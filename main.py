@@ -16,14 +16,16 @@ os.makedirs("static", exist_ok=True)
 os.makedirs("uploads", exist_ok=True)
 os.makedirs("processed", exist_ok=True)
 
-app = FastAPI(
+api = FastAPI(
     title="Excel ETL for Softone ERP",
     description="An application to process Excel files for Softone ERP system",
-    version="1.0.0"
+    version="1.0.0",
+    docs_url=None,  # Disable Swagger UI
+    redoc_url=None  # Disable ReDoc
 )
 
 # Add CORS middleware
-app.add_middleware(
+api.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
@@ -32,9 +34,9 @@ app.add_middleware(
 )
 
 # Serve static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+api.mount("/static", StaticFiles(directory="static"), name="static")
 
-@app.get("/", response_class=HTMLResponse)
+@api.get("/", response_class=HTMLResponse)
 async def root():
     """
     Root endpoint that serves the index.html file
@@ -42,7 +44,7 @@ async def root():
     with open("static/index.html") as f:
         return f.read()
 
-@app.post("/upload/")
+@api.post("/upload/")
 async def upload_file(file: UploadFile = File(...)):
     """
     Upload an Excel file for processing
@@ -62,7 +64,7 @@ async def upload_file(file: UploadFile = File(...)):
 
     return {"filename": filename, "file_path": file_path}
 
-@app.get("/column-mapping-template/")
+@api.get("/column-mapping-template/")
 async def get_mapping_template():
     """
     Get a template for column mapping
@@ -70,7 +72,7 @@ async def get_mapping_template():
     template = get_column_mapping_template()
     return template
 
-@app.post("/process/")
+@api.post("/process/")
 async def process_file(
     background_tasks: BackgroundTasks,
     filename: str = Form(...),
@@ -103,7 +105,7 @@ async def process_file(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
 
-@app.get("/download/{filename}")
+@api.get("/download/{filename}")
 async def download_file(filename: str):
     """
     Download a processed Excel file
@@ -117,3 +119,8 @@ async def download_file(filename: str):
         filename=filename,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+if __name__ == "__main__":
+    import uvicorn
+    my_ip = "0.0.0.0"  # Use 0.0.0.0 to listen on all available network interfaces
+    uvicorn.run("main:api", host=my_ip, port=3000, log_level="info", reload=False)
