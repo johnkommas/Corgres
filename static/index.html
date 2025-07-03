@@ -499,6 +499,22 @@
             let uploadedFilename = '';
             let availableColumns = [];
 
+            // Function to handle clicking on the previous step
+            function handlePreviousStepClick(e) {
+                const targetStep = parseInt(e.currentTarget.dataset.targetStep);
+                if (targetStep && targetStep >= 1 && targetStep <= 3) {
+                    console.log(`Navigating to previous step: ${targetStep}`);
+                    updateStepper(targetStep);
+
+                    // Add animation class to the section
+                    if (targetStep === 1) {
+                        document.getElementById('uploadSection').classList.add('section-enter');
+                    } else if (targetStep === 2) {
+                        document.getElementById('mappingSection').classList.add('section-enter');
+                    }
+                }
+            }
+
             // Update stepper function
             function updateStepper(currentStep) {
                 // Remove animation classes first
@@ -554,10 +570,16 @@
                         previousStep.innerHTML = '<i class="fas fa-arrow-circle-left"></i><span>Previous: Upload File</span>';
                         previousStep.style.cursor = 'pointer'; // Make it look clickable
                         previousStep.classList.add('previous-step-clickable');
+                        // Add click event listener to go back to step 1
+                        previousStep.addEventListener('click', handlePreviousStepClick);
+                        previousStep.dataset.targetStep = 1; // Store the target step
                     } else if (currentStep === 3) {
                         previousStep.innerHTML = '<i class="fas fa-arrow-circle-left"></i><span>Previous: Configure Column Mapping</span>';
                         previousStep.style.cursor = 'pointer'; // Make it look clickable
                         previousStep.classList.add('previous-step-clickable');
+                        // Add click event listener to go back to step 2
+                        previousStep.addEventListener('click', handlePreviousStepClick);
+                        previousStep.dataset.targetStep = 2; // Store the target step
                     }
                 }
 
