@@ -62,7 +62,16 @@ async def upload_file(file: UploadFile = File(...)):
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    return {"filename": filename, "file_path": file_path}
+    # Read the Excel file to get column names
+    from etl import read_excel
+    try:
+        df = read_excel(file_path)
+        column_names = df.columns.tolist()
+    except Exception as e:
+        column_names = []
+        print(f"Error reading column names: {str(e)}")
+
+    return {"filename": filename, "file_path": file_path, "column_names": column_names}
 
 @api.get("/column-mapping-template/")
 async def get_mapping_template():
