@@ -171,18 +171,19 @@
 
         /* Stepper styles */
         .stepper-wrapper {
-            position: absolute;
-            right: 2%;
+            position: fixed;
+            right: 30px;
             top: 150px;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
             padding: 20px;
             background-color: var(--ft-dark-color);
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
             z-index: 10;
-            width: 200px;
+            width: 220px;
         }
 
         .stepper-item {
@@ -191,9 +192,10 @@
             flex-direction: row;
             align-items: center;
             margin-bottom: 20px;
-            padding: 10px;
-            border-radius: 8px;
+            padding: 12px;
+            border-radius: 10px;
             transition: all 0.3s ease;
+            border: 1px solid transparent;
         }
 
         .stepper-item::before {
@@ -232,6 +234,9 @@
 
         .stepper-item:hover {
             background-color: rgba(85, 85, 85, 0.05);
+            border-color: rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
         }
 
         .step-counter {
@@ -240,15 +245,16 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            width: 30px;
-            height: 30px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             background-color: var(--upcoming-color);
             color: white;
-            margin-right: 10px;
+            margin-right: 12px;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
             flex-shrink: 0;
+            font-size: 0.9rem;
         }
 
         .stepper-item.completed .step-counter {
@@ -257,15 +263,17 @@
 
         .stepper-item.current .step-counter {
             background-color: var(--current-color);
-            box-shadow: 0 0 10px rgba(85, 85, 85, 0.5);
+            box-shadow: 0 0 15px rgba(85, 85, 85, 0.6);
             transform: scale(1.2);
         }
 
         .step-name {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 600;
             color: #555;
             text-align: left;
+            transition: all 0.3s ease;
+            letter-spacing: 0.2px;
         }
 
         .stepper-item.completed .step-name {
@@ -275,13 +283,28 @@
         .stepper-item.current .step-name {
             color: var(--current-color);
             font-weight: 700;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+        }
+
+        .stepper-item:hover .step-name {
+            color: var(--primary-color);
+        }
+
+        .stepper-title {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: center;
         }
 
         /* Main content area */
         .section {
-            max-width: calc(100% - 250px); /* Make space for the vertical stepper */
+            max-width: calc(100% - 270px); /* Make space for the vertical stepper */
             z-index: 5; /* Ensure section has a higher z-index than background elements */
-            margin-right: 20px; /* Add some margin to the right to prevent content from getting too close to the stepper */
+            margin-right: 30px; /* Add some margin to the right to prevent content from getting too close to the stepper */
         }
 
         .step-info {
@@ -356,7 +379,7 @@
         <nav class="navbar navbar-expand-lg navbar-light rounded mb-4" style="background-color: var(--background-color);">
             <div class="container-fluid">
                 <a class="navbar-brand" href="/">
-                    <i class="fas fa-file-excel text-primary me-2"></i>
+                    <i class="fas fa-file-excel text-secondary me-2"></i>
                     Excel ETL for Softone ERP
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -380,30 +403,35 @@
         </nav>
 
         <div class="text-center mb-4">
-            <h1><i class="fas fa-file-excel text-primary me-2"></i> Excel ETL for Softone ERP</h1>
+            <h1><i class="fas fa-file-excel text-secondary me-2"></i> Excel ETL for Softone ERP</h1>
             <p class="lead">Transform your Excel files into Softone ERP compatible format with just a few clicks.</p>
         </div>
 
-        <!-- Progress Stepper -->
-        <div class="stepper-wrapper" id="progressStepper">
-            <div class="stepper-item current animate-progress" id="step1Item">
-                <div class="step-counter"><i class="fas fa-upload"></i></div>
-                <div class="step-name">Upload File</div>
-            </div>
-            <div class="stepper-item" id="step2Item">
-                <div class="step-counter"><i class="fas fa-columns"></i></div>
-                <div class="step-name">Map Columns</div>
-            </div>
-            <div class="stepper-item" id="step3Item">
-                <div class="step-counter"><i class="fas fa-download"></i></div>
-                <div class="step-name">Download</div>
+        <div class="row">
+            <div class="col-12">
+                <!-- Progress Stepper -->
+                <div class="stepper-wrapper" id="progressStepper">
+                    <h4 class="stepper-title">Process Steps</h4>
+                    <div class="stepper-item current animate-progress" id="step1Item">
+                        <div class="step-counter"><i class="fas fa-upload"></i></div>
+                        <div class="step-name">Upload File</div>
+                    </div>
+                    <div class="stepper-item" id="step2Item">
+                        <div class="step-counter"><i class="fas fa-columns"></i></div>
+                        <div class="step-name">Map Columns</div>
+                    </div>
+                    <div class="stepper-item" id="step3Item">
+                        <div class="step-counter"><i class="fas fa-download"></i></div>
+                        <div class="step-name">Download</div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Step 1: Upload Excel File -->
         <div class="section section-enter" id="uploadSection">
             <div class="d-flex align-items-center mb-3">
-                <div class="bg-primary text-white rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                <div class="bg-secondary text-white rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
                     <i class="fas fa-upload"></i>
                 </div>
                 <h3 class="mb-0">Step 1: Upload Excel File</h3>
@@ -413,7 +441,7 @@
                 <div class="mb-3">
                     <div class="input-group">
                         <input class="form-control" type="file" id="excelFile" accept=".xls,.xlsx" required>
-                        <button type="submit" class="btn btn-primary"><i class="fas fa-cloud-upload-alt me-2"></i>Upload</button>
+                        <button type="submit" class="btn btn-secondary"><i class="fas fa-cloud-upload-alt me-2"></i>Upload</button>
                     </div>
                 </div>
             </form>
@@ -424,7 +452,7 @@
         <!-- Step 2: Configure Column Mapping -->
         <div class="section" id="mappingSection" style="display: none;">
             <div class="d-flex align-items-center mb-3">
-                <div class="bg-primary text-white rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                <div class="bg-secondary text-white rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
                     <i class="fas fa-columns"></i>
                 </div>
                 <h3 class="mb-0">Step 2: Configure Column Mapping</h3>
@@ -433,18 +461,18 @@
             <div id="columnMappingForm" class="card p-3 mb-3" style="background-color: var(--ft-dark-color);">
                 <!-- Will be populated dynamically -->
             </div>
-            <button id="processButton" class="btn btn-primary" style="position: relative; z-index: 100; margin-top: 10px; margin-bottom: 10px;"><i class="fas fa-cogs me-2"></i>Process File</button>
+            <button id="processButton" class="btn btn-secondary" style="position: relative; z-index: 100; margin-top: 10px; margin-bottom: 10px;"><i class="fas fa-cogs me-2"></i>Process File</button>
         </div>
 
         <!-- Processing Indicator -->
         <div class="section" id="processingSpinner">
             <div class="text-center py-4">
-                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <div class="spinner-border text-secondary" role="status" style="width: 3rem; height: 3rem;">
                     <span class="visually-hidden">Processing...</span>
                 </div>
                 <p class="lead mt-3">Processing your file. Please wait...</p>
                 <div class="progress mt-3" style="height: 10px;">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 100%"></div>
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-secondary" role="progressbar" style="width: 100%"></div>
                 </div>
             </div>
         </div>
@@ -498,6 +526,56 @@
     </footer>
 
     <style>
+        /* Media query for smaller screens */
+        @media (max-width: 991px) {
+            .stepper-wrapper {
+                position: static;
+                width: 100%;
+                margin-bottom: 20px;
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: center;
+            }
+
+            .section {
+                max-width: 100%;
+                margin-right: 0;
+            }
+
+            .stepper-item {
+                margin-bottom: 10px;
+                margin-right: 0;
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .stepper-item::before {
+                display: none;
+            }
+
+            .stepper-title {
+                width: 100%;
+                max-width: 300px;
+                text-align: center;
+                margin-bottom: 15px;
+            }
+        }
+
+        /* Media query for very small screens */
+        @media (max-width: 576px) {
+            .stepper-wrapper {
+                padding: 15px;
+            }
+
+            .stepper-item {
+                max-width: 250px;
+            }
+
+            .stepper-title {
+                max-width: 250px;
+            }
+        }
+
         /* Media query for very large screens */
         @media (min-width: 1600px) {
             .container-fluid {
@@ -505,7 +583,13 @@
             }
 
             .section {
-                max-width: calc(100% - 280px);
+                max-width: calc(100% - 300px);
+                margin-right: 40px;
+            }
+
+            .stepper-wrapper {
+                right: 40px;
+                width: 240px;
             }
         }
 
@@ -516,7 +600,13 @@
             }
 
             .section {
-                max-width: calc(100% - 300px);
+                max-width: calc(100% - 320px);
+                margin-right: 50px;
+            }
+
+            .stepper-wrapper {
+                right: 50px;
+                width: 250px;
             }
 
             body {
