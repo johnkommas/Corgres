@@ -173,7 +173,7 @@ os.makedirs("uploads", exist_ok=True)
 os.makedirs("processed", exist_ok=True)
 
 api = FastAPI(
-    title="Excel ETL for Softone ERP",
+    title="Softone ERP Excel Formatter",
     description="An application to process Excel files for Softone ERP system",
     version="1.0.0",
     docs_url=None,  # Disable Swagger UI

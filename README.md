@@ -1,4 +1,4 @@
-# Excel ETL for Softone ERP
+# Softone ERP Excel Formatter
 
 An application to process Excel files for the Softone ERP system by rearranging columns to fit the required format.
 
