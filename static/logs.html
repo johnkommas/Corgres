@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Log Analytics Dashboard - ΣΙΓΑΝΟΣ Α.Ε. - Προηγμένη ανάλυση αρχείων καταγραφής της εφαρμογής">
+    <meta name="theme-color" content="#FFF1E5">
+    <title>Log Analytics Dashboard - FINANCIAL TIMES</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://siganos-sa.gr/wp-content/uploads/2021/06/placeholder-300x300.jpg">
+
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- <link rel="stylesheet" href="{{ url_for('static', path='css/apple-style.css') }}"> -->
+    <link href="https://fonts.googleapis.com/css2?family=Poiret+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+
+    <style>
+        :root {
+            --primary-color: #555555;
+            --secondary-color: #1d1d1f;
+            --background-color: #FFF1E5;
+            --ft-dark-color: #F7D0B0;
+            --text-color: #1d1d1f;
+            --light-text-color: #86868b;
+            --border-color: #d2d2d7;
+            --success-color: #777777;
+            --warning-color: #ff9500;
+            --danger-color: #ff3b30;
+            --transition-speed: 0.3s;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            padding: 30px;
+            min-height: 100vh;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container-fluid {
+            background-color: var(--background-color);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            transition: var(--transition-speed);
+        }
+        .log-container {
+            background-color: var(--ft-dark-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .log-entry {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 5px;
+            background-color: var(--ft-dark-color);
+            border-radius: 4px;
+        }
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        .log-entry.error {
+            color: #dc3545;
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+        .log-entry.warning {
+            color: #ffc107;
+            background-color: rgba(255, 193, 7, 0.1);
+        }
+        .log-entry.info {
+            color: #0d6efd;
+        }
+        .log-timestamp {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .log-logger {
+            color: #6c757d;
+            margin-right: 10px;
+        }
+        .log-level {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .log-level.error {
+            color: #dc3545;
+        }
+        .log-level.warning {
+            color: #ffc107;
+        }
+        .log-level.info {
+            color: #0d6efd;
+        }
+        .log-message {
+            display: inline-block;
+            margin-top: 5px;
+        }
+        .log-controls {
+            margin-bottom: 20px;
+        }
+        .log-filter {
+            margin-bottom: 10px;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .stat-card .stat-label {
+            font-size: 1rem;
+            color: #6c757d;
+        }
+        .stat-card.info {
+            background-color: rgba(13, 110, 253, 0.1);
+            border-left: 4px solid #0d6efd;
+        }
+        .stat-card.warning {
+            background-color: rgba(255, 193, 7, 0.1);
+            border-left: 4px solid #ffc107;
+        }
+        .stat-card.error {
+            background-color: rgba(220, 53, 69, 0.1);
+            border-left: 4px solid #dc3545;
+        }
+        .stat-card.success {
+            background-color: rgba(25, 135, 84, 0.1);
+            border-left: 4px solid #198754;
+        }
+        .dashboard-section {
+            margin-bottom: 30px;
+            background-color: var(--ft-dark-color);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        .dashboard-section-title {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+
+        /* Card styles */
+        .card {
+            background-color: var(--ft-dark-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border: none;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background-color: var(--ft-dark-color) !important;
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 20px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+        .error-list {
+            list-style: none;
+            padding: 0;
+        }
+        .error-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            background-color: rgba(220, 53, 69, 0.1);
+            border-left: 4px solid #dc3545;
+        }
+        .error-timestamp {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .error-message {
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .error-details {
+            font-size: 0.9rem;
+            color: #495057;
+        }
+        .nav-tabs .nav-link {
+            border: none;
+            color: #495057;
+            padding: 10px 15px;
+            border-radius: 0;
+            border-bottom: 3px solid transparent;
+        }
+        .nav-tabs .nav-link.active {
+            color: #0d6efd;
+            background-color: transparent;
+            border-bottom: 3px solid #0d6efd;
+        }
+        .nav-tabs .nav-link:hover {
+            border-bottom: 3px solid #dee2e6;
+        }
+        .date-range-picker {
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        /* Custom styles for header layout */
+        .pre-header-middle {
+            text-align: center;
+            width: 100%;
+        }
+
+        .pre-header-right {
+            position: absolute;
+            right: 20px;
+            top: 10px;
+        }
+
+        .pre-header-content {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="pre-header">
+        <div class="container-fluid">
+            <div class="pre-header-content">
+                <div class="pre-header-left">
+                    <div class="language-selector">
+                        <i class="fas fa-globe"></i> Greece
+                    </div>
+                </div>
+                <div class="pre-header-middle">
+                    <a href="/" class="text-decoration-none">
+                        <h5 class="m-0">FINANCIAL TIMES</h5>
+                    </a>
+                </div>
+                <div class="pre-header-right">
+                    <div class="login-register">
+                        <a href="/" class="login-link">Επιστροφή στην Αρχική</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="header">
+        <div class="container-fluid">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1 class="header-title">Αναλυτικά Στοιχεία Καταγραφών</h1>
+                    <p class="header-subtitle">Προηγμένη ανάλυση και οπτικοποίηση των αρχείων καταγραφής της εφαρμογής</p>
+                </div>
+                <!-- Image removed as per requirements -->
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <!-- Global Controls -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                    <input type="text" class="form-control date-range-picker" id="dateRange" placeholder="Επιλογή χρονικού διαστήματος">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="logTypeFilter">
+                    <option value="all">Όλοι οι τύποι καταγραφών</option>
+                    <option value="app">Εφαρμογή</option>
+                    <option value="database">Βάση Δεδομένων</option>
+                    <option value="api">API</option>
+                    <option value="data_processing">Επεξεργασία Δεδομένων</option>
+                    <option value="error">Σφάλματα</option>
+                </select>
+            </div>
+            <div class="col-md-5 text-end">
+                <button id="refreshDashboard" class="btn btn-primary">
+                    <i class="fas fa-sync-alt"></i> Ανανέωση Δεδομένων
+                </button>
+                <button id="exportPDF" class="btn btn-success ms-2">
+                    <i class="fas fa-file-pdf"></i> Εξαγωγή PDF
+                </button>
+                <button id="exportCSV" class="btn btn-info ms-2">
+                    <i class="fas fa-file-csv"></i> Εξαγωγή CSV
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs mb-4" id="dashboardTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true">
+                    <i class="fas fa-chart-pie"></i> Επισκόπηση
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="trends-tab" data-bs-toggle="tab" data-bs-target="#trends" type="button" role="tab" aria-controls="trends" aria-selected="false">
+                    <i class="fas fa-chart-line"></i> Τάσεις
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="errors-tab" data-bs-toggle="tab" data-bs-target="#errors" type="button" role="tab" aria-controls="errors" aria-selected="false">
+                    <i class="fas fa-exclamation-triangle"></i> Σφάλματα
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab" aria-controls="logs" aria-selected="false">
+                    <i class="fas fa-list"></i> Καταγραφές
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="dashboardTabsContent">
+            <!-- Overview Tab -->
+            <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+                <!-- Summary Stats -->
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stat-card info">
+                            <div class="stat-value" id="totalLogs">-</div>
+                            <div class="stat-label">Συνολικές Καταγραφές</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card success">
+                            <div class="stat-value" id="infoLogs">-</div>
+                            <div class="stat-label">Πληροφοριακές (INFO)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card warning">
+                            <div class="stat-value" id="warningLogs">-</div>
+                            <div class="stat-label">Προειδοποιήσεις (WARNING)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card error">
+                            <div class="stat-value" id="errorLogs">-</div>
+                            <div class="stat-label">Σφάλματα (ERROR)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Distribution Charts -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="dashboard-section">
+                            <h3 class="dashboard-section-title">Κατανομή ανά Επίπεδο</h3>
+                            <div class="chart-container">
+                                <canvas id="logLevelChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="dashboard-section">
+                            <h3 class="dashboard-section-title">Κατανομή ανά Υποσύστημα</h3>
+                            <div class="chart-container">
+                                <canvas id="loggerChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Charts -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="dashboard-section">
+                            <h3 class="dashboard-section-title">Δραστηριότητα ανά Ημέρα</h3>
+                            <div class="chart-container">
+                                <canvas id="dailyActivityChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="dashboard-section">
+                            <h3 class="dashboard-section-title">Δραστηριότητα ανά Ώρα</h3>
+                            <div class="chart-container">
+                                <canvas id="hourlyActivityChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Common Messages -->
+                <div class="dashboard-section">
+                    <h3 class="dashboard-section-title">Συχνά Μηνύματα</h3>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Μήνυμα</th>
+                                    <th>Συχνότητα</th>
+                                </tr>
+                            </thead>
+                            <tbody id="commonMessagesTable">
+                                <tr>
+                                    <td colspan="2" class="text-center">Φόρτωση δεδομένων...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trends Tab -->
+            <div class="tab-pane fade" id="trends" role="tabpanel" aria-labelledby="trends-tab">
+                <div class="dashboard-section">
+                    <h3 class="dashboard-section-title">Τάσεις Καταγραφών στο Χρόνο</h3>
+                    <div class="chart-container" style="height: 400px;">
+                        <canvas id="timeSeriesChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="dashboard-section">
+                    <h3 class="dashboard-section-title">Σύγκριση Επιπέδων Καταγραφής</h3>
+                    <div class="chart-container" style="height: 400px;">
+                        <canvas id="logLevelComparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Errors Tab -->
+            <div class="tab-pane fade" id="errors" role="tabpanel" aria-labelledby="errors-tab">
+                <div class="dashboard-section">
+                    <h3 class="dashboard-section-title">Πρόσφατα Σφάλματα</h3>
+                    <ul class="error-list" id="errorList">
+                        <li class="text-center">Φόρτωση σφαλμάτων...</li>
+                    </ul>
+                </div>
+
+                <div class="dashboard-section">
+                    <h3 class="dashboard-section-title">Κατανομή Σφαλμάτων ανά Υποσύστημα</h3>
+                    <div class="chart-container">
+                        <canvas id="errorsByModuleChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logs Tab -->
+            <div class="tab-pane fade" id="logs" role="tabpanel" aria-labelledby="logs-tab">
+                <div class="log-controls">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="log-filter">
+                                <label for="logFilter" class="form-label">Φίλτρο:</label>
+                                <input type="text" class="form-control" id="logFilter" placeholder="Αναζήτηση στα logs...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="log-level-filter">
+                                <label for="logLevelFilter" class="form-label">Επίπεδο:</label>
+                                <select class="form-select" id="logLevelFilter">
+                                    <option value="all">Όλα</option>
+                                    <option value="info">INFO</option>
+                                    <option value="warning">WARNING</option>
+                                    <option value="error">ERROR</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="log-lines">
+                                <label for="logLines" class="form-label">Αριθμός γραμμών:</label>
+                                <select class="form-select" id="logLines">
+                                    <option value="100">100</option>
+                                    <option value="200">200</option>
+                                    <option value="500">500</option>
+                                    <option value="1000">1000</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <button id="refreshLogs" class="btn btn-primary">
+                                <i class="fas fa-sync-alt"></i> Ανανέωση
+                            </button>
+                            <button id="clearFilter" class="btn btn-secondary">
+                                <i class="fas fa-eraser"></i> Καθαρισμός Φίλτρου
+                            </button>
+                            <button id="downloadLogs" class="btn btn-success">
+                                <i class="fas fa-download"></i> Λήψη Logs
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="log-container" id="logContainer">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Φόρτωση αρχείων καταγραφής...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p>Copyright &copy; <span id="currentYear"></span>. Ioannis E. Kommas. Business Intelligence Reports. All Rights Reserved</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="/" class="btn btn-secondary">
+                        <i class="fas fa-home"></i> Επιστροφή στην Αρχική
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        // Global variables
+        let logStats = null;
+        let logTrends = null;
+        let logErrors = null;
+        let charts = {};
+        let selectedDays = 7;
+        let selectedLogType = 'all';
+        let selectedStartDate = null;
+        let selectedEndDate = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set current year in footer
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+            // Initialize date range picker
+            const initialStartDate = moment().subtract(7, 'days');
+            const initialEndDate = moment();
+
+            // Set initial values for selectedStartDate and selectedEndDate
+            selectedStartDate = initialStartDate.format('YYYY-MM-DD');
+            selectedEndDate = initialEndDate.format('YYYY-MM-DD');
+
+            $('#dateRange').daterangepicker({
+                startDate: initialStartDate,
+                endDate: initialEndDate,
+                ranges: {
+                   'Σήμερα': [moment(), moment()],
+                   'Χθες': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                   'Τελευταίες 7 ημέρες': [moment().subtract(6, 'days'), moment()],
+                   'Τελευταίες 30 ημέρες': [moment().subtract(29, 'days'), moment()],
+                   'Αυτός ο μήνας': [moment().startOf('month'), moment().endOf('month')],
+                   'Προηγούμενος μήνας': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                },
+                locale: {
+                    format: 'DD/MM/YYYY',
+                    applyLabel: 'Εφαρμογή',
+                    cancelLabel: 'Ακύρωση',
+                    customRangeLabel: 'Προσαρμοσμένο',
+                    daysOfWeek: ['Κυ', 'Δε', 'Τρ', 'Τε', 'Πε', 'Πα', 'Σα'],
+                    monthNames: ['Ιανουάριος', 'Φεβρουάριος', 'Μάρτιος', 'Απρίλιος', 'Μάιος', 'Ιούνιος', 'Ιούλιος', 'Αύγουστος', 'Σεπτέμβριος', 'Οκτώβριος', 'Νοέμβριος', 'Δεκέμβριος']
+                }
+            });
+
+            // Set up event listeners
+            document.getElementById('refreshLogs').addEventListener('click', loadLogs);
+            document.getElementById('clearFilter').addEventListener('click', clearFilter);
+            document.getElementById('downloadLogs').addEventListener('click', downloadLogs);
+            document.getElementById('logFilter').addEventListener('input', filterLogs);
+            document.getElementById('logLevelFilter').addEventListener('change', filterLogs);
+            document.getElementById('logLines').addEventListener('change', loadLogs);
+            document.getElementById('refreshDashboard').addEventListener('click', refreshDashboard);
+            document.getElementById('exportPDF').addEventListener('click', exportToPDF);
+            document.getElementById('exportCSV').addEventListener('click', exportToCSV);
+            document.getElementById('logTypeFilter').addEventListener('change', function() {
+                selectedLogType = this.value;
+                refreshDashboard();
+            });
+
+            // Date range change event
+            $('#dateRange').on('apply.daterangepicker', function(ev, picker) {
+                const days = picker.endDate.diff(picker.startDate, 'days') + 1;
+                selectedDays = days;
+                // Store the selected start and end dates in ISO format (YYYY-MM-DD)
+                selectedStartDate = picker.startDate.format('YYYY-MM-DD');
+                selectedEndDate = picker.endDate.format('YYYY-MM-DD');
+                console.log(`Date range selected: ${selectedStartDate} to ${selectedEndDate} (${selectedDays} days)`);
+                refreshDashboard();
+            });
+
+            // Initialize dashboard
+            initializeCharts();
+            loadLogs();
+            refreshDashboard();
+        });
+
+        function refreshDashboard() {
+            // Show loading indicators
+            document.getElementById('totalLogs').textContent = '-';
+            document.getElementById('infoLogs').textContent = '-';
+            document.getElementById('warningLogs').textContent = '-';
+            document.getElementById('errorLogs').textContent = '-';
+            document.getElementById('commonMessagesTable').innerHTML = '<tr><td colspan="2" class="text-center">Φόρτωση δεδομένων...</td></tr>';
+            document.getElementById('errorList').innerHTML = '<li class="text-center">Φόρτωση σφαλμάτων...</li>';
+
+            // Fetch statistics
+            fetchLogStats();
+            fetchLogTrends();
+            fetchLogErrors();
+        }
+
+        function fetchLogStats() {
+            let url = `/api/logs/stats?log_type=${selectedLogType}&days=${selectedDays}`;
+
+            // Add start and end dates if they are set
+            if (selectedStartDate && selectedEndDate) {
+                url += `&start_date=${selectedStartDate}&end_date=${selectedEndDate}`;
+            }
+
+            // Debug: Log the full URL
+            console.log(`Fetching log stats with URL: ${url}`);
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    logStats = data;
+                    updateStatCards();
+                    updateDistributionCharts();
+                    updateActivityCharts();
+                    updateCommonMessages();
+                })
+                .catch(error => {
+                    console.error('Error fetching log statistics:', error);
+                    alert('Σφάλμα κατά τη φόρτωση των στατιστικών: ' + error.message);
+                });
+        }
+
+        function fetchLogTrends() {
+            // Use the stats endpoint since trends endpoint doesn't exist
+            let url = `/api/logs/stats?log_type=${selectedLogType}&days=${selectedDays}`;
+
+            // Add start and end dates if they are set
+            if (selectedStartDate && selectedEndDate) {
+                url += `&start_date=${selectedStartDate}&end_date=${selectedEndDate}`;
+            }
+
+            // Debug: Log the full URL
+            console.log(`Fetching log trends with URL: ${url}`);
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    // Convert stats data to trends format
+                    logTrends = {
+                        time_series: Object.keys(data.time_series).map(date => ({
+                            timestamp: date,
+                            INFO: data.time_series[date].INFO || 0,
+                            WARNING: data.time_series[date].WARNING || 0,
+                            ERROR: data.time_series[date].ERROR || 0
+                        }))
+                    };
+                    updateTrendsCharts();
+                })
+                .catch(error => {
+                    console.error('Error fetching log trends:', error);
+                    alert('Σφάλμα κατά τη φόρτωση των τάσεων: ' + error.message);
+                });
+        }
+
+        function fetchLogErrors() {
+            // Use the logs endpoint since errors endpoint doesn't exist
+            let url = `/api/logs?limit=100`;
+
+            // Debug: Log the full URL
+            console.log(`Fetching log errors with URL: ${url}`);
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    // Filter logs to get only errors
+                    const errorLogs = data.logs.filter(log => {
+                        // Check if log message contains ERROR
+                        return log.message.includes('ERROR') || log.type === 'errors';
+                    });
+
+                    // Convert logs to errors format
+                    logErrors = {
+                        errors: errorLogs.map(log => {
+                            // Extract timestamp and message
+                            const timestamp = log.timestamp;
+                            const message = log.message;
+                            const logger = log.type;
+
+                            return {
+                                timestamp: timestamp,
+                                message: message,
+                                logger: logger,
+                                module: logger
+                            };
+                        })
+                    };
+
+                    updateErrorsList();
+                    updateErrorsChart();
+                })
+                .catch(error => {
+                    console.error('Error fetching log errors:', error);
+                    alert('Σφάλμα κατά τη φόρτωση των σφαλμάτων: ' + error.message);
+                });
+        }
+
+        function initializeCharts() {
+            // Initialize all charts with empty data
+            charts.logLevel = new Chart(
+                document.getElementById('logLevelChart'),
+                {
+                    type: 'pie',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            data: [],
+                            backgroundColor: [
+                                'rgba(13, 110, 253, 0.7)',  // INFO - blue
+                                'rgba(255, 193, 7, 0.7)',   // WARNING - yellow
+                                'rgba(220, 53, 69, 0.7)',   // ERROR - red
+                                'rgba(108, 117, 125, 0.7)'  // Others - gray
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Κατανομή Καταγραφών ανά Επίπεδο'
+                            }
+                        }
+                    }
+                }
+            );
+
+            charts.logger = new Chart(
+                document.getElementById('loggerChart'),
+                {
+                    type: 'pie',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            data: [],
+                            backgroundColor: [
+                                'rgba(13, 110, 253, 0.7)',
+                                'rgba(25, 135, 84, 0.7)',
+                                'rgba(255, 193, 7, 0.7)',
+                                'rgba(220, 53, 69, 0.7)',
+                                'rgba(108, 117, 125, 0.7)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Κατανομή Καταγραφών ανά Υποσύστημα'
+                            }
+                        }
+                    }
+                }
+            );
+
+            charts.dailyActivity = new Chart(
+                document.getElementById('dailyActivityChart'),
+                {
+                    type: 'bar',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Καταγραφές',
+                            data: [],
+                            backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                            borderColor: 'rgba(13, 110, 253, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Καταγραφές ανά Ημέρα'
+                            }
+                        }
+                    }
+                }
+            );
+
+            charts.hourlyActivity = new Chart(
+                document.getElementById('hourlyActivityChart'),
+                {
+                    type: 'bar',
+                    data: {
+                        labels: Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0')),
+                        datasets: [{
+                            label: 'Καταγραφές',
+                            data: [],
+                            backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                            borderColor: 'rgba(25, 135, 84, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Καταγραφές ανά Ώρα'
+                            }
+                        }
+                    }
+                }
+            );
+
+            charts.timeSeries = new Chart(
+                document.getElementById('timeSeriesChart'),
+                {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            {
+                                label: 'INFO',
+                                data: [],
+                                borderColor: 'rgba(13, 110, 253, 1)',
+                                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'WARNING',
+                                data: [],
+                                borderColor: 'rgba(255, 193, 7, 1)',
+                                backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'ERROR',
+                                data: [],
+                                borderColor: 'rgba(220, 53, 69, 1)',
+                                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'day'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Ημερομηνία'
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Αριθμός Καταγραφών'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Τάσεις Καταγραφών στο Χρόνο'
+                            }
+                        }
+                    }
+                }
+            );
+
+            charts.logLevelComparison = new Chart(
+                document.getElementById('logLevelComparisonChart'),
+                {
+                    type: 'bar',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            {
+                                label: 'INFO',
+                                data: [],
+                                backgroundColor: 'rgba(13, 110, 253, 0.7)'
+                            },
+                            {
+                                label: 'WARNING',
+                                data: [],
+                                backgroundColor: 'rgba(255, 193, 7, 0.7)'
+                            },
+                            {
+                                label: 'ERROR',
+                                data: [],
+                                backgroundColor: 'rgba(220, 53, 69, 0.7)'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                stacked: false
+                            },
+                            y: {
+                                stacked: false,
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Σύγκριση Επιπέδων Καταγραφής'
+                            }
+                        }
+                    }
+                }
+            );
+
+            charts.errorsByModule = new Chart(
+                document.getElementById('errorsByModuleChart'),
+                {
+                    type: 'bar',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Σφάλματα',
+                            data: [],
+                            backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                            borderColor: 'rgba(220, 53, 69, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Σφάλματα ανά Υποσύστημα'
+                            }
+                        }
+                    }
+                }
+            );
+        }
+
+        function updateStatCards() {
+            if (!logStats) return;
+
+            document.getElementById('totalLogs').textContent = logStats.total.toLocaleString();
+            document.getElementById('infoLogs').textContent = (logStats.by_level.INFO || 0).toLocaleString();
+            document.getElementById('warningLogs').textContent = (logStats.by_level.WARNING || 0).toLocaleString();
+            document.getElementById('errorLogs').textContent = (logStats.by_level.ERROR || 0).toLocaleString();
+        }
+
+        function updateDistributionCharts() {
+            if (!logStats) return;
+
+            // Update log level chart
+            const levelLabels = Object.keys(logStats.by_level);
+            const levelData = levelLabels.map(label => logStats.by_level[label]);
+
+            charts.logLevel.data.labels = levelLabels;
+            charts.logLevel.data.datasets[0].data = levelData;
+            charts.logLevel.update();
+
+            // Update logger chart
+            const loggerLabels = Object.keys(logStats.by_logger);
+            const loggerData = loggerLabels.map(label => logStats.by_logger[label]);
+
+            charts.logger.data.labels = loggerLabels;
+            charts.logger.data.datasets[0].data = loggerData;
+            charts.logger.update();
+        }
+
+        function updateActivityCharts() {
+            if (!logStats) return;
+
+            // Update daily activity chart
+            const dayLabels = Object.keys(logStats.by_day).sort();
+            const dayData = dayLabels.map(day => logStats.by_day[day]);
+
+            charts.dailyActivity.data.labels = dayLabels;
+            charts.dailyActivity.data.datasets[0].data = dayData;
+            charts.dailyActivity.update();
+
+            // Update hourly activity chart
+            const hourData = Array.from({length: 24}, (_, i) => {
+                const hour = i.toString().padStart(2, '0');
+                return logStats.by_hour[hour] || 0;
+            });
+
+            charts.hourlyActivity.data.datasets[0].data = hourData;
+            charts.hourlyActivity.update();
+        }
+
+        function updateCommonMessages() {
+            if (!logStats || !logStats.common_messages) return;
+
+            const tableBody = document.getElementById('commonMessagesTable');
+            tableBody.innerHTML = '';
+
+            if (logStats.common_messages.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="2" class="text-center">Δεν βρέθηκαν συχνά μηνύματα</td></tr>';
+                return;
+            }
+
+            logStats.common_messages.forEach(item => {
+                const row = document.createElement('tr');
+
+                const messageCell = document.createElement('td');
+                messageCell.textContent = item.message;
+
+                const countCell = document.createElement('td');
+                countCell.textContent = item.count;
+                countCell.style.textAlign = 'center';
+                countCell.style.width = '100px';
+
+                row.appendChild(messageCell);
+                row.appendChild(countCell);
+                tableBody.appendChild(row);
+            });
+        }
+
+        function updateTrendsCharts() {
+            if (!logTrends || !logTrends.time_series) return;
+
+            const timeLabels = logTrends.time_series.map(item => item.timestamp);
+            const infoData = logTrends.time_series.map(item => ({x: item.timestamp, y: item.INFO || 0}));
+            const warningData = logTrends.time_series.map(item => ({x: item.timestamp, y: item.WARNING || 0}));
+            const errorData = logTrends.time_series.map(item => ({x: item.timestamp, y: item.ERROR || 0}));
+
+            // Update time series chart
+            charts.timeSeries.data.labels = timeLabels;
+            charts.timeSeries.data.datasets[0].data = infoData;
+            charts.timeSeries.data.datasets[1].data = warningData;
+            charts.timeSeries.data.datasets[2].data = errorData;
+            charts.timeSeries.update();
+
+            // Update log level comparison chart
+            charts.logLevelComparison.data.labels = timeLabels;
+            charts.logLevelComparison.data.datasets[0].data = logTrends.time_series.map(item => item.INFO || 0);
+            charts.logLevelComparison.data.datasets[1].data = logTrends.time_series.map(item => item.WARNING || 0);
+            charts.logLevelComparison.data.datasets[2].data = logTrends.time_series.map(item => item.ERROR || 0);
+            charts.logLevelComparison.update();
+        }
+
+        function updateErrorsList() {
+            if (!logErrors || !logErrors.errors) return;
+
+            const errorList = document.getElementById('errorList');
+            errorList.innerHTML = '';
+
+            if (logErrors.errors.length === 0) {
+                errorList.innerHTML = '<li class="text-center">Δεν βρέθηκαν σφάλματα</li>';
+                return;
+            }
+
+            logErrors.errors.forEach(error => {
+                const errorItem = document.createElement('li');
+                errorItem.className = 'error-item';
+
+                const timestamp = document.createElement('div');
+                timestamp.className = 'error-timestamp';
+                timestamp.textContent = error.timestamp;
+
+                const message = document.createElement('div');
+                message.className = 'error-message';
+                message.textContent = error.message;
+
+                const details = document.createElement('div');
+                details.className = 'error-details';
+                details.textContent = `${error.logger} - ${error.module || 'Unknown module'}${error.line ? ':' + error.line : ''}`;
+
+                errorItem.appendChild(timestamp);
+                errorItem.appendChild(message);
+                errorItem.appendChild(details);
+                errorList.appendChild(errorItem);
+            });
+        }
+
+        function updateErrorsChart() {
+            if (!logErrors || !logErrors.errors) return;
+
+            // Count errors by module
+            const errorsByModule = {};
+            logErrors.errors.forEach(error => {
+                const module = error.module || 'Unknown';
+                errorsByModule[module] = (errorsByModule[module] || 0) + 1;
+            });
+
+            const moduleLabels = Object.keys(errorsByModule);
+            const moduleData = moduleLabels.map(module => errorsByModule[module]);
+
+            // Update errors by module chart
+            charts.errorsByModule.data.labels = moduleLabels;
+            charts.errorsByModule.data.datasets[0].data = moduleData;
+            charts.errorsByModule.update();
+        }
+
+        function loadLogs() {
+            const logContainer = document.getElementById('logContainer');
+            const lines = document.getElementById('logLines').value;
+            const logType = document.getElementById('logTypeFilter').value;
+
+            // Show loading indicator
+            logContainer.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Φόρτωση αρχείων καταγραφής...</p>
+                </div>
+            `;
+
+            // Fetch logs from API
+            fetch(`/api/logs?limit=${lines}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        logContainer.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                        return;
+                    }
+
+                    if (!data.logs || data.logs.length === 0) {
+                        logContainer.innerHTML = `<div class="alert alert-info">Δεν βρέθηκαν αρχεία καταγραφής.</div>`;
+                        return;
+                    }
+
+                    // Filter logs by type if specified
+                    let filteredLogs = data.logs;
+                    if (logType !== 'all') {
+                        filteredLogs = data.logs.filter(log => log.type === logType);
+                    }
+
+                    // Display logs
+                    logContainer.innerHTML = '';
+                    filteredLogs.forEach(log => {
+                        const logEntry = document.createElement('div');
+                        logEntry.className = 'log-entry';
+
+                        // Parse log message to extract components
+                        let logParts, timestamp, loggerName, logLevel, message;
+
+                        // Check if the log message uses tabs or dashes as separators
+                        if (log.message.includes('\t')) {
+                            // New format with tabs
+                            logParts = log.message.split('\t');
+                            timestamp = logParts[0];
+
+                            // Extract logger name
+                            if (logParts.length >= 2) {
+                                loggerName = logParts[1];
+                                if (loggerName.startsWith('[') && loggerName.endsWith(']')) {
+                                    loggerName = loggerName.substring(1, loggerName.length - 1);
+                                }
+                            } else {
+                                loggerName = log.type;
+                            }
+
+                            // Extract log level
+                            if (logParts.length >= 3) {
+                                logLevel = logParts[2];
+                                if (logLevel.startsWith('[') && logLevel.endsWith(']')) {
+                                    logLevel = logLevel.substring(1, logLevel.length - 1);
+                                }
+                            } else {
+                                logLevel = '';
+                            }
+
+                            // Extract message
+                            message = logParts.slice(3).join('\t');
+                        } else {
+                            // Old format with dashes
+                            logParts = log.message.split(' - ');
+                            timestamp = logParts[0];
+
+                            // Extract logger name
+                            if (logParts.length >= 2) {
+                                loggerName = logParts[1];
+                                if (loggerName.startsWith('[') && loggerName.endsWith(']')) {
+                                    loggerName = loggerName.substring(1, loggerName.length - 1);
+                                }
+                            } else {
+                                loggerName = log.type;
+                            }
+
+                            // Extract log level
+                            if (logParts.length >= 3) {
+                                logLevel = logParts[2];
+                                if (logLevel.startsWith('[') && logLevel.endsWith(']')) {
+                                    logLevel = logLevel.substring(1, logLevel.length - 1);
+                                }
+                            } else {
+                                logLevel = '';
+                            }
+
+                            // Extract message
+                            message = logParts.slice(3).join(' - ');
+                        }
+
+                        // Add class based on log level
+                        if (logLevel === 'ERROR') {
+                            logEntry.classList.add('error');
+                        } else if (logLevel === 'WARNING') {
+                            logEntry.classList.add('warning');
+                        } else if (logLevel === 'INFO') {
+                            logEntry.classList.add('info');
+                        }
+
+                        // Format the log entry
+                        logEntry.innerHTML = `
+                            <span class="log-timestamp">${timestamp}</span>
+                            <span class="log-logger">[${loggerName}]</span>
+                            <span class="log-level">[${logLevel}]</span>
+                            <span class="log-message">${message}</span>
+                        `;
+
+                        logContainer.appendChild(logEntry);
+                    });
+
+                    // Apply any active filters
+                    filterLogs();
+                })
+                .catch(error => {
+                    logContainer.innerHTML = `<div class="alert alert-danger">Error loading logs: ${error.message}</div>`;
+                });
+        }
+
+        function filterLogs() {
+            const filterText = document.getElementById('logFilter').value.toLowerCase();
+            const filterLevel = document.getElementById('logLevelFilter').value;
+            const logEntries = document.querySelectorAll('.log-entry');
+
+            logEntries.forEach(entry => {
+                const text = entry.textContent.toLowerCase();
+                let showByText = filterText === '' || text.includes(filterText);
+
+                // Check log level based on class
+                let showByLevel = filterLevel === 'all' || 
+                                 (filterLevel === 'error' && entry.classList.contains('error')) ||
+                                 (filterLevel === 'warning' && entry.classList.contains('warning')) ||
+                                 (filterLevel === 'info' && entry.classList.contains('info'));
+
+                entry.style.display = (showByText && showByLevel) ? '' : 'none';
+            });
+        }
+
+        function clearFilter() {
+            document.getElementById('logFilter').value = '';
+            document.getElementById('logLevelFilter').value = 'all';
+            filterLogs();
+        }
+
+        function downloadLogs() {
+            const lines = document.getElementById('logLines').value;
+            const logType = document.getElementById('logTypeFilter').value;
+
+            fetch(`/api/logs?lines=${lines}&log_type=${logType}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(`Error: ${data.error}`);
+                        return;
+                    }
+
+                    if (!data.logs || data.logs.length === 0) {
+                        alert('No logs available to download.');
+                        return;
+                    }
+
+                    // Create a blob with the log data
+                    const blob = new Blob([data.logs.join('\n')], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+
+                    // Create a temporary link and trigger download
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `app_logs_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+
+                    // Clean up
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }, 100);
+                })
+                .catch(error => {
+                    alert(`Error downloading logs: ${error.message}`);
+                });
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+
+            // Add title
+            doc.setFontSize(18);
+            doc.text('Αναφορά Καταγραφών Συστήματος', 105, 20, { align: 'center' });
+
+            // Add date
+            doc.setFontSize(12);
+            doc.text(`Ημερομηνία: ${new Date().toLocaleDateString('el-GR')}`, 105, 30, { align: 'center' });
+
+            // Add summary stats
+            doc.setFontSize(14);
+            doc.text('Συνοπτικά Στατιστικά', 20, 45);
+
+            doc.setFontSize(10);
+            doc.text(`Συνολικές Καταγραφές: ${document.getElementById('totalLogs').textContent}`, 25, 55);
+            doc.text(`Πληροφοριακές (INFO): ${document.getElementById('infoLogs').textContent}`, 25, 60);
+            doc.text(`Προειδοποιήσεις (WARNING): ${document.getElementById('warningLogs').textContent}`, 25, 65);
+            doc.text(`Σφάλματα (ERROR): ${document.getElementById('errorLogs').textContent}`, 25, 70);
+
+            // Add charts as images
+            doc.setFontSize(14);
+            doc.text('Γραφήματα', 20, 85);
+
+            // Use html2canvas to capture charts
+            html2canvas(document.getElementById('logLevelChart')).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                doc.addImage(imgData, 'PNG', 20, 90, 80, 60);
+
+                html2canvas(document.getElementById('loggerChart')).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    doc.addImage(imgData, 'PNG', 110, 90, 80, 60);
+
+                    html2canvas(document.getElementById('timeSeriesChart')).then(canvas => {
+                        const imgData = canvas.toDataURL('image/png');
+                        doc.addPage();
+                        doc.text('Τάσεις Καταγραφών', 20, 20);
+                        doc.addImage(imgData, 'PNG', 20, 25, 170, 80);
+
+                        // Add errors section
+                        doc.setFontSize(14);
+                        doc.text('Πρόσφατα Σφάλματα', 20, 120);
+
+                        // Add recent errors
+                        if (logErrors && logErrors.errors && logErrors.errors.length > 0) {
+                            doc.setFontSize(10);
+                            let y = 130;
+                            logErrors.errors.slice(0, 5).forEach(error => {
+                                doc.text(`${error.timestamp} - ${error.message}`, 25, y);
+                                y += 5;
+                            });
+                        } else {
+                            doc.setFontSize(10);
+                            doc.text('Δεν βρέθηκαν πρόσφατα σφάλματα', 25, 130);
+                        }
+
+                        // Save the PDF
+                        doc.save(`log_report_${new Date().toISOString().slice(0, 10)}.pdf`);
+                    });
+                });
+            });
+        }
+
+        function exportToCSV() {
+            if (!logStats) {
+                alert('Δεν υπάρχουν δεδομένα για εξαγωγή');
+                return;
+            }
+
+            // Create CSV content
+            let csvContent = 'data:text/csv;charset=utf-8,';
+
+            // Add header
+            csvContent += 'Category,Metric,Value\n';
+
+            // Add summary stats
+            csvContent += `Summary,Total Logs,${logStats.total}\n`;
+            Object.keys(logStats.by_level).forEach(level => {
+                csvContent += `Summary,${level} Logs,${logStats.by_level[level]}\n`;
+            });
+
+            // Add by logger stats
+            Object.keys(logStats.by_logger).forEach(logger => {
+                csvContent += `Logger,${logger},${logStats.by_logger[logger]}\n`;
+            });
+
+            // Add by day stats
+            Object.keys(logStats.by_day).sort().forEach(day => {
+                csvContent += `Daily,${day},${logStats.by_day[day]}\n`;
+            });
+
+            // Add by hour stats
+            Object.keys(logStats.by_hour).sort().forEach(hour => {
+                csvContent += `Hourly,${hour},${logStats.by_hour[hour]}\n`;
+            });
+
+            // Add common messages
+            if (logStats.common_messages) {
+                logStats.common_messages.forEach(item => {
+                    csvContent += `Common Message,"${item.message.replace(/"/g, '""')}",${item.count}\n`;
+                });
+            }
+
+            // Create download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `log_stats_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+
+            // Trigger download
+            link.click();
+
+            // Clean up
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

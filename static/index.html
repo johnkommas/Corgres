@@ -8,32 +8,46 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #4361ee;
-            --secondary-color: #3a0ca3;
+            --primary-color: #555555;
+            --secondary-color: #1d1d1f;
+            --background-color: #FFF1E5;
+            --ft-dark-color: #F7D0B0;
+            --text-color: #1d1d1f;
+            --light-text-color: #86868b;
+            --border-color: #d2d2d7;
+            --success-color: #777777;
+            --warning-color: #ff9500;
+            --danger-color: #ff3b30;
+            --transition-speed: 0.3s;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            /* Preserve original colors for specific functionality */
+            --completed-color: #777777;
+            --current-color: #555555;
+            --upcoming-color: #d2d2d7;
+            /* Additional colors from original theme */
             --accent-color: #7209b7;
-            --success-color: #4cc9f0;
             --light-color: #f8f9fa;
             --dark-color: #212529;
-            --completed-color: #4cc9f0;
-            --current-color: #4361ee;
-            --upcoming-color: #c3cfe2;
         }
 
         body {
-            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            color: var(--dark-color);
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
             padding: 30px;
             min-height: 100vh;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        .container {
-            max-width: 90%;
-            margin: 0 auto;
-            background-color: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        .container-fluid {
+            background-color: var(--background-color);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            transition: var(--transition-speed);
         }
 
         h1 {
@@ -57,10 +71,10 @@
             margin-bottom: 35px;
             padding: 25px;
             border: none;
-            border-radius: 12px;
-            background-color: rgba(255, 255, 255, 0.8);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            transition: all 0.5s ease;
+            border-radius: var(--border-radius);
+            background-color: var(--ft-dark-color);
+            box-shadow: var(--box-shadow);
+            transition: all var(--transition-speed) ease;
             position: relative;
             border-top: 4px solid var(--primary-color);
             overflow: visible; /* Changed from hidden to visible */
@@ -73,7 +87,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, rgba(67, 97, 238, 0.05) 0%, rgba(255, 255, 255, 0) 50%);
+            background: linear-gradient(135deg, rgba(85, 85, 85, 0.05) 0%, rgba(255, 255, 255, 0) 50%);
             z-index: 0;
         }
 
@@ -104,8 +118,8 @@
         .btn {
             padding: 10px 20px;
             font-weight: 500;
-            border-radius: 8px;
-            transition: all 0.3s ease;
+            border-radius: calc(var(--border-radius) / 2);
+            transition: all var(--transition-speed) ease;
         }
 
         .btn-primary {
@@ -117,7 +131,7 @@
             background-color: var(--secondary-color);
             border-color: var(--secondary-color);
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+            box-shadow: 0 5px 15px rgba(85, 85, 85, 0.3);
         }
 
         .btn-success {
@@ -133,15 +147,17 @@
         }
 
         .form-control {
-            border-radius: 8px;
+            border-radius: calc(var(--border-radius) / 2);
             padding: 12px;
-            border: 1px solid #ddd;
-            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+            transition: all var(--transition-speed) ease;
+            background-color: var(--ft-dark-color);
         }
 
         .form-control:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+            box-shadow: 0 0 0 0.25rem rgba(85, 85, 85, 0.25);
+            outline: none;
         }
 
         #processingSpinner, #downloadSection {
@@ -162,7 +178,7 @@
             flex-direction: column;
             justify-content: flex-start;
             padding: 20px;
-            background-color: rgba(255, 255, 255, 0.9);
+            background-color: var(--ft-dark-color);
             border-radius: 12px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
             z-index: 10;
@@ -215,7 +231,7 @@
         }
 
         .stepper-item:hover {
-            background-color: rgba(67, 97, 238, 0.05);
+            background-color: rgba(85, 85, 85, 0.05);
         }
 
         .step-counter {
@@ -241,7 +257,7 @@
 
         .stepper-item.current .step-counter {
             background-color: var(--current-color);
-            box-shadow: 0 0 10px rgba(67, 97, 238, 0.5);
+            box-shadow: 0 0 10px rgba(85, 85, 85, 0.5);
             transform: scale(1.2);
         }
 
@@ -273,7 +289,7 @@
             margin-bottom: 30px;
             padding: 15px;
             border-radius: 8px;
-            background-color: rgba(255, 255, 255, 0.8);
+            background-color: var(--ft-dark-color);
             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
             border-left: 4px solid var(--primary-color);
             transition: all 0.3s ease;
@@ -290,7 +306,7 @@
             height: 0;
             border-left: 15px solid transparent;
             border-right: 15px solid transparent;
-            border-bottom: 15px solid rgba(255, 255, 255, 0.8);
+            border-bottom: 15px solid var(--ft-dark-color);
         }
 
         .step-info .previous-step,
@@ -304,7 +320,7 @@
         }
 
         .step-info .previous-step-clickable:hover {
-            background-color: rgba(67, 97, 238, 0.1);
+            background-color: rgba(85, 85, 85, 0.1);
             transform: translateX(-3px);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
@@ -336,7 +352,33 @@
     </style>
 </head>
 <body>
-    <div class="container position-relative">
+    <div class="container-fluid position-relative">
+        <nav class="navbar navbar-expand-lg navbar-light rounded mb-4" style="background-color: var(--background-color);">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">
+                    <i class="fas fa-file-excel text-primary me-2"></i>
+                    Excel ETL for Softone ERP
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/">
+                                <i class="fas fa-home me-1"></i> Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/logs">
+                                <i class="fas fa-list-alt me-1"></i> Logs
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
         <div class="text-center mb-4">
             <h1><i class="fas fa-file-excel text-primary me-2"></i> Excel ETL for Softone ERP</h1>
             <p class="lead">Transform your Excel files into Softone ERP compatible format with just a few clicks.</p>
@@ -388,7 +430,7 @@
                 <h3 class="mb-0">Step 2: Configure Column Mapping</h3>
             </div>
             <p>Map your Excel columns to the required Softone ERP format:</p>
-            <div id="columnMappingForm" class="card p-3 mb-3">
+            <div id="columnMappingForm" class="card p-3 mb-3" style="background-color: var(--ft-dark-color);">
                 <!-- Will be populated dynamically -->
             </div>
             <button id="processButton" class="btn btn-primary" style="position: relative; z-index: 100; margin-top: 10px; margin-bottom: 10px;"><i class="fas fa-cogs me-2"></i>Process File</button>
@@ -444,7 +486,7 @@
 
     <!-- Footer -->
     <footer class="mt-5 text-center text-muted">
-        <div class="container">
+        <div class="container-fluid">
             <p>
                 <i class="fas fa-code"></i> Excel ETL for Softone ERP &copy; <span id="currentYear"></span>
                 <span class="mx-2">|</span>
@@ -458,8 +500,8 @@
     <style>
         /* Media query for very large screens */
         @media (min-width: 1600px) {
-            .container {
-                max-width: 85%;
+            .container-fluid {
+                padding: 0 7.5%;
             }
 
             .section {
@@ -469,8 +511,8 @@
 
         /* Media query for extra large screens */
         @media (min-width: 2000px) {
-            .container {
-                max-width: 80%;
+            .container-fluid {
+                padding: 0 10%;
             }
 
             .section {
