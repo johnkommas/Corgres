@@ -1,0 +1,19 @@
+# Test your FastAPI endpoints
+
+# Get the main page (HTML)
+GET http://127.0.0.1:8000/
+Accept: text/html
+
+###
+
+# Access Swagger UI documentation
+GET http://127.0.0.1:8000/docs
+Accept: text/html
+
+###
+
+# Access ReDoc documentation
+GET http://127.0.0.1:8000/redoc
+Accept: text/html
+
+###
