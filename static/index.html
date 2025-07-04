@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Transform your Excel files into Softone ERP compatible format with just a few clicks.">
     <meta name="theme-color" content="#e11d48">
+    <meta name="author" content="Ioannis E. Kommas">
+    <meta name="keywords" content="Softone, ERP, Excel, Formatter, Data Transformation">
     <title>Softone ERP Excel Formatter</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/images/logo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -641,18 +645,18 @@
         <div class="row">
             <div class="col-12">
                 <!-- Progress Stepper -->
-                <div class="stepper-wrapper" id="progressStepper">
+                <div class="stepper-wrapper" id="progressStepper" role="navigation" aria-label="Process Steps">
                     <h4 class="stepper-title">Process Steps</h4>
-                    <div class="stepper-item current animate-progress" id="step1Item">
-                        <div class="step-counter"><i class="fas fa-upload"></i></div>
+                    <div class="stepper-item current animate-progress" id="step1Item" aria-current="true">
+                        <div class="step-counter" aria-hidden="true"><i class="fas fa-upload"></i></div>
                         <div class="step-name">Upload File</div>
                     </div>
                     <div class="stepper-item" id="step2Item">
-                        <div class="step-counter"><i class="fas fa-columns"></i></div>
+                        <div class="step-counter" aria-hidden="true"><i class="fas fa-columns"></i></div>
                         <div class="step-name">Map Columns</div>
                     </div>
                     <div class="stepper-item" id="step3Item">
-                        <div class="step-counter"><i class="fas fa-download"></i></div>
+                        <div class="step-counter" aria-hidden="true"><i class="fas fa-download"></i></div>
                         <div class="step-name">Download</div>
                     </div>
                 </div>
@@ -671,9 +675,10 @@
             <form id="uploadForm" enctype="multipart/form-data">
                 <div class="mb-3">
                     <div class="input-group">
-                        <input class="form-control" type="file" id="excelFile" accept=".xls,.xlsx" required>
-                        <button type="submit" class="btn btn-secondary"><i class="fas fa-cloud-upload-alt me-2"></i>Upload</button>
+                        <input class="form-control" type="file" id="excelFile" accept=".xls,.xlsx" required aria-label="Select Excel file" aria-describedby="fileHelp">
+                        <button type="submit" class="btn btn-secondary" aria-label="Upload file"><i class="fas fa-cloud-upload-alt me-2" aria-hidden="true"></i>Upload</button>
                     </div>
+                    <small id="fileHelp" class="form-text text-muted mt-2">Please select an Excel file (.xls or .xlsx) to upload. Maximum file size: 10MB.</small>
                 </div>
             </form>
             <div class="alert alert-success mt-3" id="uploadSuccess" style="display: none;"></div>
@@ -692,18 +697,19 @@
             <div id="columnMappingForm" class="card p-3 mb-3" style="background-color: var(--muted-color);">
                 <!-- Will be populated dynamically -->
             </div>
-            <button id="processButton" class="btn btn-secondary" style="position: relative; z-index: 100; margin-top: 10px; margin-bottom: 10px;"><i class="fas fa-cogs me-2"></i>Process File</button>
+            <button id="processButton" class="btn btn-primary" style="position: relative; z-index: 100; margin-top: 10px; margin-bottom: 10px;"><i class="fas fa-cogs me-2" aria-hidden="true"></i>Process File</button>
         </div>
 
         <!-- Processing Indicator -->
         <div class="section" id="processingSpinner">
             <div class="text-center py-4">
-                <div class="spinner-border text-secondary" role="status" style="width: 3rem; height: 3rem;">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
                     <span class="visually-hidden">Processing...</span>
                 </div>
                 <p class="lead mt-3">Processing your file. Please wait...</p>
+                <p class="text-muted">This may take a few moments depending on the file size.</p>
                 <div class="progress mt-3" style="height: 10px;">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-secondary" role="progressbar" style="width: 100%"></div>
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
                 </div>
             </div>
         </div>
@@ -720,8 +726,8 @@
                 <i class="fas fa-check-circle me-2"></i> Your file has been processed successfully!
             </div>
             <div class="d-flex justify-content-center mt-4">
-                <a id="downloadLink" href="#" class="btn btn-success me-3" style="position: relative; z-index: 100; margin: 10px; padding: 15px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="console.log('Download link clicked inline'); return true;"><i class="fas fa-download me-2"></i>Download Processed File</a>
-                <button id="startOverButton" class="btn btn-secondary" style="position: relative; z-index: 100; margin: 10px; padding: 15px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="console.log('Start over button clicked inline'); document.getElementById('uploadForm').reset(); document.getElementById('uploadSuccess').style.display = 'none'; document.getElementById('uploadError').style.display = 'none'; uploadedFilename = ''; availableColumns = []; document.getElementById('mappingSection').style.display = 'none'; document.getElementById('downloadSection').style.display = 'none'; document.getElementById('uploadSection').style.display = 'block'; updateStepper(1); document.getElementById('uploadSection').classList.add('section-enter'); return false;"><i class="fas fa-redo me-2"></i>Process Another File</button>
+                <a id="downloadLink" href="#" class="btn btn-success me-3" style="position: relative; z-index: 100; margin: 10px; padding: 15px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s ease;" aria-label="Download processed file"><i class="fas fa-download me-2" aria-hidden="true"></i>Download Processed File</a>
+                <button id="startOverButton" class="btn btn-secondary" style="position: relative; z-index: 100; margin: 10px; padding: 15px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s ease;" aria-label="Process another file"><i class="fas fa-redo me-2" aria-hidden="true"></i>Process Another File</button>
             </div>
         </div>
 
@@ -1393,18 +1399,25 @@
             // Helper functions
             function showUploadSuccess(message) {
                 const successElement = document.getElementById('uploadSuccess');
-                successElement.textContent = message;
+                successElement.innerHTML = `<i class="fas fa-check-circle me-2"></i> <strong>Success:</strong> ${message}`;
                 successElement.style.display = 'block';
+                successElement.setAttribute('role', 'alert');
+                successElement.setAttribute('aria-live', 'polite');
 
                 document.getElementById('uploadError').style.display = 'none';
             }
 
             function showUploadError(message) {
                 const errorElement = document.getElementById('uploadError');
-                errorElement.textContent = message;
+                errorElement.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i> <strong>Error:</strong> ${message}`;
                 errorElement.style.display = 'block';
+                errorElement.setAttribute('role', 'alert');
+                errorElement.setAttribute('aria-live', 'assertive');
 
                 document.getElementById('uploadSuccess').style.display = 'none';
+
+                // Scroll to error message
+                errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         });
     </script>

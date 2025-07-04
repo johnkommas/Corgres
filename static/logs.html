@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Log Analytics Dashboard - Cogres Σταγάκης - Προηγμένη ανάλυση αρχείων καταγραφής της εφαρμογής">
     <meta name="theme-color" content="#e11d48">
+    <meta name="author" content="Ioannis E. Kommas">
+    <meta name="keywords" content="Softone, ERP, Excel, Formatter, Logs, Analytics, Dashboard">
     <title>Log Analytics Dashboard - Softone ERP Excel Formatter</title>
 
     <!-- Favicon -->
@@ -543,16 +545,25 @@
 
     <div class="container-fluid">
         <div class="py-4 border-top"></div>
+
+        <!-- Error Message Container -->
+        <div id="errorMessageContainer" class="alert alert-danger mb-4" style="display: none;" role="alert" aria-live="assertive">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <strong id="errorTitle">Error</strong>: <span id="errorDetails">An unexpected error occurred.</span>
+        </div>
+
         <!-- Global Controls -->
         <div class="row mb-4">
             <div class="col-md-4">
+                <label for="dateRange" class="visually-hidden">Επιλογή χρονικού διαστήματος</label>
                 <div class="input-group">
-                    <span class="input-group-text"><i class="fas fa-calendar"></i></span>
-                    <input type="text" class="form-control date-range-picker" id="dateRange" placeholder="Επιλογή χρονικού διαστήματος">
+                    <span class="input-group-text"><i class="fas fa-calendar" aria-hidden="true"></i></span>
+                    <input type="text" class="form-control date-range-picker" id="dateRange" placeholder="Επιλογή χρονικού διαστήματος" aria-label="Επιλογή χρονικού διαστήματος">
                 </div>
             </div>
             <div class="col-md-3">
-                <select class="form-select" id="logTypeFilter">
+                <label for="logTypeFilter" class="visually-hidden">Τύπος καταγραφών</label>
+                <select class="form-select" id="logTypeFilter" aria-label="Επιλογή τύπου καταγραφών">
                     <option value="all">Όλοι οι τύποι καταγραφών</option>
                     <option value="app">Εφαρμογή</option>
                     <option value="database">Βάση Δεδομένων</option>
@@ -562,38 +573,38 @@
                 </select>
             </div>
             <div class="col-md-5 text-end">
-                <button id="refreshDashboard" class="btn btn-primary">
-                    <i class="fas fa-sync-alt"></i> Ανανέωση Δεδομένων
+                <button id="refreshDashboard" class="btn btn-primary" aria-label="Ανανέωση δεδομένων">
+                    <i class="fas fa-sync-alt" aria-hidden="true"></i> Ανανέωση Δεδομένων
                 </button>
-                <button id="exportPDF" class="btn btn-success ms-2">
-                    <i class="fas fa-file-pdf"></i> Εξαγωγή PDF
+                <button id="exportPDF" class="btn btn-success ms-2" aria-label="Εξαγωγή σε PDF">
+                    <i class="fas fa-file-pdf" aria-hidden="true"></i> Εξαγωγή PDF
                 </button>
-                <button id="exportCSV" class="btn btn-info ms-2">
-                    <i class="fas fa-file-csv"></i> Εξαγωγή CSV
+                <button id="exportCSV" class="btn btn-info ms-2" aria-label="Εξαγωγή σε CSV">
+                    <i class="fas fa-file-csv" aria-hidden="true"></i> Εξαγωγή CSV
                 </button>
             </div>
         </div>
 
         <!-- Navigation Tabs -->
-        <ul class="nav nav-tabs mb-4" id="dashboardTabs" role="tablist">
+        <ul class="nav nav-tabs mb-4" id="dashboardTabs" role="tablist" aria-label="Dashboard Sections">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true">
-                    <i class="fas fa-chart-pie"></i> Επισκόπηση
+                    <i class="fas fa-chart-pie" aria-hidden="true"></i> Επισκόπηση
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="trends-tab" data-bs-toggle="tab" data-bs-target="#trends" type="button" role="tab" aria-controls="trends" aria-selected="false">
-                    <i class="fas fa-chart-line"></i> Τάσεις
+                    <i class="fas fa-chart-line" aria-hidden="true"></i> Τάσεις
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="errors-tab" data-bs-toggle="tab" data-bs-target="#errors" type="button" role="tab" aria-controls="errors" aria-selected="false">
-                    <i class="fas fa-exclamation-triangle"></i> Σφάλματα
+                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Σφάλματα
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab" aria-controls="logs" aria-selected="false">
-                    <i class="fas fa-list"></i> Καταγραφές
+                    <i class="fas fa-list" aria-hidden="true"></i> Καταγραφές
                 </button>
             </li>
         </ul>
@@ -732,13 +743,13 @@
                         <div class="col-md-6">
                             <div class="log-filter">
                                 <label for="logFilter" class="form-label">Φίλτρο:</label>
-                                <input type="text" class="form-control" id="logFilter" placeholder="Αναζήτηση στα logs...">
+                                <input type="text" class="form-control" id="logFilter" placeholder="Αναζήτηση στα logs..." aria-label="Αναζήτηση στα αρχεία καταγραφής">
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="log-level-filter">
                                 <label for="logLevelFilter" class="form-label">Επίπεδο:</label>
-                                <select class="form-select" id="logLevelFilter">
+                                <select class="form-select" id="logLevelFilter" aria-label="Επιλογή επιπέδου καταγραφής">
                                     <option value="all">Όλα</option>
                                     <option value="info">INFO</option>
                                     <option value="warning">WARNING</option>
@@ -749,7 +760,7 @@
                         <div class="col-md-3">
                             <div class="log-lines">
                                 <label for="logLines" class="form-label">Αριθμός γραμμών:</label>
-                                <select class="form-select" id="logLines">
+                                <select class="form-select" id="logLines" aria-label="Επιλογή αριθμού γραμμών">
                                     <option value="100">100</option>
                                     <option value="200">200</option>
                                     <option value="500">500</option>
@@ -760,25 +771,29 @@
                     </div>
                     <div class="row mt-3">
                         <div class="col-md-12">
-                            <button id="refreshLogs" class="btn btn-primary">
-                                <i class="fas fa-sync-alt"></i> Ανανέωση
+                            <button id="refreshLogs" class="btn btn-primary" aria-label="Ανανέωση αρχείων καταγραφής">
+                                <i class="fas fa-sync-alt" aria-hidden="true"></i> Ανανέωση
                             </button>
-                            <button id="clearFilter" class="btn btn-secondary">
-                                <i class="fas fa-eraser"></i> Καθαρισμός Φίλτρου
+                            <button id="clearFilter" class="btn btn-secondary" aria-label="Καθαρισμός φίλτρων">
+                                <i class="fas fa-eraser" aria-hidden="true"></i> Καθαρισμός Φίλτρου
                             </button>
-                            <button id="downloadLogs" class="btn btn-success">
-                                <i class="fas fa-download"></i> Λήψη Logs
+                            <button id="downloadLogs" class="btn btn-success" aria-label="Λήψη αρχείων καταγραφής">
+                                <i class="fas fa-download" aria-hidden="true"></i> Λήψη Logs
                             </button>
                         </div>
                     </div>
                 </div>
 
                 <div class="log-container" id="logContainer">
-                    <div class="text-center">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Loading...</span>
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Φόρτωση...</span>
                         </div>
-                        <p>Φόρτωση αρχείων καταγραφής...</p>
+                        <p class="lead mt-3">Φόρτωση αρχείων καταγραφής...</p>
+                        <p class="text-muted">Παρακαλώ περιμένετε καθώς ανακτώνται τα δεδομένα.</p>
+                        <div class="progress mt-3" style="height: 10px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -830,6 +845,26 @@
         let selectedLogType = 'all';
         let selectedStartDate = null;
         let selectedEndDate = null;
+
+        // Function to show error messages
+        function showErrorMessage(title, details) {
+            const container = document.getElementById('errorMessageContainer');
+            const titleElement = document.getElementById('errorTitle');
+            const detailsElement = document.getElementById('errorDetails');
+
+            titleElement.textContent = title || 'Error';
+            detailsElement.textContent = details || 'An unexpected error occurred.';
+
+            container.style.display = 'block';
+
+            // Scroll to error message
+            container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Hide after 10 seconds
+            setTimeout(() => {
+                container.style.display = 'none';
+            }, 10000);
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             // Set current year in footer
@@ -933,7 +968,7 @@
                 })
                 .catch(error => {
                     console.error('Error fetching log statistics:', error);
-                    alert('Σφάλμα κατά τη φόρτωση των στατιστικών: ' + error.message);
+                    showErrorMessage('Σφάλμα κατά τη φόρτωση των στατιστικών', error.message);
                 });
         }
 
@@ -965,7 +1000,7 @@
                 })
                 .catch(error => {
                     console.error('Error fetching log trends:', error);
-                    alert('Σφάλμα κατά τη φόρτωση των τάσεων: ' + error.message);
+                    showErrorMessage('Σφάλμα κατά τη φόρτωση των τάσεων', error.message);
                 });
         }
 
@@ -1009,7 +1044,7 @@
                 })
                 .catch(error => {
                     console.error('Error fetching log errors:', error);
-                    alert('Σφάλμα κατά τη φόρτωση των σφαλμάτων: ' + error.message);
+                    showErrorMessage('Σφάλμα κατά τη φόρτωση των σφαλμάτων', error.message);
                 });
         }
 
