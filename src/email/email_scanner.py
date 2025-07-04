@@ -6,7 +6,7 @@ import datetime
 import tempfile
 import shutil
 from typing import List, Dict, Optional, Tuple
-from utils.logger import get_app_logger, get_error_logger
+from src.utils.logger import get_app_logger, get_error_logger
 
 # Initialize loggers
 app_logger = get_app_logger()
@@ -255,7 +255,7 @@ def save_attachment_from_email(email_data: Dict, attachment_index: int = 0) -> O
         # Generate a unique filename
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         unique_filename = f"{timestamp}_email_{filename}"
-        file_path = os.path.join("uploads", unique_filename)
+        file_path = os.path.join("src/data/uploads", unique_filename)
 
         # Save the attachment
         with open(file_path, 'wb') as f:

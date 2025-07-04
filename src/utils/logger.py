@@ -4,11 +4,11 @@ from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
 # Create logs directory if it doesn't exist
-os.makedirs("logs/api", exist_ok=True)
-os.makedirs("logs/app", exist_ok=True)
-os.makedirs("logs/data_processing", exist_ok=True)
-os.makedirs("logs/database", exist_ok=True)
-os.makedirs("logs/errors", exist_ok=True)
+os.makedirs("src/logs/api", exist_ok=True)
+os.makedirs("src/logs/app", exist_ok=True)
+os.makedirs("src/logs/data_processing", exist_ok=True)
+os.makedirs("src/logs/database", exist_ok=True)
+os.makedirs("src/logs/errors", exist_ok=True)
 
 # Define log format
 LOG_FORMAT = "%(asctime)s\t[%(name)s]\t[%(levelname)s]\t[%(message)s]"
@@ -54,31 +54,31 @@ def get_logger(name, log_file, level=logging.INFO):
 def get_api_logger():
     """Get logger for API operations"""
     today = datetime.now().strftime("%Y-%m-%d")
-    log_file = f"logs/api/api_{today}.log"
+    log_file = f"src/logs/api/api_{today}.log"
     return get_logger("api", log_file)
 
 def get_app_logger():
     """Get logger for general application operations"""
     today = datetime.now().strftime("%Y-%m-%d")
-    log_file = f"logs/app/app_{today}.log"
+    log_file = f"src/logs/app/app_{today}.log"
     return get_logger("app", log_file)
 
 def get_data_processing_logger():
     """Get logger for data processing operations"""
     today = datetime.now().strftime("%Y-%m-%d")
-    log_file = f"logs/data_processing/data_processing_{today}.log"
+    log_file = f"src/logs/data_processing/data_processing_{today}.log"
     return get_logger("data_processing", log_file)
 
 def get_database_logger():
     """Get logger for database operations"""
     today = datetime.now().strftime("%Y-%m-%d")
-    log_file = f"logs/database/database_{today}.log"
+    log_file = f"src/logs/database/database_{today}.log"
     return get_logger("database", log_file)
 
 def get_error_logger():
     """Get logger for errors"""
     today = datetime.now().strftime("%Y-%m-%d")
-    log_file = f"logs/errors/errors_{today}.log"
+    log_file = f"src/logs/errors/errors_{today}.log"
     return get_logger("errors", log_file, level=logging.ERROR)
 
 # Function to get all logs for display in UI
@@ -96,7 +96,7 @@ def get_all_logs(max_entries=100):
 
     # Get all log files
     log_files = []
-    for root, _, files in os.walk("logs"):
+    for root, _, files in os.walk("src/logs"):
         for file in files:
             if file.endswith(".log"):
                 log_files.append(os.path.join(root, file))

@@ -69,7 +69,7 @@ def find_uvicorn_processes(port=None):
             # Check if this is a uvicorn process
             if proc.info['name'] == 'python' or 'python' in proc.info['name'].lower():
                 cmdline = proc.info['cmdline']
-                if cmdline and ('uvicorn' in ' '.join(cmdline) or 'main:api' in ' '.join(cmdline)):
+                if cmdline and ('uvicorn' in ' '.join(cmdline) or 'main:api' in ' '.join(cmdline) or 'src.core.main:api' in ' '.join(cmdline)):
                     # If port is specified, check if this process is using that port
                     if port is None or (f"--port={port}" in cmdline or f"--port {port}" in ' '.join(cmdline)):
                         uvicorn_pids.append(proc.info['pid'])
@@ -120,7 +120,7 @@ def stop_uvicorn(port=None):
 def start_uvicorn(host="0.0.0.0", port=3000, reload=True):
     """Start the uvicorn server."""
     # Ensure logs directory exists
-    os.makedirs("logs", exist_ok=True)
+    os.makedirs("src/logs", exist_ok=True)
 
     # Get the IP address
     ip_address = get_ip_address() if host == "0.0.0.0" else host
@@ -149,7 +149,7 @@ def start_uvicorn(host="0.0.0.0", port=3000, reload=True):
 
     # Start uvicorn
     reload_flag = "--reload" if reload else ""
-    cmd = [python_cmd, "-m", "uvicorn", "main:api", f"--host={host}", f"--port={port}"]
+    cmd = [python_cmd, "-m", "uvicorn", "src.core.main:api", f"--host={host}", f"--port={port}"]
     if reload:
         cmd.append("--reload")
 

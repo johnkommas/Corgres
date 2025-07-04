@@ -7,12 +7,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 # File to store column mappings
-MAPPINGS_FILE = "column_mappings.json"
+MAPPINGS_FILE = "src/config/column_mappings.json"
 
 def load_mappings() -> Dict[str, Set[str]]:
     """
     Load column mappings from the JSON file.
-    
+
     Returns:
         Dictionary with required column names as keys and sets of possible source column names as values
     """
@@ -32,10 +32,10 @@ def load_mappings() -> Dict[str, Set[str]]:
 def save_mappings(mappings: Dict[str, Set[str]]) -> bool:
     """
     Save column mappings to the JSON file.
-    
+
     Args:
         mappings: Dictionary with required column names as keys and sets of possible source column names as values
-        
+
     Returns:
         True if successful, False otherwise
     """
@@ -53,24 +53,24 @@ def save_mappings(mappings: Dict[str, Set[str]]) -> bool:
 def add_mapping(column_mapping: Dict[str, str]) -> bool:
     """
     Add a new column mapping to the stored mappings.
-    
+
     Args:
         column_mapping: Dictionary mapping required column names to source column names
-        
+
     Returns:
         True if successful, False otherwise
     """
     try:
         # Load existing mappings
         mappings = load_mappings()
-        
+
         # Add new mappings
         for target_col, source_col in column_mapping.items():
             if source_col:  # Only add non-empty mappings
                 if target_col not in mappings:
                     mappings[target_col] = set()
                 mappings[target_col].add(source_col)
-        
+
         # Save updated mappings
         return save_mappings(mappings)
     except Exception as e:
@@ -80,27 +80,27 @@ def add_mapping(column_mapping: Dict[str, str]) -> bool:
 def get_suggestions(column_names: List[str]) -> Dict[str, str]:
     """
     Get suggestions for column mapping based on stored mappings.
-    
+
     Args:
         column_names: List of column names from the source file
-        
+
     Returns:
         Dictionary with suggested mappings (required column names as keys, suggested source column names as values)
     """
     try:
         # Load existing mappings
         mappings = load_mappings()
-        
+
         # Create a dictionary to store suggestions
         suggestions = {}
-        
+
         # For each required column, check if any of the source columns match stored mappings
         for target_col, possible_sources in mappings.items():
             for source_col in column_names:
                 if source_col in possible_sources:
                     suggestions[target_col] = source_col
                     break
-        
+
         logger.info(f"Generated {len(suggestions)} column mapping suggestions")
         return suggestions
     except Exception as e:

@@ -126,13 +126,13 @@ def load_row_mappings() -> Dict[str, Dict[str, str]]:
     """
     try:
         logger.info("Loading row mappings from rown_mapping.json")
-        if os.path.exists("rown_mapping.json"):
-            with open("rown_mapping.json", "r") as f:
+        if os.path.exists("src/config/rown_mapping.json"):
+            with open("src/config/rown_mapping.json", "r") as f:
                 mappings = json.load(f)
             logger.info(f"Loaded row mappings for {len(mappings)} columns")
             return mappings
         else:
-            logger.warning("rown_mapping.json file not found")
+            logger.warning("src/config/rown_mapping.json file not found")
             return {}
     except Exception as e:
         logger.error(f"Error loading row mappings: {str(e)}")
@@ -163,7 +163,7 @@ def add_row_mapping(column: str, value: str, mapped_value: str) -> bool:
         mappings[column][value] = mapped_value
 
         # Save mappings
-        with open("rown_mapping.json", "w") as f:
+        with open("src/config/rown_mapping.json", "w") as f:
             json.dump(mappings, f, indent=2)
 
         logger.info(f"Row mapping added successfully")
