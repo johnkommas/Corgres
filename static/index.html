@@ -82,14 +82,14 @@
         .section {
             margin-bottom: 2rem;
             padding: 2rem;
-            border: none;
             border-radius: var(--border-radius);
-            background-color: var(--card-bg-color);
-            box-shadow: var(--box-shadow);
+            background-color: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04);
             transition: all var(--transition-speed) ease;
             position: relative;
-            border-left: 4px solid var(--primary-color);
-            overflow: visible;
+            overflow: hidden;
         }
 
         .section::after {
@@ -97,34 +97,15 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
+            width: 4px;
             height: 100%;
-            background: linear-gradient(135deg, rgba(225, 29, 72, 0.05) 0%, rgba(255, 255, 255, 0) 50%);
-            z-index: 0;
-            pointer-events: none;
-            border-radius: var(--border-radius);
+            background: linear-gradient(to bottom, var(--primary-color), var(--accent-color));
+            opacity: 0.8;
         }
 
         .section:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 30px rgba(225, 29, 72, 0.15);
-            border-left: 4px solid var(--accent-color);
-        }
-
-        .section::before {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-            transition: width 0.5s ease;
-            z-index: 1;
-        }
-
-        .section:hover::before {
-            width: 100%;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.06);
         }
 
         .section-enter {
@@ -312,7 +293,7 @@
             background-color: var(--warning-color);
         }
 
-        /* Stepper styles */
+        /* Stepper styles - Simplified Elegant Design */
         .stepper-wrapper {
             position: fixed;
             right: 30px;
@@ -320,13 +301,14 @@
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
-            padding: 1.5rem;
-            background-color: rgba(255, 255, 255, 0.9);
+            padding: 1.5rem 1rem;
+            background-color: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             border-radius: var(--border-radius);
-            border: 1px solid var(--border-color);
-            box-shadow: var(--box-shadow);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
             z-index: 10;
-            width: 250px;
+            width: 260px;
             transition: all var(--transition-speed) ease;
         }
 
@@ -336,37 +318,17 @@
             flex-direction: row;
             align-items: center;
             margin-bottom: 1.25rem;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
+            padding: 0.75rem 0.5rem;
+            border-radius: 0.75rem;
             transition: all 0.3s ease;
-            border: 1px solid var(--border-color);
-            background-color: white;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
+            background-color: transparent;
         }
 
-        /* Add a subtle gradient overlay that moves on hover */
-        .stepper-item::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 200%;
-            height: 100%;
-            background: linear-gradient(90deg, 
-                rgba(255, 255, 255, 0) 0%, 
-                rgba(255, 255, 255, 0.2) 25%, 
-                rgba(255, 255, 255, 0.2) 50%, 
-                rgba(255, 255, 255, 0) 75%
-            );
-            transition: transform 0.8s ease;
-            pointer-events: none;
-        }
-
+        /* Connection line between steps */
         .stepper-item::before {
             position: absolute;
             content: "";
-            border-left: 2px dashed var(--border-color);
+            border-left: 2px solid rgba(225, 29, 72, 0.15);
             height: 100%;
             top: -50%;
             left: 20px;
@@ -379,18 +341,18 @@
 
         .stepper-item.completed::before {
             border-left: 2px solid var(--completed-color);
-            transition: border-left 0.5s ease;
+            opacity: 0.6;
         }
 
         .stepper-item.current::before {
             border-left: 2px solid var(--current-color);
-            transition: border-left 0.5s ease;
+            opacity: 0.6;
         }
 
         /* Progress line animation */
         @keyframes progressLine {
-            from { height: 0; }
-            to { height: 100%; }
+            from { height: 0; opacity: 0; }
+            to { height: 100%; opacity: 0.6; }
         }
 
         .stepper-item.animate-progress::before {
@@ -398,14 +360,8 @@
         }
 
         .stepper-item:hover {
-            background-color: var(--highlight-color);
-            border-color: var(--primary-color);
+            background-color: rgba(255, 255, 255, 0.2);
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(225, 29, 72, 0.1);
-        }
-
-        .stepper-item:hover::after {
-            transform: translateX(100%);
         }
 
         .step-counter {
@@ -417,26 +373,23 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background-color: var(--muted-color);
+            background-color: rgba(255, 255, 255, 0.7);
             color: var(--light-text-color);
             margin-right: 12px;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             flex-shrink: 0;
             font-size: 1rem;
-            border: 1px solid var(--border-color);
         }
 
         .stepper-item.completed .step-counter {
             background-color: var(--completed-color);
             color: white;
-            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
         }
 
         .stepper-item.current .step-counter {
             background-color: var(--current-color);
             color: white;
-            box-shadow: 0 2px 8px rgba(225, 29, 72, 0.2);
             transform: scale(1.1);
         }
 
@@ -447,57 +400,33 @@
         .step-name {
             font-size: 0.95rem;
             font-weight: 600;
-            color: var(--light-text-color);
+            color: var(--text-color);
             text-align: left;
             transition: all 0.3s ease;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            background-color: var(--muted-color);
         }
 
         .stepper-item.completed .step-name {
             color: var(--completed-color);
-            background-color: rgba(16, 185, 129, 0.1);
         }
 
         .stepper-item.current .step-name {
             color: var(--current-color);
             font-weight: 700;
-            background-color: rgba(225, 29, 72, 0.1);
         }
 
         .stepper-item:hover .step-name {
             color: var(--primary-color);
-            background-color: var(--highlight-color);
         }
 
         .stepper-title {
             margin-bottom: 1.25rem;
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid var(--border-color);
+            padding: 0.5rem 0;
             color: var(--dark-color);
             font-size: 1.1rem;
             font-weight: 700;
             text-align: center;
-            background-color: var(--muted-color);
-            border-radius: 6px 6px 0 0;
             position: relative;
-            overflow: hidden;
-        }
-
-        .stepper-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-            transition: width 0.5s ease;
-        }
-
-        .stepper-wrapper:hover .stepper-title::after {
-            width: 100%;
+            border-bottom: 1px solid rgba(225, 29, 72, 0.1);
         }
 
         /* Main content area */
@@ -508,44 +437,31 @@
         }
 
         .step-info {
-            margin-top: 25px;
+            margin-top: 20px;
             margin-bottom: 15px;
-            padding: 10px;
-            border-radius: 8px;
-            background-color: var(--muted-color);
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-            border-left: 4px solid var(--primary-color);
+            padding: 12px 15px;
+            border-radius: 6px;
+            background-color: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
             transition: all 0.3s ease;
             position: relative;
-        }
-
-        .step-info::after {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 10px solid transparent;
-            border-right: 10px solid transparent;
-            border-bottom: 10px solid var(--muted-color);
         }
 
         .step-info .previous-step,
         .step-info .next-step {
             display: flex;
             align-items: center;
-            margin: 3px 10px;
+            margin: 3px 0;
             padding: 5px;
-            border-radius: 6px;
             transition: all 0.3s ease;
+            color: var(--text-color);
         }
 
         .step-info .previous-step-clickable:hover {
-            background-color: rgba(85, 85, 85, 0.1);
-            transform: translateX(-3px);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            color: var(--primary-color);
+            transform: translateX(-2px);
         }
 
         .step-info .next-step {
@@ -555,7 +471,7 @@
         .step-info i {
             margin-right: 10px;
             color: var(--primary-color);
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
 
         .step-info .next-step i {
@@ -665,50 +581,56 @@
 
         <!-- Step 1: Upload Excel File -->
         <div class="section section-enter" id="uploadSection">
-            <div class="d-flex align-items-center mb-3">
-                <div class="bg-secondary text-white rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                    <i class="fas fa-upload"></i>
+            <div class="d-flex align-items-center mb-4">
+                <div class="step-icon-wrapper me-3">
+                    <div class="step-icon">
+                        <i class="fas fa-upload"></i>
+                    </div>
                 </div>
                 <h3 class="mb-0">Step 1: Upload Excel File</h3>
             </div>
             <p class="mt-4">Select an Excel file (.xls or .xlsx) to upload:</p>
             <form id="uploadForm" enctype="multipart/form-data">
                 <div class="mb-3">
-                    <div class="input-group">
-                        <input class="form-control" type="file" id="excelFile" accept=".xls,.xlsx" required aria-label="Select Excel file" aria-describedby="fileHelp">
-                        <button type="submit" class="btn btn-secondary" aria-label="Upload file"><i class="fas fa-cloud-upload-alt me-2" aria-hidden="true"></i>Upload</button>
+                    <div class="input-group glass-input-group">
+                        <input class="form-control glass-input" type="file" id="excelFile" accept=".xls,.xlsx" required aria-label="Select Excel file" aria-describedby="fileHelp">
+                        <button type="submit" class="btn btn-glass" aria-label="Upload file"><i class="fas fa-cloud-upload-alt me-2" aria-hidden="true"></i>Upload</button>
                     </div>
                     <small id="fileHelp" class="form-text text-muted mt-2">Please select an Excel file (.xls or .xlsx) to upload. Maximum file size: 10MB.</small>
                 </div>
             </form>
-            <div class="alert alert-success mt-3" id="uploadSuccess" style="display: none;"></div>
-            <div class="alert alert-danger mt-3" id="uploadError" style="display: none;"></div>
+            <div class="alert alert-success glass-alert mt-3" id="uploadSuccess" style="display: none;"></div>
+            <div class="alert alert-danger glass-alert mt-3" id="uploadError" style="display: none;"></div>
         </div>
 
         <!-- Step 2: Configure Column Mapping -->
         <div class="section" id="mappingSection" style="display: none;">
-            <div class="d-flex align-items-center mb-3">
-                <div class="bg-secondary text-white rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                    <i class="fas fa-columns"></i>
+            <div class="d-flex align-items-center mb-4">
+                <div class="step-icon-wrapper me-3">
+                    <div class="step-icon">
+                        <i class="fas fa-columns"></i>
+                    </div>
                 </div>
                 <h3 class="mb-0">Step 2: Configure Column Mapping</h3>
             </div>
             <p class="mt-4">Map your Excel columns to the required Softone ERP format:</p>
-            <div id="columnMappingForm" class="card p-3 mb-3" style="background-color: var(--muted-color);">
+            <div id="columnMappingForm" class="glass-card p-4 mb-4">
                 <!-- Will be populated dynamically -->
             </div>
-            <button id="processButton" class="btn btn-primary" style="position: relative; z-index: 100; margin-top: 10px; margin-bottom: 10px;"><i class="fas fa-cogs me-2" aria-hidden="true"></i>Process File</button>
+            <button id="processButton" class="btn btn-glass-primary"><i class="fas fa-cogs me-2" aria-hidden="true"></i>Process File</button>
         </div>
 
         <!-- Processing Indicator -->
         <div class="section" id="processingSpinner">
             <div class="text-center py-4">
-                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                    <span class="visually-hidden">Processing...</span>
+                <div class="glass-spinner">
+                    <div class="spinner-border text-primary" role="status" style="width: 3.5rem; height: 3.5rem;">
+                        <span class="visually-hidden">Processing...</span>
+                    </div>
                 </div>
-                <p class="lead mt-3">Processing your file. Please wait...</p>
+                <p class="lead mt-4">Processing your file. Please wait...</p>
                 <p class="text-muted">This may take a few moments depending on the file size.</p>
-                <div class="progress mt-3" style="height: 10px;">
+                <div class="progress glass-progress mt-4" style="height: 12px;">
                     <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
                 </div>
             </div>
@@ -716,18 +638,20 @@
 
         <!-- Step 3: Download Processed File -->
         <div class="section" id="downloadSection" style="position: relative; z-index: 10;">
-            <div class="d-flex align-items-center mb-3">
-                <div class="bg-success text-white rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                    <i class="fas fa-check"></i>
+            <div class="d-flex align-items-center mb-4">
+                <div class="step-icon-wrapper me-3">
+                    <div class="step-icon step-icon-success">
+                        <i class="fas fa-check"></i>
+                    </div>
                 </div>
                 <h3 class="mb-0">Step 3: Download Processed File</h3>
             </div>
-            <div class="alert alert-success mt-4">
+            <div class="alert alert-success glass-alert mt-4">
                 <i class="fas fa-check-circle me-2"></i> Your file has been processed successfully!
             </div>
-            <div class="d-flex justify-content-center mt-4">
-                <a id="downloadLink" href="#" class="btn btn-success me-3" style="position: relative; z-index: 100; margin: 10px; padding: 15px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s ease;" aria-label="Download processed file"><i class="fas fa-download me-2" aria-hidden="true"></i>Download Processed File</a>
-                <button id="startOverButton" class="btn btn-secondary" style="position: relative; z-index: 100; margin: 10px; padding: 15px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s ease;" aria-label="Process another file"><i class="fas fa-redo me-2" aria-hidden="true"></i>Process Another File</button>
+            <div class="d-flex justify-content-center mt-5">
+                <a id="downloadLink" href="#" class="btn btn-glass-success me-4" aria-label="Download processed file"><i class="fas fa-download me-2" aria-hidden="true"></i>Download Processed File</a>
+                <button id="startOverButton" class="btn btn-glass" aria-label="Process another file"><i class="fas fa-redo me-2" aria-hidden="true"></i>Process Another File</button>
             </div>
         </div>
 
@@ -779,6 +703,172 @@
     </footer>
 
     <style>
+        /* Simplified UI Elements */
+        .step-icon-wrapper {
+            position: relative;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+
+        .step-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 2px 8px rgba(225, 29, 72, 0.15);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .step-icon:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(225, 29, 72, 0.2);
+        }
+
+        .step-icon-success {
+            background-color: var(--success-color);
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+        }
+
+        .step-icon-success:hover {
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .glass-input-group {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            background-color: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .glass-input {
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0.75rem 1rem !important;
+            color: var(--text-color) !important;
+            font-weight: 500 !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .glass-input:focus {
+            background-color: rgba(255, 255, 255, 0.2) !important;
+            box-shadow: none !important;
+        }
+
+        .glass-card {
+            background-color: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .glass-alert {
+            background-color: rgba(255, 255, 255, 0.3) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            border: none !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+            border-radius: 8px !important;
+        }
+
+        .glass-spinner {
+            display: inline-flex;
+            padding: 1rem;
+            background-color: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 50%;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            margin-bottom: 1rem;
+        }
+
+        .glass-progress {
+            background-color: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.03);
+        }
+
+        .btn-glass {
+            background-color: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: none;
+            color: var(--text-color);
+            font-weight: 500;
+            padding: 0.7rem 1.2rem;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-glass:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            color: var(--primary-color);
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .btn-glass-primary {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+            padding: 0.7rem 1.2rem;
+            border-radius: 6px;
+            border: none;
+            box-shadow: 0 2px 8px rgba(225, 29, 72, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-glass-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(225, 29, 72, 0.15);
+            background-color: var(--secondary-color);
+        }
+
+        .btn-glass-success {
+            background-color: var(--success-color);
+            color: white;
+            font-weight: 500;
+            padding: 0.7rem 1.2rem;
+            border-radius: 6px;
+            border: none;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-glass-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+            background-color: #0ea271;
+        }
+
         /* Media query for smaller screens */
         @media (max-width: 991px) {
             .container-fluid {
@@ -788,33 +878,28 @@
             .stepper-wrapper {
                 position: static;
                 width: 100%;
-                margin-bottom: 2rem;
+                margin-bottom: 1.5rem;
                 flex-direction: row;
                 justify-content: space-between;
                 align-items: center;
                 flex-wrap: wrap;
-                padding: 1.25rem;
-                transform: none !important; /* Disable 3D transform on mobile */
-                perspective: none !important;
-                transform-style: flat !important;
-                backdrop-filter: blur(5px);
-                -webkit-backdrop-filter: blur(5px);
-                background-color: rgba(255, 255, 255, 0.8);
+                padding: 1rem;
+                background-color: rgba(255, 255, 255, 0.2);
             }
 
             .section {
                 max-width: 100%;
                 margin-right: 0;
+                padding: 1.5rem;
             }
 
             .stepper-item {
-                margin-bottom: 0.75rem;
+                margin-bottom: 0.5rem;
                 margin-right: 0.5rem;
                 width: auto;
                 flex: 1 1 auto;
-                min-width: 150px;
-                transform: none !important; /* Disable 3D transform on mobile */
-                animation: none !important; /* Disable animation on mobile */
+                min-width: 120px;
+                padding: 0.5rem;
             }
 
             .stepper-item::before {
@@ -824,16 +909,8 @@
             .stepper-title {
                 width: 100%;
                 text-align: center;
-                margin-bottom: 1rem;
-                transform: none !important; /* Disable 3D transform on mobile */
-            }
-
-            .step-counter {
-                transform: none !important; /* Disable 3D transform on mobile */
-            }
-
-            .step-name {
-                transform: none !important; /* Disable 3D transform on mobile */
+                margin-bottom: 0.75rem;
+                padding-bottom: 0.5rem;
             }
 
             .step-info {
@@ -841,15 +918,69 @@
             }
 
             h1 {
-                font-size: 2rem;
+                font-size: 1.75rem;
             }
 
             h3 {
-                font-size: 1.25rem;
+                font-size: 1.2rem;
             }
 
             .btn {
                 padding: 0.625rem 1.25rem;
+            }
+
+            /* UI elements mobile adjustments */
+            .step-icon-wrapper {
+                width: 40px;
+                height: 40px;
+                margin-right: 10px;
+            }
+
+            .step-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
+            }
+
+            .step-icon:hover {
+                transform: none;
+            }
+
+            .glass-card:hover {
+                transform: none;
+            }
+
+            .btn-glass, .btn-glass-primary, .btn-glass-success {
+                width: 100%;
+                margin-bottom: 0.75rem;
+            }
+
+            .btn-glass:hover, .btn-glass-primary:hover, .btn-glass-success:hover {
+                transform: none;
+            }
+
+            .glass-input-group {
+                flex-direction: column;
+            }
+
+            .glass-input {
+                border-radius: 6px 6px 0 0 !important;
+            }
+
+            .glass-input-group .btn {
+                border-radius: 0 0 6px 6px;
+            }
+
+            .d-flex.justify-content-center {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .d-flex.justify-content-center .btn, 
+            .d-flex.justify-content-center a.btn {
+                margin-right: 0 !important;
+                margin-left: 0 !important;
+                width: 100%;
             }
         }
 
