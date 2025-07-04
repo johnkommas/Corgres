@@ -114,6 +114,30 @@
             background-color: rgba(255, 255, 255, 0.25) !important;
         }
 
+        /* Fix for icon and text overlapping in toast notifications */
+        .toast-message {
+            margin-left: 30px !important; /* Add space to the left of the message to prevent overlap with the icon */
+            display: block !important; /* Ensure the message is displayed as a block */
+            word-wrap: break-word !important; /* Allow long words to break */
+        }
+
+        /* Also ensure the title doesn't overlap with the icon */
+        .toast-title {
+            margin-left: 30px !important; /* Add space to the left of the title to prevent overlap with the icon */
+            display: block !important; /* Ensure the title is displayed as a block */
+            word-wrap: break-word !important; /* Allow long words to break */
+            font-weight: bold !important; /* Make the title bold for better readability */
+        }
+
+        /* Ensure the icon is properly positioned */
+        #toast-container > div:before {
+            position: absolute !important;
+            left: 15px !important;
+            top: 16px !important; /* Position at the top with some padding instead of centering vertically */
+            font-size: 24px !important;
+            line-height: 24px !important;
+        }
+
         :root {
             --primary-color: #e11d48;
             --secondary-color: #be123c;

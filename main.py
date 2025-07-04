@@ -578,7 +578,13 @@ async def process_file(
 
         # If there are potential mappings and no value_mapping provided, and skip_auto_mapping is not set,
         # return them to the frontend for confirmation
-        if potential_mappings and not value_mapping and not skip_auto_mapping:
+        api_logger.info(f"Checking conditions for auto mapping confirmation:")
+        api_logger.info(f"  - potential_mappings: {bool(potential_mappings)}")
+        api_logger.info(f"  - value_mapping: {bool(value_mapping)}")
+        api_logger.info(f"  - skip_auto_mapping: {bool(skip_auto_mapping)}")
+        api_logger.info(f"  - accept_auto_mapping: {bool(accept_auto_mapping)}")
+
+        if potential_mappings and not value_mapping and not skip_auto_mapping and not accept_auto_mapping:
             api_logger.info(f"Found potential mappings: {potential_mappings}")
             api_logger.info("Returning potential mappings to frontend for confirmation")
             return {
