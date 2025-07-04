@@ -317,13 +317,21 @@
             flex-direction: column;
             justify-content: flex-start;
             padding: 1.5rem;
-            background-color: var(--card-bg-color);
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border-radius: var(--border-radius);
-            border: 1px solid var(--border-color);
-            box-shadow: var(--box-shadow);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 
+                0 4px 20px rgba(0, 0, 0, 0.1),
+                0 8px 16px rgba(225, 29, 72, 0.05),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.5);
             z-index: 10;
             width: 250px;
             transition: all var(--transition-speed) ease;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            transform: translateZ(0);
         }
 
         .stepper-item {
@@ -335,7 +343,15 @@
             padding: 0.75rem;
             border-radius: 0.5rem;
             transition: all 0.3s ease;
-            border: 1px solid transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background-color: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            box-shadow: 
+                0 4px 6px rgba(0, 0, 0, 0.05),
+                inset 0 1px 1px rgba(255, 255, 255, 0.7);
+            transform-style: preserve-3d;
+            transform: translateZ(0px);
         }
 
         .stepper-item::before {
@@ -346,6 +362,7 @@
             top: -50%;
             left: 20px;
             z-index: 1;
+            transform: translateZ(-5px);
         }
 
         .stepper-item:first-child::before {
@@ -355,11 +372,13 @@
         .stepper-item.completed::before {
             border-left: 2px solid var(--completed-color);
             transition: border-left 0.5s ease;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
         }
 
         .stepper-item.current::before {
             border-left: 2px solid var(--current-color);
             transition: border-left 0.5s ease;
+            box-shadow: 0 0 8px rgba(225, 29, 72, 0.3);
         }
 
         /* Progress line animation */
@@ -372,11 +391,22 @@
             animation: progressLine 0.8s ease-out forwards;
         }
 
+        /* 3D hover effect */
+        @keyframes float {
+            0% { transform: translateZ(10px) rotateX(0deg) rotateY(0deg); }
+            50% { transform: translateZ(15px) rotateX(2deg) rotateY(-1deg); }
+            100% { transform: translateZ(10px) rotateX(0deg) rotateY(0deg); }
+        }
+
         .stepper-item:hover {
-            background-color: var(--highlight-color);
-            border-color: var(--primary-color);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(225, 29, 72, 0.1);
+            background-color: rgba(254, 205, 211, 0.7); /* var(--highlight-color) with transparency */
+            border-color: rgba(225, 29, 72, 0.5);
+            transform: translateZ(10px) rotateX(2deg) rotateY(-1deg);
+            box-shadow: 
+                0 10px 20px rgba(0, 0, 0, 0.1),
+                0 6px 6px rgba(225, 29, 72, 0.1),
+                inset 0 1px 1px rgba(255, 255, 255, 0.7);
+            animation: float 3s ease-in-out infinite;
         }
 
         .step-counter {
@@ -388,25 +418,46 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background-color: var(--upcoming-color);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.8), rgba(254, 226, 226, 0.9));
             color: var(--light-text-color);
             margin-right: 12px;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            box-shadow: 
+                0 4px 8px rgba(0, 0, 0, 0.1),
+                inset 0 1px 1px rgba(255, 255, 255, 0.7),
+                inset 0 -2px 1px rgba(0, 0, 0, 0.05);
             flex-shrink: 0;
             font-size: 1rem;
+            transform: translateZ(5px);
+            text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
 
         .stepper-item.completed .step-counter {
-            background-color: var(--completed-color);
+            background: linear-gradient(145deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.8));
             color: white;
+            box-shadow: 
+                0 4px 8px rgba(16, 185, 129, 0.3),
+                inset 0 1px 1px rgba(255, 255, 255, 0.3),
+                0 0 15px rgba(16, 185, 129, 0.3);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.5);
         }
 
         .stepper-item.current .step-counter {
-            background-color: var(--current-color);
+            background: linear-gradient(145deg, rgba(225, 29, 72, 0.9), rgba(190, 18, 60, 0.8));
             color: white;
-            box-shadow: 0 0 0 5px rgba(225, 29, 72, 0.2);
-            transform: scale(1.1);
+            box-shadow: 
+                0 4px 12px rgba(225, 29, 72, 0.3),
+                inset 0 1px 1px rgba(255, 255, 255, 0.3),
+                0 0 20px rgba(225, 29, 72, 0.4);
+            transform: translateZ(10px) scale(1.1);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(225, 29, 72, 0.5);
+        }
+
+        .stepper-item:hover .step-counter {
+            transform: translateZ(15px) scale(1.05);
         }
 
         .step-name {
@@ -415,29 +466,84 @@
             color: var(--light-text-color);
             text-align: left;
             transition: all 0.3s ease;
+            transform: translateZ(3px);
+            text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            background-color: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3);
         }
 
         .stepper-item.completed .step-name {
             color: var(--completed-color);
+            background-color: rgba(16, 185, 129, 0.1);
+            text-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);
+            box-shadow: 
+                inset 0 1px 1px rgba(255, 255, 255, 0.3),
+                0 0 5px rgba(16, 185, 129, 0.1);
         }
 
         .stepper-item.current .step-name {
             color: var(--current-color);
             font-weight: 700;
+            background-color: rgba(225, 29, 72, 0.1);
+            text-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);
+            box-shadow: 
+                inset 0 1px 1px rgba(255, 255, 255, 0.3),
+                0 0 5px rgba(225, 29, 72, 0.1);
         }
 
         .stepper-item:hover .step-name {
             color: var(--primary-color);
+            transform: translateZ(8px);
+            background-color: rgba(225, 29, 72, 0.15);
+            box-shadow: 
+                inset 0 1px 1px rgba(255, 255, 255, 0.5),
+                0 0 8px rgba(225, 29, 72, 0.2);
         }
 
         .stepper-title {
             margin-bottom: 1.25rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid var(--border-color);
+            padding: 0.5rem 0.75rem 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
             color: var(--dark-color);
             font-size: 1.1rem;
             font-weight: 700;
             text-align: center;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1));
+            border-radius: 6px 6px 0 0;
+            box-shadow: 
+                inset 0 1px 1px rgba(255, 255, 255, 0.7),
+                0 1px 3px rgba(0, 0, 0, 0.05);
+            transform: translateZ(5px);
+            text-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stepper-title::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                to bottom right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.1) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            transform: rotate(30deg);
+            animation: shimmer 3s infinite linear;
+            pointer-events: none;
+        }
+
+        @keyframes shimmer {
+            from { transform: translateX(-100%) rotate(30deg); }
+            to { transform: translateX(100%) rotate(30deg); }
         }
 
         /* Main content area */
@@ -717,6 +823,12 @@
                 align-items: center;
                 flex-wrap: wrap;
                 padding: 1.25rem;
+                transform: none !important; /* Disable 3D transform on mobile */
+                perspective: none !important;
+                transform-style: flat !important;
+                backdrop-filter: blur(5px);
+                -webkit-backdrop-filter: blur(5px);
+                background-color: rgba(255, 255, 255, 0.8);
             }
 
             .section {
@@ -730,6 +842,8 @@
                 width: auto;
                 flex: 1 1 auto;
                 min-width: 150px;
+                transform: none !important; /* Disable 3D transform on mobile */
+                animation: none !important; /* Disable animation on mobile */
             }
 
             .stepper-item::before {
@@ -740,6 +854,15 @@
                 width: 100%;
                 text-align: center;
                 margin-bottom: 1rem;
+                transform: none !important; /* Disable 3D transform on mobile */
+            }
+
+            .step-counter {
+                transform: none !important; /* Disable 3D transform on mobile */
+            }
+
+            .step-name {
+                transform: none !important; /* Disable 3D transform on mobile */
             }
 
             .step-info {
@@ -890,8 +1013,112 @@
             // Set current year in footer
             document.getElementById('currentYear').textContent = new Date().getFullYear();
 
+            // Initialize 3D tilt effect for stepper
+            initStepperTiltEffect();
+
             let uploadedFilename = '';
             let availableColumns = [];
+
+            // Function to initialize 3D tilt effect for the stepper
+            function initStepperTiltEffect() {
+                const stepper = document.getElementById('progressStepper');
+                const stepperItems = document.querySelectorAll('.stepper-item');
+                const stepperTitle = document.querySelector('.stepper-title');
+
+                // Check if device is mobile or tablet
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 992;
+
+                // Only initialize tilt effect on non-mobile devices
+                if (!isMobile) {
+                    // Variables for tilt effect
+                    const maxTilt = 10; // Maximum tilt angle in degrees
+                    const maxTranslate = 15; // Maximum translation in pixels
+                    const perspective = 1000; // Perspective value
+
+                    // Add event listener for mouse movement
+                    stepper.addEventListener('mousemove', function(e) {
+                        // Get stepper dimensions and position
+                        const rect = stepper.getBoundingClientRect();
+
+                        // Calculate mouse position relative to stepper center
+                        const centerX = rect.left + rect.width / 2;
+                        const centerY = rect.top + rect.height / 2;
+                        const mouseX = e.clientX;
+                        const mouseY = e.clientY;
+
+                        // Calculate tilt angles based on mouse position
+                        const tiltX = ((mouseY - centerY) / (rect.height / 2)) * maxTilt;
+                        const tiltY = ((centerX - mouseX) / (rect.width / 2)) * maxTilt;
+
+                        // Apply tilt effect to stepper
+                        stepper.style.transform = `perspective(${perspective}px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(0)`;
+
+                        // Apply parallax effect to stepper items
+                        stepperItems.forEach((item, index) => {
+                            const depth = 5 + (index * 3); // Increasing depth for each item
+                            const translateX = (tiltY / maxTilt) * maxTranslate;
+                            const translateY = (tiltX / maxTilt) * maxTranslate;
+
+                            item.style.transform = `translateX(${translateX}px) translateY(${translateY}px) translateZ(${depth}px)`;
+                        });
+
+                        // Apply effect to title
+                        if (stepperTitle) {
+                            const titleTranslateX = (tiltY / maxTilt) * (maxTranslate * 0.7);
+                            const titleTranslateY = (tiltX / maxTilt) * (maxTranslate * 0.7);
+                            stepperTitle.style.transform = `translateX(${titleTranslateX}px) translateY(${titleTranslateY}px) translateZ(5px)`;
+                        }
+                    });
+
+                    // Reset transform on mouse leave
+                    stepper.addEventListener('mouseleave', function() {
+                        stepper.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateZ(0)';
+
+                        // Reset items with transition
+                        stepperItems.forEach(item => {
+                            item.style.transform = 'translateZ(0)';
+                        });
+
+                        // Reset title
+                        if (stepperTitle) {
+                            stepperTitle.style.transform = 'translateZ(5px)';
+                        }
+                    });
+
+                    // Add smooth transition on mouse enter/leave
+                    stepper.addEventListener('mouseenter', function() {
+                        stepper.style.transition = 'transform 0.3s ease-out';
+                        stepperItems.forEach(item => {
+                            item.style.transition = 'transform 0.3s ease-out';
+                        });
+                        if (stepperTitle) {
+                            stepperTitle.style.transition = 'transform 0.3s ease-out';
+                        }
+                    });
+
+                    stepper.addEventListener('mouseleave', function() {
+                        stepper.style.transition = 'transform 0.5s ease';
+                        stepperItems.forEach(item => {
+                            item.style.transition = 'transform 0.5s ease';
+                        });
+                        if (stepperTitle) {
+                            stepperTitle.style.transition = 'transform 0.5s ease';
+                        }
+                    });
+                } else {
+                    // For mobile devices, ensure the stepper has a clean glass effect without 3D transforms
+                    stepper.style.backdropFilter = 'blur(10px)';
+                    stepper.style.webkitBackdropFilter = 'blur(10px)';
+                    stepper.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+
+                    // Make sure stepper items have proper styling for mobile
+                    stepperItems.forEach(item => {
+                        item.style.backdropFilter = 'blur(5px)';
+                        item.style.webkitBackdropFilter = 'blur(5px)';
+                        item.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+                    });
+                }
+            }
 
             // Function to handle clicking on the previous step
             function handlePreviousStepClick(e) {
