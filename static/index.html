@@ -9,7 +9,7 @@
     <meta name="keywords" content="Softone, ERP, Excel, Formatter, Data Transformation">
     <title>Softone ERP Excel Formatter</title>
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/images/logo.png">
+    <link rel="icon" type="image/png" href="/images/mylogo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -508,9 +508,9 @@
         }
 
         .step-info {
-            margin-top: 50px;
-            margin-bottom: 30px;
-            padding: 15px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            padding: 10px;
             border-radius: 8px;
             background-color: var(--muted-color);
             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
@@ -522,22 +522,22 @@
         .step-info::after {
             content: '';
             position: absolute;
-            top: -15px;
+            top: -10px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            border-bottom: 15px solid var(--muted-color);
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid var(--muted-color);
         }
 
         .step-info .previous-step,
         .step-info .next-step {
             display: flex;
             align-items: center;
-            margin: 5px 15px;
-            padding: 8px;
+            margin: 3px 10px;
+            padding: 5px;
             border-radius: 6px;
             transition: all 0.3s ease;
         }
@@ -597,7 +597,7 @@
 
                 <a class="navbar-brand d-flex align-items-center" href="/">
 
-                    <img src="/images/logo.png" alt="Softone ERP Logo" height="36">
+                    <img src="/images/mylogo.png" alt="Softone ERP Logo" height="36">
                     <span class="fw-bold me-2" style="color: var(--dark-color);">Cogres Σταγάκης</span>
                     <span class="text-muted d-none d-md-inline me-2">|</span>
                     <span class="text-muted d-none d-md-inline me-2">Softone ERP Excel Formatter</span>
@@ -631,7 +631,7 @@
 
         <div class="text-center mb-5">
             <div class="mb-4">
-                <img src="/images/logo.png" alt="Softone ERP Logo" height="60" class="mb-3" style="filter: drop-shadow(0 4px 6px rgba(225, 29, 72, 0.3));">
+                <img src="/images/mylogo.png" alt="Softone ERP Logo" height="60" class="mb-3" style="filter: drop-shadow(0 4px 6px rgba(225, 29, 72, 0.3));">
             </div>
             <h1 class="mb-3" style="background: linear-gradient(90deg, var(--primary-color), var(--accent-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 2px 10px rgba(225, 29, 72, 0.2);">Softone ERP Excel Formatter</h1>
             <p class="lead text-muted mb-4" style="max-width: 900px; margin-left: auto; margin-right: auto;">Transform your Excel files into Softone ERP compatible format with just a few clicks.</p>
@@ -731,10 +731,13 @@
             </div>
         </div>
 
-        <!-- Step Navigation at Bottom -->
-        <div class="step-info mt-4" id="stepInfo">
+    </div>
+
+    <!-- Step Navigation at Bottom -->
+    <div class="container-fluid">
+        <div class="step-info mt-3 mb-3 py-2" id="stepInfo">
             <div class="d-flex justify-content-between">
-                <div class="previous-step" id="previousStep">
+                <div class="previous-step" id="previousStep" style="display: none;">
                     <i class="fas fa-arrow-circle-left"></i>
                     <span>Previous: None</span>
                 </div>
@@ -743,7 +746,7 @@
                     <i class="fas fa-arrow-circle-right ms-2"></i>
                 </div>
             </div>
-            <div class="text-center mt-4 py-3">
+            <div class="text-center mt-2 py-2">
                 <small class="text-muted p-2">Step 1 of 3: Upload your Excel file to begin the transformation process</small>
             </div>
         </div>
@@ -756,7 +759,7 @@
                 <div class="row align-items-center">
                     <div class="col-md-4 text-md-start mb-3 mb-md-0">
                         <a href="/" class="d-inline-flex align-items-center text-decoration-none">
-                            <img src="/images/logo.png" alt="Softone ERP Logo" height="30" class="me-2">
+                            <img src="/images/mylogo.png" alt="Softone ERP Logo" height="30" class="me-2">
                             <span class="fw-bold" style="color: var(--dark-color);">Cogres Σταγάκης</span>
                         </a>
                     </div>
@@ -834,7 +837,7 @@
             }
 
             .step-info {
-                margin-top: 1.5rem;
+                margin-top: 1rem;
             }
 
             h1 {
@@ -1091,7 +1094,6 @@
                 if (currentStep === 1) {
                     previousStep.style.display = 'none'; // Hide previous step button on first step
                 } else {
-                    previousStep.style.display = 'flex'; // Show for other steps
                     if (currentStep === 2) {
                         previousStep.innerHTML = '<i class="fas fa-arrow-circle-left"></i><span>Previous: Upload File</span>';
                         previousStep.style.cursor = 'pointer'; // Make it look clickable
@@ -1099,6 +1101,7 @@
                         // Add click event listener to go back to step 1
                         previousStep.addEventListener('click', handlePreviousStepClick);
                         previousStep.dataset.targetStep = 1; // Store the target step
+                        previousStep.style.display = 'flex'; // Show for step 2
                     } else if (currentStep === 3) {
                         previousStep.innerHTML = '<i class="fas fa-arrow-circle-left"></i><span>Previous: Configure Column Mapping</span>';
                         previousStep.style.cursor = 'pointer'; // Make it look clickable
@@ -1106,7 +1109,14 @@
                         // Add click event listener to go back to step 2
                         previousStep.addEventListener('click', handlePreviousStepClick);
                         previousStep.dataset.targetStep = 2; // Store the target step
+                        previousStep.style.display = 'flex'; // Show for step 3
                     }
+                }
+
+                // Double check to hide previous step if it contains "None"
+                const spanElement = previousStep.querySelector('span');
+                if (spanElement && spanElement.textContent.includes('None') || previousStep.textContent.includes('None')) {
+                    previousStep.style.display = 'none';
                 }
 
                 // Set next step text and visibility
