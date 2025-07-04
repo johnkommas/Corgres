@@ -22,16 +22,15 @@
         /* Custom styles for toastr notifications */
         #toast-container > div {
             border-radius: 24px !important; /* Even more rounded corners */
-            background-color: rgba(255, 255, 255, 0.65) !important; /* More transparent background for glassier look */
-            backdrop-filter: blur(12px) !important; /* Enhanced glassy blur effect */
-            -webkit-backdrop-filter: blur(12px) !important; /* For Safari */
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important; /* Enhanced shadow for depth */
-            border: 1px solid rgba(255, 255, 255, 0.2) !important; /* Subtle border */
+            background-color: rgba(255, 255, 255, 0.55) !important; /* More transparent background for glassier look */
+            backdrop-filter: blur(15px) !important; /* Enhanced glassy blur effect */
+            -webkit-backdrop-filter: blur(15px) !important; /* For Safari */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 0 15px rgba(255, 255, 255, 0.1) !important; /* Enhanced shadow for depth */
+            border: 1px solid rgba(255, 255, 255, 0.25) !important; /* Subtle border */
             padding: 16px 22px !important; /* More padding for better appearance */
             opacity: 1 !important; /* Ensure full visibility */
             transition: all 0.3s ease !important; /* Smooth transitions */
             transform: translateY(0) !important; /* For animation */
-            animation: toast-in 0.5s ease forwards !important; /* Entry animation */
             font-weight: 500 !important; /* Slightly bolder text */
             letter-spacing: 0.2px !important; /* Improved text readability */
         }
@@ -50,40 +49,45 @@
 
         /* Hover effect for toasts */
         #toast-container > div:hover {
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15) !important; /* Deeper shadow on hover */
-            transform: translateY(-2px) !important; /* Slight lift on hover */
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.18), 0 0 20px rgba(255, 255, 255, 0.15) !important; /* Enhanced shadow on hover */
+            transform: translateY(-3px) !important; /* More noticeable lift on hover */
+            filter: brightness(1.05) !important; /* Subtle brightness increase on hover */
         }
 
         /* Style for success toast */
         #toast-container > .toast-success {
-            background-color: rgba(16, 185, 129, 0.75) !important; /* Semi-transparent green */
+            background: linear-gradient(135deg, rgba(20, 220, 145, 0.9), rgba(0, 180, 120, 0.85)) !important; /* More vivid gradient background */
             color: white !important;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important; /* Text shadow for better readability */
-            border: 1px solid rgba(16, 185, 129, 0.3) !important; /* Colored border */
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important; /* Enhanced text shadow for better readability */
+            border: 1px solid rgba(20, 220, 145, 0.5) !important; /* Colored border */
+            box-shadow: 0 10px 25px rgba(20, 220, 145, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important; /* Inner highlight */
         }
 
         /* Style for error toast */
         #toast-container > .toast-error {
-            background-color: rgba(239, 68, 68, 0.75) !important; /* Semi-transparent red */
+            background: linear-gradient(135deg, rgba(255, 65, 65, 0.9), rgba(230, 25, 25, 0.85)) !important; /* More vivid gradient background */
             color: white !important;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
-            border: 1px solid rgba(239, 68, 68, 0.3) !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+            border: 1px solid rgba(255, 65, 65, 0.5) !important;
+            box-shadow: 0 10px 25px rgba(255, 65, 65, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important; /* Enhanced inner highlight */
         }
 
         /* Style for info toast */
         #toast-container > .toast-info {
-            background-color: rgba(59, 130, 246, 0.75) !important; /* Semi-transparent blue */
+            background: linear-gradient(135deg, rgba(65, 145, 255, 0.9), rgba(30, 105, 250, 0.85)) !important; /* More vivid gradient background */
             color: white !important;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
-            border: 1px solid rgba(59, 130, 246, 0.3) !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+            border: 1px solid rgba(65, 145, 255, 0.5) !important;
+            box-shadow: 0 10px 25px rgba(65, 145, 255, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important; /* Enhanced inner highlight */
         }
 
         /* Style for warning toast */
         #toast-container > .toast-warning {
-            background-color: rgba(245, 158, 11, 0.75) !important; /* Semi-transparent orange */
+            background: linear-gradient(135deg, rgba(255, 175, 25, 0.9), rgba(240, 140, 0, 0.85)) !important; /* More vivid gradient background */
             color: white !important;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
-            border: 1px solid rgba(245, 158, 11, 0.3) !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+            border: 1px solid rgba(255, 175, 25, 0.5) !important;
+            box-shadow: 0 10px 25px rgba(255, 175, 25, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important; /* Enhanced inner highlight */
         }
 
         /* Ensure the close button is visible and stylish */
@@ -92,7 +96,7 @@
             opacity: 0.7 !important;
             font-size: 1.1rem !important;
             font-weight: 400 !important;
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.1) !important;
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.15) !important;
             transition: all 0.2s ease !important;
             position: absolute !important;
             top: 12px !important;
@@ -103,15 +107,18 @@
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            background-color: rgba(255, 255, 255, 0.15) !important;
-            backdrop-filter: blur(4px) !important;
-            -webkit-backdrop-filter: blur(4px) !important;
+            background-color: rgba(255, 255, 255, 0.2) !important;
+            backdrop-filter: blur(5px) !important;
+            -webkit-backdrop-filter: blur(5px) !important;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+            transform: scale(1) !important;
         }
 
         #toast-container > div .toast-close-button:hover {
             opacity: 1 !important;
-            transform: rotate(90deg) !important;
-            background-color: rgba(255, 255, 255, 0.25) !important;
+            background-color: rgba(255, 255, 255, 0.3) !important;
+            transform: scale(1.1) !important;
+            box-shadow: 0 3px 7px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
         }
 
         /* Fix for icon and text overlapping in toast notifications */
@@ -119,6 +126,60 @@
             margin-left: 30px !important; /* Add space to the left of the message to prevent overlap with the icon */
             display: block !important; /* Ensure the message is displayed as a block */
             word-wrap: break-word !important; /* Allow long words to break */
+            font-size: 14px !important; /* Slightly larger font size */
+            line-height: 1.5 !important; /* Better line height for readability */
+            letter-spacing: 0.3px !important; /* Slightly increased letter spacing */
+        }
+
+        /* Enhanced icon styling */
+        #toast-container > .toast-success:before,
+        #toast-container > .toast-error:before,
+        #toast-container > .toast-info:before,
+        #toast-container > .toast-warning:before {
+            opacity: 0.9 !important; /* Make icons slightly more visible */
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important; /* Add subtle shadow to icons */
+        }
+
+        /* Set icon content for each toast type */
+        #toast-container > .toast-success:before {
+            content: "\f058" !important; /* FontAwesome check-circle icon */
+            font-family: 'Font Awesome 6 Free' !important;
+            font-weight: 900 !important;
+        }
+
+        #toast-container > .toast-error:before {
+            content: "\f057" !important; /* FontAwesome times-circle icon */
+            font-family: 'Font Awesome 6 Free' !important;
+            font-weight: 900 !important;
+        }
+
+        #toast-container > .toast-info:before {
+            content: "\f05a" !important; /* FontAwesome info-circle icon */
+            font-family: 'Font Awesome 6 Free' !important;
+            font-weight: 900 !important;
+        }
+
+        #toast-container > .toast-warning:before {
+            content: "\f06a" !important; /* FontAwesome exclamation-circle icon */
+            font-family: 'Font Awesome 6 Free' !important;
+            font-weight: 900 !important;
+        }
+
+        /* Additional animation for toast appearance */
+        @keyframes toast-glow {
+            0%, 100% {
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18), 0 0 15px rgba(255, 255, 255, 0.15) !important;
+                filter: brightness(1) !important;
+            }
+            50% {
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 0 25px rgba(255, 255, 255, 0.2) !important;
+                filter: brightness(1.08) !important;
+            }
+        }
+
+        /* Apply the glow animation */
+        #toast-container > div {
+            animation: toast-in 0.5s ease forwards, toast-glow 3s ease-in-out infinite !important;
         }
 
         /* Also ensure the title doesn't overlap with the icon */
@@ -1564,19 +1625,30 @@
 
                     // Only proceed if there are files to delete
                     if (currentCount > 0) {
-                        // Confirm before deleting
-                        if (confirm(`Are you sure you want to delete ${currentCount} files from the processed and uploads folders?`)) {
+                        // Show custom modal for confirmation
+                        const modal = document.getElementById('confirmDeleteModal');
+                        const modalBody = document.getElementById('confirmDeleteModalBody');
+                        modalBody.textContent = `You are about to delete ${currentCount} files from the processed and uploads folders. This action cannot be undone.`;
+
+                        // Show the modal
+                        const bsModal = new bootstrap.Modal(modal);
+                        bsModal.show();
+
+                        // Set up confirm button action
+                        document.getElementById('confirmDeleteBtn').onclick = function() {
                             fetch('/api/flash-files')
                                 .then(response => response.json())
                                 .then(data => {
                                     showSuccessNotification(`Successfully deleted ${data.deleted_count} files`);
                                     updateFilesCount(); // Update count after deletion
+                                    bsModal.hide(); // Hide the modal after successful deletion
                                 })
                                 .catch(error => {
                                     console.error('Error flashing files:', error);
                                     showErrorNotification('Failed to delete files');
+                                    bsModal.hide(); // Hide the modal on error
                                 });
-                        }
+                        };
                     } else {
                         showInfoNotification('No files to delete');
                     }
@@ -3122,5 +3194,24 @@
     </script>
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Confirmation Modal for File Deletion -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="confirmDeleteModalLabel">Confirm File Deletion</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="confirmDeleteModalBody">
+                    <!-- Dynamic content will be inserted here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Files</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
