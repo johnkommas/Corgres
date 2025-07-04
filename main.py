@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 import re
 
-from etl import process_excel_file, get_column_mapping_template
+from etl import process_excel_file, get_column_mapping_template, validate_main_unit_measurement, read_excel, validate_column_values, load_row_mappings, add_row_mapping
 from utils.logger import get_api_logger, get_app_logger, get_data_processing_logger, get_error_logger, get_all_logs
 from email_scanner import get_emails_with_attachments, save_attachment_from_email, list_mail_folders
 from column_mapper import add_mapping, get_suggestions
@@ -304,7 +304,7 @@ async def upload_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=error_msg)
 
     # Read the Excel file to get column names
-    from etl import read_excel
+    from etl import read_excel, get_unique_column_values
     try:
         df = read_excel(file_path)
         column_names = df.columns.tolist()
@@ -313,13 +313,18 @@ async def upload_file(file: UploadFile = File(...)):
         # Get suggestions for column mapping based on previous mappings
         suggestions = get_suggestions(column_names)
         data_logger.info(f"Generated {len(suggestions)} column mapping suggestions")
+
+        # Get unique values for each column
+        unique_values = get_unique_column_values(df)
+        data_logger.info(f"Extracted unique values for {len(unique_values)} columns")
     except Exception as e:
         error_msg = f"Error reading column names: {str(e)}"
         error_logger.error(error_msg)
         column_names = []
         suggestions = {}
+        unique_values = {}
 
-    return {"filename": filename, "file_path": file_path, "column_names": column_names, "suggestions": suggestions}
+    return {"filename": filename, "file_path": file_path, "column_names": column_names, "suggestions": suggestions, "unique_values": unique_values}
 
 @api.get("/mail-folders/")
 async def get_mail_folders():
@@ -475,7 +480,7 @@ async def fetch_attachment(email_id: str = Form(...), attachment_index: int = Fo
         filename = os.path.basename(file_path)
 
         # Read the Excel file to get column names
-        from etl import read_excel
+        from etl import read_excel, get_unique_column_values
         try:
             df = read_excel(file_path)
             column_names = df.columns.tolist()
@@ -484,13 +489,18 @@ async def fetch_attachment(email_id: str = Form(...), attachment_index: int = Fo
             # Get suggestions for column mapping based on previous mappings
             suggestions = get_suggestions(column_names)
             data_logger.info(f"Generated {len(suggestions)} column mapping suggestions")
+
+            # Get unique values for each column
+            unique_values = get_unique_column_values(df)
+            data_logger.info(f"Extracted unique values for {len(unique_values)} columns")
         except Exception as e:
             error_msg = f"Error reading column names: {str(e)}"
             error_logger.error(error_msg)
             column_names = []
             suggestions = {}
+            unique_values = {}
 
-        return {"filename": filename, "file_path": file_path, "column_names": column_names, "suggestions": suggestions}
+        return {"filename": filename, "file_path": file_path, "column_names": column_names, "suggestions": suggestions, "unique_values": unique_values}
     except HTTPException:
         raise
     except Exception as e:
@@ -511,17 +521,28 @@ async def get_mapping_template():
 async def process_file(
     background_tasks: BackgroundTasks,
     filename: str = Form(...),
-    column_mapping: str = Form(...)
+    column_mapping: str = Form(...),
+    value_mapping: Optional[str] = Form(None),
+    accept_auto_mapping: Optional[str] = Form(None),
+    skip_auto_mapping: Optional[str] = Form(None)
 ):
     """
     Process an Excel file with the provided column mapping
     """
     api_logger.info(f"Processing file: {filename}")
+    api_logger.info(f"accept_auto_mapping: {accept_auto_mapping}, type: {type(accept_auto_mapping)}")
+    api_logger.info(f"skip_auto_mapping: {skip_auto_mapping}, type: {type(skip_auto_mapping)}")
 
     try:
         # Parse the column mapping JSON
         mapping_dict = json.loads(column_mapping)
         data_logger.info(f"Column mapping: {mapping_dict}")
+
+        # Parse value mapping if provided
+        value_mapping_dict = {}
+        if value_mapping:
+            value_mapping_dict = json.loads(value_mapping)
+            data_logger.info(f"Value mapping: {value_mapping_dict}")
 
         # Validate the input file exists
         input_path = os.path.join("uploads", filename)
@@ -530,14 +551,117 @@ async def process_file(
             error_logger.error(error_msg)
             raise HTTPException(status_code=404, detail=error_msg)
 
+        # Read the Excel file
+        df = read_excel(input_path)
+
+        # Map columns according to the mapping
+        from etl import map_columns
+        df = map_columns(df, mapping_dict)
+
+        # Load existing row mappings
+        row_mappings = load_row_mappings()
+        data_logger.info(f"Loaded row mappings for {len(row_mappings)} columns")
+
+        # Check if there are any values that would be mapped
+        potential_mappings = {}
+        for column, mappings in row_mappings.items():
+            if column in df.columns:
+                # Find values in the dataframe that have mappings
+                column_values = df[column].astype(str).unique().tolist()
+                applicable_mappings = {}
+                for val in column_values:
+                    if val in mappings:
+                        applicable_mappings[val] = mappings[val]
+
+                if applicable_mappings:
+                    potential_mappings[column] = applicable_mappings
+
+        # If there are potential mappings and no value_mapping provided, and skip_auto_mapping is not set,
+        # return them to the frontend for confirmation
+        if potential_mappings and not value_mapping and not skip_auto_mapping:
+            api_logger.info(f"Found potential mappings: {potential_mappings}")
+            api_logger.info("Returning potential mappings to frontend for confirmation")
+            return {
+                "auto_mapping_available": True,
+                "potential_mappings": potential_mappings
+            }
+
+        # Log the decision based on flags
+        if accept_auto_mapping and accept_auto_mapping.lower() == 'true':
+            api_logger.info("User accepted automatic mappings")
+        elif skip_auto_mapping and skip_auto_mapping.lower() == 'true':
+            api_logger.info("User declined automatic mappings")
+        elif not potential_mappings:
+            api_logger.info("No potential mappings found")
+        else:
+            api_logger.info("Proceeding with normal processing")
+
+        # Apply existing row mappings to the data if:
+        # 1. accept_auto_mapping is set to 'true' (user explicitly accepted the mappings)
+        # 2. There are no potential mappings (no auto-mapping scenario)
+        # 3. value_mapping is provided (user has provided manual mappings)
+        if (accept_auto_mapping and accept_auto_mapping.lower() == 'true') or not potential_mappings or value_mapping:
+            # Log which condition triggered the mapping application
+            if accept_auto_mapping and accept_auto_mapping.lower() == 'true':
+                data_logger.info("Applying mappings because user accepted automatic mappings")
+            elif not potential_mappings:
+                data_logger.info("Applying mappings because no potential mappings were found")
+            elif value_mapping:
+                data_logger.info("Applying mappings because user provided manual mappings")
+            for column, mappings in row_mappings.items():
+                if column in df.columns:
+                    data_logger.info(f"Applying existing row mappings to {column}")
+                    # Replace values according to the mapping
+                    df[column] = df[column].map(
+                        lambda x: mappings.get(str(x), x) if str(x) in mappings else x
+                    )
+
+        # Validate Main Unit Measurement values
+        validation_result = validate_main_unit_measurement(df)
+        data_logger.info(f"Validation result: {validation_result}")
+
+        # If validation failed and no value mapping provided, return validation result
+        if not validation_result["valid"] and not value_mapping:
+            api_logger.info("Validation failed. Returning validation result to frontend.")
+            return {
+                "validation_required": True,
+                "validation_result": validation_result
+            }
+
+        # If value mapping provided, apply it to the data
+        if value_mapping_dict:
+            # Get the column name from the validation result
+            column = validation_result.get("column", "Main Unit Measurement")
+
+            if column in df.columns:
+                data_logger.info(f"Applying value mapping to {column}")
+                # Replace values according to the mapping
+                df[column] = df[column].map(
+                    lambda x: value_mapping_dict.get(x, x) if x in value_mapping_dict else x
+                )
+
+                # Store the mappings for future use
+                for original_value, mapped_value in value_mapping_dict.items():
+                    add_row_mapping(column, original_value, mapped_value)
+
+                # Validate again after mapping
+                validation_result = validate_column_values(df, column)
+                data_logger.info(f"Validation result after mapping: {validation_result}")
+
+                # If still invalid, return error
+                if not validation_result["valid"]:
+                    error_msg = f"Invalid {column} values after mapping"
+                    error_logger.error(error_msg)
+                    raise HTTPException(status_code=400, detail=error_msg)
+
         # Generate output filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_filename = f"processed_{timestamp}_{filename}"
         output_path = os.path.join("processed", output_filename)
 
-        # Process the file
-        data_logger.info(f"Starting ETL process for {input_path}")
-        result_path = process_excel_file(input_path, output_path, mapping_dict)
+        # Export to Excel
+        from etl import export_to_excel
+        result_path = export_to_excel(df, output_path)
         data_logger.info(f"ETL process completed. Output file: {result_path}")
 
         # Store column mapping for future use
@@ -559,7 +683,7 @@ async def process_file(
 @api.get("/download/{filename}")
 async def download_file(filename: str):
     """
-    Download a processed Excel file
+    Download a processed Excel file and clear processed and uploads folders
     """
     api_logger.info(f"Download requested for file: {filename}")
 
@@ -570,11 +694,104 @@ async def download_file(filename: str):
         raise HTTPException(status_code=404, detail=error_msg)
 
     api_logger.info(f"Serving file for download: {file_path}")
-    return FileResponse(
+    response = FileResponse(
         path=file_path,
         filename=filename,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+    # Clear processed and uploads folders after download
+    try:
+        # Keep the current file being downloaded
+        current_file = os.path.basename(file_path)
+
+        # Clear processed folder (except the file being downloaded)
+        for file in os.listdir("processed"):
+            if file != current_file:
+                file_to_remove = os.path.join("processed", file)
+                if os.path.isfile(file_to_remove):
+                    os.remove(file_to_remove)
+                    api_logger.info(f"Removed processed file: {file}")
+
+        # Clear uploads folder
+        for file in os.listdir("uploads"):
+            file_to_remove = os.path.join("uploads", file)
+            if os.path.isfile(file_to_remove):
+                os.remove(file_to_remove)
+                api_logger.info(f"Removed uploaded file: {file}")
+
+        api_logger.info("Processed and uploads folders cleared successfully")
+    except Exception as e:
+        error_msg = f"Error clearing folders: {str(e)}"
+        error_logger.error(error_msg)
+        # Don't raise an exception here to ensure the download still works
+
+    return response
+
+@api.get("/api/flash-files")
+async def flash_files():
+    """
+    Delete all files in the processed and uploads folders
+    Returns the count of deleted files
+    """
+    api_logger.info("Flash Files requested")
+
+    deleted_count = 0
+
+    try:
+        # Count files before deletion
+        processed_files = [f for f in os.listdir("processed") if os.path.isfile(os.path.join("processed", f))]
+        uploads_files = [f for f in os.listdir("uploads") if os.path.isfile(os.path.join("uploads", f))]
+
+        total_files = len(processed_files) + len(uploads_files)
+
+        # Clear processed folder
+        for file in processed_files:
+            file_to_remove = os.path.join("processed", file)
+            os.remove(file_to_remove)
+            deleted_count += 1
+            api_logger.info(f"Removed processed file: {file}")
+
+        # Clear uploads folder
+        for file in uploads_files:
+            file_to_remove = os.path.join("uploads", file)
+            os.remove(file_to_remove)
+            deleted_count += 1
+            api_logger.info(f"Removed uploaded file: {file}")
+
+        api_logger.info(f"Processed and uploads folders cleared successfully. Deleted {deleted_count} files.")
+        return {"message": "Folders cleared successfully", "deleted_count": deleted_count}
+
+    except Exception as e:
+        error_msg = f"Error clearing folders: {str(e)}"
+        error_logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+
+@api.get("/api/files-count")
+async def get_files_count():
+    """
+    Get the count of files in the processed and uploads folders
+    """
+    api_logger.info("Files count requested")
+
+    try:
+        # Count files
+        processed_files = [f for f in os.listdir("processed") if os.path.isfile(os.path.join("processed", f))]
+        uploads_files = [f for f in os.listdir("uploads") if os.path.isfile(os.path.join("uploads", f))]
+
+        total_files = len(processed_files) + len(uploads_files)
+
+        api_logger.info(f"Files count: {total_files} (Processed: {len(processed_files)}, Uploads: {len(uploads_files)})")
+        return {
+            "total": total_files,
+            "processed": len(processed_files),
+            "uploads": len(uploads_files)
+        }
+
+    except Exception as e:
+        error_msg = f"Error counting files: {str(e)}"
+        error_logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
 
 def get_ip_address():
     """
@@ -584,10 +801,25 @@ def get_ip_address():
     s.connect(("8.8.8.8", 80))
     return s.getsockname()[0]
 
+def ensure_folders_exist():
+    """
+    Ensure that required folders exist
+    """
+    required_folders = ["processed", "uploads"]
+    for folder in required_folders:
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+            app_logger.info(f"Created folder: {folder}")
+        else:
+            app_logger.info(f"Folder exists: {folder}")
+
 if __name__ == "__main__":
     import uvicorn
     my_ip = get_ip_address()  # Use 0.0.0.0 to listen on all available network interfaces
     port = 3000
+
+    # Ensure required folders exist
+    ensure_folders_exist()
 
     app_logger.info(f"Starting server on {my_ip}:{port}")
     uvicorn.run("main:api", host=my_ip, port=port, log_level="info", reload=False)

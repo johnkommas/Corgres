@@ -15,7 +15,105 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <style>
+        /* Custom styles for toastr notifications */
+        #toast-container > div {
+            border-radius: 24px !important; /* Even more rounded corners */
+            background-color: rgba(255, 255, 255, 0.65) !important; /* More transparent background for glassier look */
+            backdrop-filter: blur(12px) !important; /* Enhanced glassy blur effect */
+            -webkit-backdrop-filter: blur(12px) !important; /* For Safari */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important; /* Enhanced shadow for depth */
+            border: 1px solid rgba(255, 255, 255, 0.2) !important; /* Subtle border */
+            padding: 16px 22px !important; /* More padding for better appearance */
+            opacity: 1 !important; /* Ensure full visibility */
+            transition: all 0.3s ease !important; /* Smooth transitions */
+            transform: translateY(0) !important; /* For animation */
+            animation: toast-in 0.5s ease forwards !important; /* Entry animation */
+            font-weight: 500 !important; /* Slightly bolder text */
+            letter-spacing: 0.2px !important; /* Improved text readability */
+        }
+
+        /* Entry animation for toasts */
+        @keyframes toast-in {
+            0% {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Hover effect for toasts */
+        #toast-container > div:hover {
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15) !important; /* Deeper shadow on hover */
+            transform: translateY(-2px) !important; /* Slight lift on hover */
+        }
+
+        /* Style for success toast */
+        #toast-container > .toast-success {
+            background-color: rgba(16, 185, 129, 0.75) !important; /* Semi-transparent green */
+            color: white !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important; /* Text shadow for better readability */
+            border: 1px solid rgba(16, 185, 129, 0.3) !important; /* Colored border */
+        }
+
+        /* Style for error toast */
+        #toast-container > .toast-error {
+            background-color: rgba(239, 68, 68, 0.75) !important; /* Semi-transparent red */
+            color: white !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+            border: 1px solid rgba(239, 68, 68, 0.3) !important;
+        }
+
+        /* Style for info toast */
+        #toast-container > .toast-info {
+            background-color: rgba(59, 130, 246, 0.75) !important; /* Semi-transparent blue */
+            color: white !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+            border: 1px solid rgba(59, 130, 246, 0.3) !important;
+        }
+
+        /* Style for warning toast */
+        #toast-container > .toast-warning {
+            background-color: rgba(245, 158, 11, 0.75) !important; /* Semi-transparent orange */
+            color: white !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+            border: 1px solid rgba(245, 158, 11, 0.3) !important;
+        }
+
+        /* Ensure the close button is visible and stylish */
+        #toast-container > div .toast-close-button {
+            color: inherit !important;
+            opacity: 0.7 !important;
+            font-size: 1.1rem !important;
+            font-weight: 400 !important;
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.1) !important;
+            transition: all 0.2s ease !important;
+            position: absolute !important;
+            top: 12px !important;
+            right: 12px !important;
+            width: 24px !important;
+            height: 24px !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background-color: rgba(255, 255, 255, 0.15) !important;
+            backdrop-filter: blur(4px) !important;
+            -webkit-backdrop-filter: blur(4px) !important;
+        }
+
+        #toast-container > div .toast-close-button:hover {
+            opacity: 1 !important;
+            transform: rotate(90deg) !important;
+            background-color: rgba(255, 255, 255, 0.25) !important;
+        }
+
         :root {
             --primary-color: #e11d48;
             --secondary-color: #be123c;
@@ -322,6 +420,11 @@
             border-radius: 0.75rem;
             transition: all 0.3s ease;
             background-color: transparent;
+        }
+
+        /* Ensure proper spacing between step counter and step name */
+        .stepper-item .step-counter {
+            margin-right: 15px; /* Increase from 12px to 15px for better separation */
         }
 
         /* Connection line between steps */
@@ -642,6 +745,11 @@
                             <a class="nav-link px-3 py-2 mx-1 rounded" href="/logs" style="transition: all 0.2s ease;">
                                 <i class="fas fa-list-alt me-1"></i> Logs
                             </a>
+                        </li>
+                        <li class="nav-item">
+                            <button id="flashFilesBtn" class="nav-link px-3 py-2 mx-1 rounded btn" style="transition: all 0.2s ease; border: none; background: none;">
+                                <i class="fas fa-trash-alt me-1"></i> Flash Files <span id="filesCount" class="badge bg-danger">0</span>
+                            </button>
                         </li>
                     </ul>
                 </div>
@@ -1063,6 +1171,29 @@
             background-color: #0ea271;
         }
 
+        /* Ensure icons don't overlap with text */
+        .fas:not(.me-1):not(.me-2):not(.me-3):not(.me-4):not(.ms-1):not(.ms-2):not(.ms-3):not(.ms-4) {
+            margin-right: 0.5rem !important; /* Increase spacing between icons and text */
+        }
+
+        /* Increase spacing for icons in buttons and other elements */
+        .btn .fas.me-1 {
+            margin-right: 0.5rem !important; /* Increase from 0.25rem to 0.5rem */
+        }
+
+        .btn .fas.me-2 {
+            margin-right: 0.75rem !important; /* Increase from 0.5rem to 0.75rem */
+        }
+
+        /* Ensure step counter icons are properly spaced */
+        .step-counter .fas {
+            margin-right: 0 !important; /* Remove right margin for centered icons */
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
         /* Media query for smaller screens */
         @media (max-width: 991px) {
             .container-fluid {
@@ -1134,6 +1265,17 @@
                 width: 36px;
                 height: 36px;
                 font-size: 1rem;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            /* Ensure icons are visible on mobile */
+            .step-icon .fas {
+                position: relative;
+                left: 0;
+                top: 0;
+                transform: translate(0, 0);
             }
 
             .step-icon:hover {
@@ -1147,6 +1289,17 @@
             .btn-glass, .btn-glass-primary, .btn-glass-success {
                 width: 100%;
                 margin-bottom: 0.75rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            /* Ensure button icons are properly spaced on mobile */
+            .btn .fas {
+                margin-right: 0.5rem !important;
+                position: relative;
+                top: 0;
+                left: 0;
             }
 
             .btn-glass:hover, .btn-glass-primary:hover, .btn-glass-success:hover {
@@ -1312,9 +1465,110 @@
             // Initialize interactive effects for stepper
             initStepperInteractiveEffects();
 
+            // Initialize Flash Files functionality
+            initFlashFiles();
+
+            // Configure toastr notifications
+            toastr.options = {
+                "closeButton": true,
+                "debug": false,
+                "newestOnTop": true,
+                "progressBar": true,
+                "positionClass": "toast-top-right",
+                "preventDuplicates": false,
+                "onclick": null,
+                "showDuration": "300",
+                "hideDuration": "1000",
+                "timeOut": "10000",
+                "extendedTimeOut": "3000",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+                "showMethod": "fadeIn",
+                "hideMethod": "fadeOut",
+                "tapToDismiss": true
+            };
+
+            // Helper functions for notifications
+            function showSuccessNotification(message) {
+                toastr.success(message, 'Success');
+            }
+
+            function showErrorNotification(message) {
+                toastr.error(message, 'Error');
+            }
+
+            function showInfoNotification(message) {
+                toastr.info(message, 'Information');
+            }
+
+            function showWarningNotification(message) {
+                toastr.warning(message, 'Warning');
+            }
+
+            // Function to initialize Flash Files functionality
+            function initFlashFiles() {
+                const flashFilesBtn = document.getElementById('flashFilesBtn');
+                const filesCountBadge = document.getElementById('filesCount');
+
+                // Function to update files count
+                function updateFilesCount() {
+                    fetch('/api/files-count')
+                        .then(response => response.json())
+                        .then(data => {
+                            const totalFiles = data.total;
+                            filesCountBadge.textContent = totalFiles;
+
+                            // Show/hide badge based on count
+                            if (totalFiles > 0) {
+                                filesCountBadge.style.display = 'inline-block';
+                                flashFilesBtn.classList.add('text-danger');
+                            } else {
+                                filesCountBadge.style.display = 'none';
+                                flashFilesBtn.classList.remove('text-danger');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching files count:', error);
+                            showErrorNotification('Failed to get files count');
+                        });
+                }
+
+                // Add click event to Flash Files button
+                flashFilesBtn.addEventListener('click', function() {
+                    // Get current count
+                    const currentCount = parseInt(filesCountBadge.textContent);
+
+                    // Only proceed if there are files to delete
+                    if (currentCount > 0) {
+                        // Confirm before deleting
+                        if (confirm(`Are you sure you want to delete ${currentCount} files from the processed and uploads folders?`)) {
+                            fetch('/api/flash-files')
+                                .then(response => response.json())
+                                .then(data => {
+                                    showSuccessNotification(`Successfully deleted ${data.deleted_count} files`);
+                                    updateFilesCount(); // Update count after deletion
+                                })
+                                .catch(error => {
+                                    console.error('Error flashing files:', error);
+                                    showErrorNotification('Failed to delete files');
+                                });
+                        }
+                    } else {
+                        showInfoNotification('No files to delete');
+                    }
+                });
+
+                // Update files count on page load
+                updateFilesCount();
+
+                // Update files count every 30 seconds
+                setInterval(updateFilesCount, 30000);
+            }
+
             let uploadedFilename = '';
             let availableColumns = [];
             let columnSuggestions = {};
+            let columnUniqueValues = {};
 
             // Function to initialize interactive effects for the stepper
             function initStepperInteractiveEffects() {
@@ -1505,6 +1759,7 @@
                     uploadedFilename = data.filename;
                     availableColumns = data.column_names || [];
                     columnSuggestions = data.suggestions || {};
+                    columnUniqueValues = data.unique_values || {};
 
                     showUploadSuccess(`File "${file.name}" uploaded successfully`);
                     loadColumnMappingTemplate();
@@ -1574,6 +1829,9 @@
                     // Display results in the modal
                     displayEmailResultsInModal(data.emails);
 
+                    // Show success notification
+                    showSuccessNotification(`Successfully scanned emails for the last ${days} days. Found ${data.emails.length} emails with attachments.`);
+
                 } catch (error) {
                     console.error('Error scanning emails:', error);
                     // Hide spinner
@@ -1640,6 +1898,13 @@
                     // Display the folders
                     const tableBody = document.getElementById('foldersTableBody');
                     tableBody.innerHTML = '';
+
+                    // Show success notification
+                    if (folderExists) {
+                        showSuccessNotification(`Successfully connected to email server. Found ${data.folders.length} mail folders.`);
+                    } else {
+                        showWarningNotification(`Connected to email server, but the configured folder "${configuredFolder}" was not found. Please select a valid folder.`);
+                    }
 
                     // Create an array to store selected folders
                     window.selectedFolders = [];
@@ -1773,6 +2038,9 @@
                             Error checking mail folders: ${error.message}
                         </div>
                     `;
+
+                    // Show error notification
+                    showErrorNotification(`Error checking mail folders: ${error.message}`);
                 }
             });
 
@@ -2012,6 +2280,7 @@
                     uploadedFilename = data.filename;
                     availableColumns = data.column_names || [];
                     columnSuggestions = data.suggestions || {};
+                    columnUniqueValues = data.unique_values || {};
 
                     showUploadSuccess(`Attachment "${data.filename}" fetched successfully`);
                     loadColumnMappingTemplate();
@@ -2072,6 +2341,7 @@
                     uploadedFilename = data.filename;
                     availableColumns = data.column_names || [];
                     columnSuggestions = data.suggestions || {};
+                    columnUniqueValues = data.unique_values || {};
 
                     // Close the modal
                     emailScanModal.hide();
@@ -2189,23 +2459,118 @@
                     emptyOption.textContent = '-- Select a column --';
                     select.appendChild(emptyOption);
 
+                    // Create a div to display unique values
+                    const uniqueValuesDiv = document.createElement('div');
+                    uniqueValuesDiv.className = 'unique-values-display mt-2 small text-muted';
+                    uniqueValuesDiv.style.fontStyle = 'italic';
+                    uniqueValuesDiv.style.backgroundColor = '#f8f9fa';
+                    uniqueValuesDiv.style.padding = '0.5rem';
+                    uniqueValuesDiv.style.borderRadius = '0.25rem';
+                    uniqueValuesDiv.style.overflowX = 'auto';
+                    uniqueValuesDiv.style.whiteSpace = 'nowrap';
+                    uniqueValuesDiv.style.display = 'none';
+                    uniqueValuesDiv.id = `unique-values-${targetCol.replace(/\s+/g, '-')}`;
+
                     // Check if we have a suggestion for this target column
                     if (columnSuggestions && targetCol in columnSuggestions) {
                         // Pre-select the suggested column
                         const suggestedColumn = columnSuggestions[targetCol];
                         // Store the suggestion as the selected value
                         selectedValues[targetCol] = suggestedColumn;
+
+                        // Add the suggested option to the dropdown immediately
+                        const suggestedOption = document.createElement('option');
+                        suggestedOption.value = suggestedColumn;
+                        suggestedOption.textContent = suggestedColumn;
+                        suggestedOption.selected = true;
+                        select.appendChild(suggestedOption);
+
+                        // Display unique values for the suggested column
+                        if (columnUniqueValues && columnUniqueValues[suggestedColumn]) {
+                            const uniqueVals = columnUniqueValues[suggestedColumn];
+                            if (uniqueVals.length > 0) {
+                                const formattedValues = uniqueVals.join(' || ');
+                                uniqueValuesDiv.textContent = `${suggestedColumn} || ${formattedValues}`;
+                                uniqueValuesDiv.style.display = 'block';
+
+                                // Check if this is the Main Unit Measurement column
+                                if (targetCol === 'Main Unit Measurement') {
+                                    // Define acceptable values from .env
+                                    const acceptableValues = ["ΤΕΜΑΧΙΟ", "ΜΕΤΡΟ", "ΚΙΛΟ"];
+
+                                    // Check if all unique values are in the acceptable list
+                                    const invalidValues = uniqueVals.filter(val => !acceptableValues.includes(val));
+
+                                    // Apply styling based on validation result
+                                    if (invalidValues.length > 0) {
+                                        // At least one value is outside the predefined list - mark as red
+                                        uniqueValuesDiv.style.backgroundColor = '#ffcccc';
+                                        uniqueValuesDiv.style.color = '#cc0000';
+                                        uniqueValuesDiv.style.borderLeft = '4px solid #cc0000';
+                                    } else {
+                                        // All values are in the predefined list - mark as green
+                                        uniqueValuesDiv.style.backgroundColor = '#ccffcc';
+                                        uniqueValuesDiv.style.color = '#006600';
+                                        uniqueValuesDiv.style.borderLeft = '4px solid #006600';
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     // Add change event listener
                     select.addEventListener('change', function() {
                         // Update the selected value
                         selectedValues[targetCol] = this.value;
+
+                        // Display unique values for the selected column
+                        const selectedColumn = this.value;
+                        if (selectedColumn && columnUniqueValues && columnUniqueValues[selectedColumn]) {
+                            const uniqueVals = columnUniqueValues[selectedColumn];
+                            if (uniqueVals.length > 0) {
+                                const formattedValues = uniqueVals.join(' || ');
+                                uniqueValuesDiv.textContent = `${selectedColumn} || ${formattedValues}`;
+                                uniqueValuesDiv.style.display = 'block';
+
+                                // Check if this is the Main Unit Measurement column
+                                if (targetCol === 'Main Unit Measurement') {
+                                    // Define acceptable values from .env
+                                    const acceptableValues = ["ΤΕΜΑΧΙΟ", "ΜΕΤΡΟ", "ΚΙΛΟ"];
+
+                                    // Check if all unique values are in the acceptable list
+                                    const invalidValues = uniqueVals.filter(val => !acceptableValues.includes(val));
+
+                                    // Apply styling based on validation result
+                                    if (invalidValues.length > 0) {
+                                        // At least one value is outside the predefined list - mark as red
+                                        uniqueValuesDiv.style.backgroundColor = '#ffcccc';
+                                        uniqueValuesDiv.style.color = '#cc0000';
+                                        uniqueValuesDiv.style.borderLeft = '4px solid #cc0000';
+                                    } else {
+                                        // All values are in the predefined list - mark as green
+                                        uniqueValuesDiv.style.backgroundColor = '#ccffcc';
+                                        uniqueValuesDiv.style.color = '#006600';
+                                        uniqueValuesDiv.style.borderLeft = '4px solid #006600';
+                                    }
+                                } else {
+                                    // Reset styling for other columns
+                                    uniqueValuesDiv.style.backgroundColor = '#f8f9fa';
+                                    uniqueValuesDiv.style.color = '';
+                                    uniqueValuesDiv.style.borderLeft = '';
+                                }
+                            } else {
+                                uniqueValuesDiv.style.display = 'none';
+                            }
+                        } else {
+                            uniqueValuesDiv.style.display = 'none';
+                        }
+
                         // Update all dropdowns
                         updateDropdowns();
                     });
 
                     sourceColDiv.appendChild(select);
+                    sourceColDiv.appendChild(uniqueValuesDiv);
                     row.appendChild(targetColDiv);
                     row.appendChild(sourceColDiv);
                     form.appendChild(row);
@@ -2215,8 +2580,178 @@
                 updateDropdowns();
             }
 
+            // Function to show auto mapping confirmation popup
+            function showAutoMappingConfirmationPopup(potentialMappings, columnMapping) {
+                // Create modal elements
+                const modalBackdrop = document.createElement('div');
+                modalBackdrop.className = 'modal-backdrop fade show';
+                document.body.appendChild(modalBackdrop);
+
+                const modalDiv = document.createElement('div');
+                modalDiv.className = 'modal fade show';
+                modalDiv.style.display = 'block';
+                modalDiv.setAttribute('tabindex', '-1');
+                modalDiv.setAttribute('aria-modal', 'true');
+                modalDiv.setAttribute('role', 'dialog');
+
+                const modalDialog = document.createElement('div');
+                modalDialog.className = 'modal-dialog modal-dialog-centered';
+
+                const modalContent = document.createElement('div');
+                modalContent.className = 'modal-content';
+
+                // Modal header
+                const modalHeader = document.createElement('div');
+                modalHeader.className = 'modal-header';
+
+                const modalTitle = document.createElement('h5');
+                modalTitle.className = 'modal-title';
+                modalTitle.textContent = 'Automatic Value Mapping Available';
+
+                const closeButton = document.createElement('button');
+                closeButton.type = 'button';
+                closeButton.className = 'btn-close';
+                closeButton.setAttribute('aria-label', 'Close');
+                closeButton.onclick = function() {
+                    document.body.removeChild(modalBackdrop);
+                    document.body.removeChild(modalDiv);
+                };
+
+                modalHeader.appendChild(modalTitle);
+                modalHeader.appendChild(closeButton);
+
+                // Modal body
+                const modalBody = document.createElement('div');
+                modalBody.className = 'modal-body';
+
+                const messageP = document.createElement('p');
+                messageP.textContent = 'The following values can be automatically mapped based on previous mappings:';
+                modalBody.appendChild(messageP);
+
+                // Create a table to display the mappings
+                const table = document.createElement('table');
+                table.className = 'table table-striped';
+
+                // Table header
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+
+                const thColumn = document.createElement('th');
+                thColumn.textContent = 'Column';
+
+                const thOriginal = document.createElement('th');
+                thOriginal.textContent = 'Original Value';
+
+                const thMapped = document.createElement('th');
+                thMapped.textContent = 'Mapped Value';
+
+                headerRow.appendChild(thColumn);
+                headerRow.appendChild(thOriginal);
+                headerRow.appendChild(thMapped);
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                // Table body
+                const tbody = document.createElement('tbody');
+
+                // Add rows for each mapping
+                for (const [column, mappings] of Object.entries(potentialMappings)) {
+                    for (const [originalValue, mappedValue] of Object.entries(mappings)) {
+                        const row = document.createElement('tr');
+
+                        const tdColumn = document.createElement('td');
+                        tdColumn.textContent = column;
+
+                        const tdOriginal = document.createElement('td');
+                        tdOriginal.textContent = originalValue;
+
+                        const tdMapped = document.createElement('td');
+                        tdMapped.textContent = mappedValue;
+
+                        row.appendChild(tdColumn);
+                        row.appendChild(tdOriginal);
+                        row.appendChild(tdMapped);
+                        tbody.appendChild(row);
+                    }
+                }
+
+                table.appendChild(tbody);
+                modalBody.appendChild(table);
+
+                // Modal footer
+                const modalFooter = document.createElement('div');
+                modalFooter.className = 'modal-footer';
+
+                const declineButton = document.createElement('button');
+                declineButton.type = 'button';
+                declineButton.className = 'btn btn-danger';
+                declineButton.textContent = 'DECLINE';
+                declineButton.onclick = function() {
+                    // Close the modal
+                    document.body.removeChild(modalBackdrop);
+                    document.body.removeChild(modalDiv);
+
+                    // Show notification
+                    showInfoNotification('Automatic mapping declined. You can map values manually.');
+
+                    // Trigger process button click again with a flag to skip auto mapping
+                    window.skipAutoMapping = true;
+                    document.getElementById('processButton').click();
+                };
+
+                const acceptButton = document.createElement('button');
+                acceptButton.type = 'button';
+                acceptButton.className = 'btn btn-success';
+                acceptButton.textContent = 'ACCEPT';
+                acceptButton.onclick = function() {
+                    // Add debugging logs
+                    console.log('ACCEPT button clicked');
+
+                    try {
+                        // Close the modal
+                        document.body.removeChild(modalBackdrop);
+                        document.body.removeChild(modalDiv);
+                        console.log('Modal closed successfully');
+                    } catch (error) {
+                        console.error('Error closing modal:', error);
+                    }
+
+                    // Show notification
+                    showSuccessNotification('Automatic mapping accepted. Processing file...');
+
+                    // Trigger process button click again with auto mapping accepted
+                    console.log('Setting acceptAutoMapping to true');
+                    window.acceptAutoMapping = true;
+
+                    try {
+                        console.log('Clicking process button');
+                        const processButton = document.getElementById('processButton');
+                        console.log('Process button found:', processButton);
+                        processButton.click();
+                        console.log('Process button clicked');
+                    } catch (error) {
+                        console.error('Error clicking process button:', error);
+                    }
+                };
+
+                modalFooter.appendChild(declineButton);
+                modalFooter.appendChild(acceptButton);
+
+                // Assemble modal
+                modalContent.appendChild(modalHeader);
+                modalContent.appendChild(modalBody);
+                modalContent.appendChild(modalFooter);
+
+                modalDialog.appendChild(modalContent);
+                modalDiv.appendChild(modalDialog);
+
+                document.body.appendChild(modalDiv);
+            }
+
             // Process file with column mapping
             document.getElementById('processButton').addEventListener('click', async function() {
+                console.log('Process button click handler triggered');
+
                 // Collect column mapping
                 const mappingSelects = document.querySelectorAll('#columnMappingForm select');
                 const columnMapping = {};
@@ -2233,18 +2768,70 @@
                 formData.append('filename', uploadedFilename);
                 formData.append('column_mapping', JSON.stringify(columnMapping));
 
+                // Check if we have a value mapping from previous validation
+                if (window.valueMapping) {
+                    console.log('Adding value_mapping to formData:', window.valueMapping);
+                    formData.append('value_mapping', JSON.stringify(window.valueMapping));
+                }
+
+                // Check if we should accept auto mapping
+                console.log('Current value of window.acceptAutoMapping:', window.acceptAutoMapping);
+                if (window.acceptAutoMapping) {
+                    console.log('Adding accept_auto_mapping=true to formData');
+                    formData.append('accept_auto_mapping', 'true');
+                    console.log('Resetting window.acceptAutoMapping to false');
+                    window.acceptAutoMapping = false;
+                }
+
+                // Check if we should skip auto mapping
+                console.log('Current value of window.skipAutoMapping:', window.skipAutoMapping);
+                if (window.skipAutoMapping) {
+                    console.log('Adding skip_auto_mapping=true to formData');
+                    formData.append('skip_auto_mapping', 'true');
+                    console.log('Resetting window.skipAutoMapping to false');
+                    window.skipAutoMapping = false;
+                }
+
                 try {
+                    console.log('Sending request to /process/ endpoint');
                     const response = await fetch('/process/', {
                         method: 'POST',
                         body: formData
                     });
+                    console.log('Received response from /process/ endpoint');
 
                     if (!response.ok) {
                         const errorData = await response.json();
+                        console.error('Response not OK:', errorData);
                         throw new Error(errorData.detail || 'Processing failed');
                     }
 
                     const data = await response.json();
+                    console.log('Response data:', data);
+
+                    // Check if auto mapping is available
+                    if (data.auto_mapping_available) {
+                        console.log('Auto mapping available, showing confirmation popup');
+                        // Hide spinner and show mapping section
+                        document.getElementById('processingSpinner').style.display = 'none';
+                        document.getElementById('mappingSection').style.display = 'block';
+
+                        // Show auto mapping confirmation popup
+                        showAutoMappingConfirmationPopup(data.potential_mappings, columnMapping);
+                        return;
+                    }
+                    console.log('No auto mapping available or already accepted');
+
+                    // Check if validation is required
+                    if (data.validation_required) {
+                        // Hide spinner and show mapping section
+                        document.getElementById('processingSpinner').style.display = 'none';
+                        document.getElementById('mappingSection').style.display = 'block';
+
+                        // Show validation popup
+                        showValidationPopup(data.validation_result, columnMapping);
+                        return;
+                    }
 
                     // Hide spinner and show download section
                     document.getElementById('processingSpinner').style.display = 'none';
@@ -2271,12 +2858,157 @@
 
                     // Add animation class to download section
                     document.getElementById('downloadSection').classList.add('section-enter');
+
+                    // Show success notification
+                    showSuccessNotification('File processed successfully! Column mapping was applied and data was transformed.');
+
+                    // Clear any previous value mapping
+                    window.valueMapping = null;
                 } catch (error) {
                     document.getElementById('processingSpinner').style.display = 'none';
                     document.getElementById('mappingSection').style.display = 'block';
                     showUploadError(error.message);
                 }
             });
+
+            // Function to show validation popup
+            function showValidationPopup(validationResult, columnMapping) {
+                // Create modal elements
+                const modalBackdrop = document.createElement('div');
+                modalBackdrop.className = 'modal-backdrop fade show';
+                document.body.appendChild(modalBackdrop);
+
+                const modalDiv = document.createElement('div');
+                modalDiv.className = 'modal fade show';
+                modalDiv.style.display = 'block';
+                modalDiv.setAttribute('tabindex', '-1');
+                modalDiv.setAttribute('aria-modal', 'true');
+                modalDiv.setAttribute('role', 'dialog');
+
+                const modalDialog = document.createElement('div');
+                modalDialog.className = 'modal-dialog modal-dialog-centered';
+
+                const modalContent = document.createElement('div');
+                modalContent.className = 'modal-content';
+
+                // Get the column name from the validation result
+                const columnName = validationResult.column || 'Main Unit Measurement';
+
+                // Modal header
+                const modalHeader = document.createElement('div');
+                modalHeader.className = 'modal-header';
+
+                const modalTitle = document.createElement('h5');
+                modalTitle.className = 'modal-title';
+                modalTitle.textContent = `${columnName} Validation`;
+
+                const closeButton = document.createElement('button');
+                closeButton.type = 'button';
+                closeButton.className = 'btn-close';
+                closeButton.setAttribute('aria-label', 'Close');
+                closeButton.onclick = function() {
+                    document.body.removeChild(modalBackdrop);
+                    document.body.removeChild(modalDiv);
+                };
+
+                modalHeader.appendChild(modalTitle);
+                modalHeader.appendChild(closeButton);
+
+                // Modal body
+                const modalBody = document.createElement('div');
+                modalBody.className = 'modal-body';
+
+                const invalidValues = validationResult.invalid_values;
+                const acceptableValues = validationResult.acceptable_values;
+
+                const messageP = document.createElement('p');
+                messageP.textContent = `The following values in the "${columnName}" column are not valid. Please map them to acceptable values:`;
+                modalBody.appendChild(messageP);
+
+                const form = document.createElement('form');
+                form.id = 'valueMappingForm';
+
+                // Create mapping inputs for each invalid value
+                invalidValues.forEach(value => {
+                    const formGroup = document.createElement('div');
+                    formGroup.className = 'form-group mb-3';
+
+                    const label = document.createElement('label');
+                    label.textContent = `Map "${value}" to:`;
+                    label.className = 'form-label';
+
+                    const select = document.createElement('select');
+                    select.className = 'form-control';
+                    select.name = value;
+
+                    // Add options for acceptable values
+                    acceptableValues.forEach(acceptableValue => {
+                        const option = document.createElement('option');
+                        option.value = acceptableValue;
+                        option.textContent = acceptableValue;
+                        select.appendChild(option);
+                    });
+
+                    formGroup.appendChild(label);
+                    formGroup.appendChild(select);
+                    form.appendChild(formGroup);
+                });
+
+                modalBody.appendChild(form);
+
+                // Modal footer
+                const modalFooter = document.createElement('div');
+                modalFooter.className = 'modal-footer';
+
+                const cancelButton = document.createElement('button');
+                cancelButton.type = 'button';
+                cancelButton.className = 'btn btn-secondary';
+                cancelButton.textContent = 'Cancel';
+                cancelButton.onclick = function() {
+                    document.body.removeChild(modalBackdrop);
+                    document.body.removeChild(modalDiv);
+                };
+
+                const saveButton = document.createElement('button');
+                saveButton.type = 'button';
+                saveButton.className = 'btn btn-primary';
+                saveButton.textContent = 'Apply Mapping';
+                saveButton.onclick = function() {
+                    // Collect value mapping
+                    const valueMapping = {};
+                    const mappingSelects = document.querySelectorAll('#valueMappingForm select');
+
+                    mappingSelects.forEach(select => {
+                        valueMapping[select.name] = select.value;
+                    });
+
+                    // Store value mapping for next process call
+                    window.valueMapping = valueMapping;
+
+                    // Close modal
+                    document.body.removeChild(modalBackdrop);
+                    document.body.removeChild(modalDiv);
+
+                    // Show notification
+                    showSuccessNotification('Value mapping applied. Processing file...');
+
+                    // Trigger process button click again
+                    document.getElementById('processButton').click();
+                };
+
+                modalFooter.appendChild(cancelButton);
+                modalFooter.appendChild(saveButton);
+
+                // Assemble modal
+                modalContent.appendChild(modalHeader);
+                modalContent.appendChild(modalBody);
+                modalContent.appendChild(modalFooter);
+
+                modalDialog.appendChild(modalContent);
+                modalDiv.appendChild(modalDialog);
+
+                document.body.appendChild(modalDiv);
+            }
 
             // Add explicit click handler for download link
             document.getElementById('downloadLink').addEventListener('click', function(e) {
@@ -2294,6 +3026,9 @@
 
                 // Let the default behavior handle the actual download
                 console.log('Proceeding with download');
+
+                // Show success notification
+                showSuccessNotification('Download started. Your file will be saved to your downloads folder.');
             });
 
             // Start over button
@@ -2323,10 +3058,14 @@
                 document.getElementById('uploadSection').classList.add('section-enter');
 
                 console.log('Reset complete, returned to step 1');
+
+                // Show info notification
+                showInfoNotification('Process reset. You can start over with a new file.');
             });
 
             // Helper functions
             function showUploadSuccess(message) {
+                // Show in-page success message
                 const successElement = document.getElementById('uploadSuccess');
                 successElement.innerHTML = `<i class="fas fa-check-circle me-2"></i> <strong>Success:</strong> ${message}`;
                 successElement.style.display = 'block';
@@ -2334,9 +3073,13 @@
                 successElement.setAttribute('aria-live', 'polite');
 
                 document.getElementById('uploadError').style.display = 'none';
+
+                // Show toast notification
+                showSuccessNotification(message);
             }
 
             function showUploadError(message) {
+                // Show in-page error message
                 const errorElement = document.getElementById('uploadError');
                 errorElement.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i> <strong>Error:</strong> ${message}`;
                 errorElement.style.display = 'block';
@@ -2347,6 +3090,9 @@
 
                 // Scroll to error message
                 errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Show toast notification
+                showErrorNotification(message);
             }
         });
     </script>
