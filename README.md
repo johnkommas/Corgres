@@ -39,6 +39,9 @@ The application ensures that all required columns for the Softone ERP system are
    # Core dependencies
    pip install fastapi uvicorn pandas openpyxl
 
+   # For start_server.py script (process management)
+   pip install psutil
+
    # Optional: for production deployment
    pip install gunicorn
    ```
@@ -46,15 +49,18 @@ The application ensures that all required columns for the Softone ERP system are
 3. Run the application:
    ```
    # Option 1: Using uvicorn directly
-   uvicorn main:app --reload
+   uvicorn main:api --reload
 
    # Option 2: Running the Python script (which uses uvicorn internally)
    python main.py
+
+   # Option 3: Using the start_server.py script (handles "Address already in use" errors)
+   ./start_server.py
    ```
 
 4. Open your browser and navigate to:
    ```
-   http://127.0.0.1:8000/
+   http://127.0.0.1:3000/
    ```
 
 ## How to Use
@@ -111,6 +117,37 @@ To run the ETL tests:
 python test_etl.py
 ```
 
+## Server Management
+
+### Using start_server.py
+
+The `start_server.py` script provides a robust way to start the application while handling common issues like "Address already in use" errors. It offers the following features:
+
+- Automatically detects and activates virtual environments
+- Checks if the port is already in use and stops conflicting processes
+- Restarts the server if it crashes
+- Provides clear feedback about server status
+- Handles graceful shutdown on keyboard interrupts
+
+To use the script with custom settings:
+
+```
+# Basic usage (uses default settings: host=0.0.0.0, port=3000, with auto-reload)
+./start_server.py
+
+# Custom host and port
+./start_server.py --host 127.0.0.1 --port 8080
+
+# Disable auto-reload for production
+./start_server.py --no-reload
+```
+
+The script requires the `psutil` package for process management:
+
+```
+pip install psutil
+```
+
 ## Production Deployment
 
 For production environments, it's recommended to use Gunicorn with Uvicorn workers:
@@ -122,7 +159,7 @@ For production environments, it's recommended to use Gunicorn with Uvicorn worke
 
 2. Run with Gunicorn and Uvicorn workers:
    ```
-   gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
+   gunicorn main:api -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:3000
    ```
 
    This setup provides better performance and reliability for production workloads.

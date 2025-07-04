@@ -3,97 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Transform your Excel files into Softone ERP compatible format with just a few clicks.">
+    <meta name="theme-color" content="#2563eb">
     <title>Softone ERP Excel Formatter</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #555555;
-            --secondary-color: #1d1d1f;
-            --background-color: #FFF1E5;
-            --ft-dark-color: #F7D0B0;
-            --text-color: #1d1d1f;
-            --light-text-color: #86868b;
-            --border-color: #d2d2d7;
-            --success-color: #777777;
-            --warning-color: #ff9500;
-            --danger-color: #ff3b30;
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --background-color: #f8fafc;
+            --card-bg-color: #ffffff;
+            --text-color: #1e293b;
+            --light-text-color: #64748b;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
             --transition-speed: 0.3s;
             --border-radius: 12px;
             --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             /* Preserve original colors for specific functionality */
-            --completed-color: #777777;
-            --current-color: #555555;
-            --upcoming-color: #d2d2d7;
+            --completed-color: #10b981;
+            --current-color: #2563eb;
+            --upcoming-color: #e2e8f0;
             /* Additional colors from original theme */
-            --accent-color: #7209b7;
-            --light-color: #f8f9fa;
-            --dark-color: #212529;
+            --accent-color: #8b5cf6;
+            --light-color: #f8fafc;
+            --dark-color: #0f172a;
+            /* New colors */
+            --highlight-color: #dbeafe;
+            --muted-color: #f1f5f9;
         }
 
         body {
-            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--background-color);
             color: var(--text-color);
-            padding: 30px;
+            padding: 0;
             min-height: 100vh;
-            line-height: 1.5;
+            line-height: 1.6;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
 
         .container-fluid {
             background-color: var(--background-color);
-            padding: 20px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
+            padding: 2rem;
             transition: var(--transition-speed);
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
         h1 {
-            color: var(--primary-color);
-            margin-bottom: 25px;
+            color: var(--dark-color);
+            margin-bottom: 1.5rem;
             text-align: center;
-            font-weight: 700;
+            font-weight: 800;
             font-size: 2.5rem;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-            border-bottom: 2px solid var(--accent-color);
-            padding-bottom: 15px;
+            letter-spacing: -0.025em;
+            line-height: 1.2;
         }
 
         h3 {
-            color: var(--secondary-color);
-            font-weight: 600;
-            margin-bottom: 20px;
+            color: var(--dark-color);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
         }
 
         .section {
-            margin-bottom: 35px;
-            padding: 25px;
+            margin-bottom: 2rem;
+            padding: 2rem;
             border: none;
             border-radius: var(--border-radius);
-            background-color: var(--ft-dark-color);
+            background-color: var(--card-bg-color);
             box-shadow: var(--box-shadow);
             transition: all var(--transition-speed) ease;
             position: relative;
-            border-top: 4px solid var(--primary-color);
-            overflow: visible; /* Changed from hidden to visible */
+            border-left: 4px solid var(--primary-color);
+            overflow: visible;
         }
 
-        .section::before {
+        .section::after {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, rgba(85, 85, 85, 0.05) 0%, rgba(255, 255, 255, 0) 50%);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.03) 0%, rgba(255, 255, 255, 0) 50%);
             z-index: 0;
+            pointer-events: none;
+            border-radius: var(--border-radius);
         }
 
         .section:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
         }
 
         .section-enter {
@@ -116,48 +126,104 @@
         }
 
         .btn {
-            padding: 10px 20px;
-            font-weight: 500;
-            border-radius: calc(var(--border-radius) / 2);
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
             transition: all var(--transition-speed) ease;
+            position: relative;
+            overflow: hidden;
+            font-size: 0.95rem;
+            letter-spacing: 0.01em;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+            opacity: 0;
+            transition: opacity var(--transition-speed) ease;
+        }
+
+        .btn:hover::after {
+            opacity: 1;
         }
 
         .btn-primary {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
+            color: white;
         }
 
         .btn-primary:hover {
             background-color: var(--secondary-color);
             border-color: var(--secondary-color);
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(85, 85, 85, 0.3);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: var(--muted-color);
+            border-color: var(--border-color);
+            color: var(--text-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--highlight-color);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
         }
 
         .btn-success {
             background-color: var(--success-color);
             border-color: var(--success-color);
+            color: white;
         }
 
         .btn-success:hover {
-            background-color: #3db8dc;
-            border-color: #3db8dc;
+            background-color: #0ea271;
+            border-color: #0ea271;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(76, 201, 240, 0.3);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
 
         .form-control {
-            border-radius: calc(var(--border-radius) / 2);
-            padding: 12px;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
             border: 1px solid var(--border-color);
             transition: all var(--transition-speed) ease;
-            background-color: var(--ft-dark-color);
+            background-color: white;
+            font-size: 0.95rem;
+            color: var(--text-color);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
         .form-control:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.25rem rgba(85, 85, 85, 0.25);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
             outline: none;
+        }
+
+        .input-group {
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .input-group .form-control {
+            box-shadow: none;
+        }
+
+        .input-group-text {
+            background-color: var(--muted-color);
+            border-color: var(--border-color);
+            color: var(--light-text-color);
         }
 
         #processingSpinner, #downloadSection {
@@ -165,8 +231,48 @@
         }
 
         .alert {
-            border-radius: 8px;
-            padding: 15px;
+            border-radius: var(--border-radius);
+            padding: 1rem 1.25rem;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .alert::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+
+        .alert-success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        .alert-success::before {
+            background-color: var(--success-color);
+        }
+
+        .alert-danger {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+        }
+
+        .alert-danger::before {
+            background-color: var(--danger-color);
+        }
+
+        .alert-warning {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+        }
+
+        .alert-warning::before {
+            background-color: var(--warning-color);
         }
 
         /* Stepper styles */
@@ -177,13 +283,14 @@
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
-            padding: 20px;
-            background-color: var(--ft-dark-color);
-            border-radius: 15px;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            background-color: var(--card-bg-color);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--box-shadow);
             z-index: 10;
-            width: 220px;
+            width: 250px;
+            transition: all var(--transition-speed) ease;
         }
 
         .stepper-item {
@@ -191,9 +298,9 @@
             display: flex;
             flex-direction: row;
             align-items: center;
-            margin-bottom: 20px;
-            padding: 12px;
-            border-radius: 10px;
+            margin-bottom: 1.25rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
             transition: all 0.3s ease;
             border: 1px solid transparent;
         }
@@ -201,7 +308,7 @@
         .stepper-item::before {
             position: absolute;
             content: "";
-            border-left: 2px solid #ccc;
+            border-left: 2px dashed var(--border-color);
             height: 100%;
             top: -50%;
             left: 20px;
@@ -233,10 +340,10 @@
         }
 
         .stepper-item:hover {
-            background-color: rgba(85, 85, 85, 0.05);
-            border-color: rgba(0, 0, 0, 0.05);
+            background-color: var(--highlight-color);
+            border-color: var(--primary-color);
             transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.1);
         }
 
         .step-counter {
@@ -245,35 +352,36 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             background-color: var(--upcoming-color);
-            color: white;
+            color: var(--light-text-color);
             margin-right: 12px;
             transition: all 0.3s ease;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             flex-shrink: 0;
-            font-size: 0.9rem;
+            font-size: 1rem;
         }
 
         .stepper-item.completed .step-counter {
             background-color: var(--completed-color);
+            color: white;
         }
 
         .stepper-item.current .step-counter {
             background-color: var(--current-color);
-            box-shadow: 0 0 15px rgba(85, 85, 85, 0.6);
-            transform: scale(1.2);
+            color: white;
+            box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.2);
+            transform: scale(1.1);
         }
 
         .step-name {
-            font-size: 15px;
+            font-size: 0.95rem;
             font-weight: 600;
-            color: #555;
+            color: var(--light-text-color);
             text-align: left;
             transition: all 0.3s ease;
-            letter-spacing: 0.2px;
         }
 
         .stepper-item.completed .step-name {
@@ -283,7 +391,6 @@
         .stepper-item.current .step-name {
             color: var(--current-color);
             font-weight: 700;
-            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
         }
 
         .stepper-item:hover .step-name {
@@ -291,12 +398,12 @@
         }
 
         .stepper-title {
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            color: var(--primary-color);
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--dark-color);
             font-size: 1.1rem;
-            font-weight: 600;
+            font-weight: 700;
             text-align: center;
         }
 
@@ -308,7 +415,7 @@
         }
 
         .step-info {
-            margin-top: 30px;
+            margin-top: 50px;
             margin-bottom: 30px;
             padding: 15px;
             border-radius: 8px;
@@ -336,7 +443,7 @@
         .step-info .next-step {
             display: flex;
             align-items: center;
-            margin: 5px 0;
+            margin: 5px 15px;
             padding: 8px;
             border-radius: 6px;
             transition: all 0.3s ease;
@@ -376,11 +483,13 @@
 </head>
 <body>
     <div class="container-fluid position-relative">
-        <nav class="navbar navbar-expand-lg navbar-light rounded mb-4" style="background-color: var(--background-color);">
+        <nav class="navbar navbar-expand-lg navbar-light rounded mb-4 py-3" style="background-color: var(--card-bg-color); box-shadow: var(--box-shadow);">
             <div class="container-fluid">
-                <a class="navbar-brand" href="/">
-                    <i class="fas fa-file-excel text-secondary me-2"></i>
-                    Softone ERP Excel Formatter
+                <a class="navbar-brand d-flex align-items-center" href="/">
+                    <img src="/images/logo.png" alt="Softone ERP Logo" height="36" class="me-2">
+                    <span class="fw-bold" style="color: var(--dark-color);">Cogres Σταγάκης</span>
+                    <span class="ms-2 text-muted d-none d-md-inline">|</span>
+                    <span class="ms-2 text-muted d-none d-md-inline">Softone ERP Excel Formatter</span>
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -388,12 +497,12 @@
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item">
-                            <a class="nav-link active" href="/">
+                            <a class="nav-link active px-3 py-2 mx-1 rounded" href="/" style="color: var(--primary-color); font-weight: 600;">
                                 <i class="fas fa-home me-1"></i> Home
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/logs">
+                            <a class="nav-link px-3 py-2 mx-1 rounded" href="/logs" style="transition: all 0.2s ease;">
                                 <i class="fas fa-list-alt me-1"></i> Logs
                             </a>
                         </li>
@@ -402,9 +511,15 @@
             </div>
         </nav>
 
-        <div class="text-center mb-4">
-            <h1><i class="fas fa-file-excel text-secondary me-2"></i> Softone ERP Excel Formatter</h1>
-            <p class="lead">Transform your Excel files into Softone ERP compatible format with just a few clicks.</p>
+        <div class="text-center mb-5">
+            <div class="mb-4">
+                <img src="/images/logo.png" alt="Softone ERP Logo" height="60" class="mb-3">
+            </div>
+            <h1 class="mb-3">Softone ERP Excel Formatter</h1>
+            <p class="lead text-muted mb-4" style="max-width: 700px; margin-left: auto; margin-right: auto;">Transform your Excel files into Softone ERP compatible format with just a few clicks.</p>
+            <div class="d-flex justify-content-center">
+                <div style="height: 4px; width: 60px; background-color: var(--primary-color); border-radius: 2px;"></div>
+            </div>
         </div>
 
         <div class="row">
@@ -436,7 +551,7 @@
                 </div>
                 <h3 class="mb-0">Step 1: Upload Excel File</h3>
             </div>
-            <p>Select an Excel file (.xls or .xlsx) to upload:</p>
+            <p class="mt-4">Select an Excel file (.xls or .xlsx) to upload:</p>
             <form id="uploadForm" enctype="multipart/form-data">
                 <div class="mb-3">
                     <div class="input-group">
@@ -457,7 +572,7 @@
                 </div>
                 <h3 class="mb-0">Step 2: Configure Column Mapping</h3>
             </div>
-            <p>Map your Excel columns to the required Softone ERP format:</p>
+            <p class="mt-4">Map your Excel columns to the required Softone ERP format:</p>
             <div id="columnMappingForm" class="card p-3 mb-3" style="background-color: var(--ft-dark-color);">
                 <!-- Will be populated dynamically -->
             </div>
@@ -485,7 +600,7 @@
                 </div>
                 <h3 class="mb-0">Step 3: Download Processed File</h3>
             </div>
-            <div class="alert alert-success">
+            <div class="alert alert-success mt-4">
                 <i class="fas fa-check-circle me-2"></i> Your file has been processed successfully!
             </div>
             <div class="d-flex justify-content-center mt-4">
@@ -506,35 +621,54 @@
                     <i class="fas fa-arrow-circle-right ms-2"></i>
                 </div>
             </div>
-            <div class="text-center mt-2">
-                <small class="text-muted">Step 1 of 3: Upload your Excel file to begin the transformation process</small>
+            <div class="text-center mt-4 py-3">
+                <small class="text-muted p-2">Step 1 of 3: Upload your Excel file to begin the transformation process</small>
             </div>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer class="mt-5 text-center text-muted">
+    <footer class="mt-5 pt-5 text-center">
         <div class="container-fluid">
-            <p>
-                <i class="fas fa-code"></i> Softone ERP Excel Formatter &copy; <span id="currentYear"></span>
-                <span class="mx-2">|</span>
-                <i class="fas fa-heart text-danger"></i> Made with care
-                <span class="mx-2">|</span>
-                Copyright &copy; Ioannis E. Kommas. All rights Reserved
-            </p>
+            <div class="py-4 border-top">
+                <div class="row align-items-center">
+                    <div class="col-md-4 text-md-start mb-3 mb-md-0">
+                        <a href="/" class="d-inline-flex align-items-center text-decoration-none">
+                            <img src="/images/logo.png" alt="Softone ERP Logo" height="30" class="me-2">
+                            <span class="fw-bold" style="color: var(--dark-color);">Cogres Σταγάκης</span>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-heart" style="color: var(--primary-color);"></i> Made with care
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <p class="text-muted mb-0">
+                            &copy; <span id="currentYear"></span> Ioannis E. Kommas. All rights Reserved
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
     </footer>
 
     <style>
         /* Media query for smaller screens */
         @media (max-width: 991px) {
+            .container-fluid {
+                padding: 1.5rem;
+            }
+
             .stepper-wrapper {
                 position: static;
                 width: 100%;
-                margin-bottom: 20px;
-                flex-direction: column;
-                justify-content: flex-start;
+                margin-bottom: 2rem;
+                flex-direction: row;
+                justify-content: space-between;
                 align-items: center;
+                flex-wrap: wrap;
+                padding: 1.25rem;
             }
 
             .section {
@@ -543,10 +677,11 @@
             }
 
             .stepper-item {
-                margin-bottom: 10px;
-                margin-right: 0;
-                width: 100%;
-                max-width: 300px;
+                margin-bottom: 0.75rem;
+                margin-right: 0.5rem;
+                width: auto;
+                flex: 1 1 auto;
+                min-width: 150px;
             }
 
             .stepper-item::before {
@@ -555,31 +690,109 @@
 
             .stepper-title {
                 width: 100%;
-                max-width: 300px;
                 text-align: center;
-                margin-bottom: 15px;
+                margin-bottom: 1rem;
+            }
+
+            .step-info {
+                margin-top: 1.5rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h3 {
+                font-size: 1.25rem;
+            }
+
+            .btn {
+                padding: 0.625rem 1.25rem;
             }
         }
 
         /* Media query for very small screens */
         @media (max-width: 576px) {
+            .container-fluid {
+                padding: 1rem;
+            }
+
             .stepper-wrapper {
-                padding: 15px;
+                padding: 1rem;
+                flex-direction: column;
+                align-items: flex-start;
             }
 
             .stepper-item {
-                max-width: 250px;
+                width: 100%;
+                margin-right: 0;
             }
 
-            .stepper-title {
-                max-width: 250px;
+            .step-counter {
+                width: 36px;
+                height: 36px;
+            }
+
+            .step-name {
+                font-size: 0.875rem;
+            }
+
+            .btn {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .input-group > .form-control {
+                border-radius: 0.5rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .input-group > .btn {
+                border-radius: 0.5rem;
+            }
+
+            .d-flex {
+                flex-direction: column;
+            }
+
+            .d-flex .btn {
+                margin-right: 0 !important;
+            }
+        }
+
+        /* Media query for medium screens */
+        @media (min-width: 992px) and (max-width: 1199px) {
+            .section {
+                max-width: calc(100% - 280px);
+                margin-right: 20px;
+            }
+
+            .stepper-wrapper {
+                width: 230px;
+            }
+        }
+
+        /* Media query for large screens */
+        @media (min-width: 1200px) and (max-width: 1599px) {
+            .section {
+                max-width: calc(100% - 290px);
+                margin-right: 30px;
+            }
+
+            .stepper-wrapper {
+                width: 240px;
             }
         }
 
         /* Media query for very large screens */
         @media (min-width: 1600px) {
             .container-fluid {
-                padding: 0 7.5%;
+                padding: 2.5rem;
+                max-width: 1600px;
             }
 
             .section {
@@ -588,15 +801,16 @@
             }
 
             .stepper-wrapper {
-                right: 40px;
-                width: 240px;
+                right: calc((100% - 1600px) / 2 + 40px);
+                width: 250px;
             }
         }
 
         /* Media query for extra large screens */
         @media (min-width: 2000px) {
             .container-fluid {
-                padding: 0 10%;
+                padding: 3rem;
+                max-width: 1800px;
             }
 
             .section {
@@ -605,8 +819,8 @@
             }
 
             .stepper-wrapper {
-                right: 50px;
-                width: 250px;
+                right: calc((100% - 1800px) / 2 + 50px);
+                width: 260px;
             }
 
             body {

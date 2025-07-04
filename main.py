@@ -1,3 +1,5 @@
+import socket
+
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -194,6 +196,7 @@ api.add_middleware(
 
 # Serve static files
 api.mount("/static", StaticFiles(directory="static"), name="static")
+api.mount("/images", StaticFiles(directory="images"), name="images")
 
 @api.get("/", response_class=HTMLResponse)
 async def root():
@@ -381,9 +384,17 @@ async def download_file(filename: str):
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+def get_ip_address():
+    """
+    Gets the local IP address by connecting to Google's DNS server.
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    return s.getsockname()[0]
+
 if __name__ == "__main__":
     import uvicorn
-    my_ip = "0.0.0.0"  # Use 0.0.0.0 to listen on all available network interfaces
+    my_ip = get_ip_address()  # Use 0.0.0.0 to listen on all available network interfaces
     port = 3000
 
     app_logger.info(f"Starting server on {my_ip}:{port}")
