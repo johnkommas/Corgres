@@ -1314,6 +1314,7 @@
 
             let uploadedFilename = '';
             let availableColumns = [];
+            let columnSuggestions = {};
 
             // Function to initialize interactive effects for the stepper
             function initStepperInteractiveEffects() {
@@ -1503,6 +1504,7 @@
                     const data = await response.json();
                     uploadedFilename = data.filename;
                     availableColumns = data.column_names || [];
+                    columnSuggestions = data.suggestions || {};
 
                     showUploadSuccess(`File "${file.name}" uploaded successfully`);
                     loadColumnMappingTemplate();
@@ -2009,6 +2011,7 @@
                     const data = await response.json();
                     uploadedFilename = data.filename;
                     availableColumns = data.column_names || [];
+                    columnSuggestions = data.suggestions || {};
 
                     showUploadSuccess(`Attachment "${data.filename}" fetched successfully`);
                     loadColumnMappingTemplate();
@@ -2068,6 +2071,7 @@
                     const data = await response.json();
                     uploadedFilename = data.filename;
                     availableColumns = data.column_names || [];
+                    columnSuggestions = data.suggestions || {};
 
                     // Close the modal
                     emailScanModal.hide();
@@ -2184,6 +2188,14 @@
                     emptyOption.value = '';
                     emptyOption.textContent = '-- Select a column --';
                     select.appendChild(emptyOption);
+
+                    // Check if we have a suggestion for this target column
+                    if (columnSuggestions && targetCol in columnSuggestions) {
+                        // Pre-select the suggested column
+                        const suggestedColumn = columnSuggestions[targetCol];
+                        // Store the suggestion as the selected value
+                        selectedValues[targetCol] = suggestedColumn;
+                    }
 
                     // Add change event listener
                     select.addEventListener('change', function() {

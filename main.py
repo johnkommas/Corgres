@@ -20,6 +20,7 @@ import re
 from etl import process_excel_file, get_column_mapping_template
 from utils.logger import get_api_logger, get_app_logger, get_data_processing_logger, get_error_logger, get_all_logs
 from email_scanner import get_emails_with_attachments, save_attachment_from_email, list_mail_folders
+from column_mapper import add_mapping, get_suggestions
 
 # Function to process logs and generate statistics
 def process_logs_for_stats(logs, log_type='all', days=7, start_date=None, end_date=None):
@@ -308,12 +309,17 @@ async def upload_file(file: UploadFile = File(...)):
         df = read_excel(file_path)
         column_names = df.columns.tolist()
         data_logger.info(f"Read Excel file with {len(df)} rows and {len(column_names)} columns")
+
+        # Get suggestions for column mapping based on previous mappings
+        suggestions = get_suggestions(column_names)
+        data_logger.info(f"Generated {len(suggestions)} column mapping suggestions")
     except Exception as e:
         error_msg = f"Error reading column names: {str(e)}"
         error_logger.error(error_msg)
         column_names = []
+        suggestions = {}
 
-    return {"filename": filename, "file_path": file_path, "column_names": column_names}
+    return {"filename": filename, "file_path": file_path, "column_names": column_names, "suggestions": suggestions}
 
 @api.get("/mail-folders/")
 async def get_mail_folders():
@@ -474,12 +480,17 @@ async def fetch_attachment(email_id: str = Form(...), attachment_index: int = Fo
             df = read_excel(file_path)
             column_names = df.columns.tolist()
             data_logger.info(f"Read Excel file with {len(df)} rows and {len(column_names)} columns")
+
+            # Get suggestions for column mapping based on previous mappings
+            suggestions = get_suggestions(column_names)
+            data_logger.info(f"Generated {len(suggestions)} column mapping suggestions")
         except Exception as e:
             error_msg = f"Error reading column names: {str(e)}"
             error_logger.error(error_msg)
             column_names = []
+            suggestions = {}
 
-        return {"filename": filename, "file_path": file_path, "column_names": column_names}
+        return {"filename": filename, "file_path": file_path, "column_names": column_names, "suggestions": suggestions}
     except HTTPException:
         raise
     except Exception as e:
@@ -528,6 +539,10 @@ async def process_file(
         data_logger.info(f"Starting ETL process for {input_path}")
         result_path = process_excel_file(input_path, output_path, mapping_dict)
         data_logger.info(f"ETL process completed. Output file: {result_path}")
+
+        # Store column mapping for future use
+        data_logger.info(f"Storing column mapping for future use")
+        add_mapping(mapping_dict)
 
         api_logger.info(f"File processed successfully: {output_filename}")
         return {"message": "File processed successfully", "output_filename": output_filename}
