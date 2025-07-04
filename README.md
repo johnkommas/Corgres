@@ -37,7 +37,7 @@ The application ensures that all required columns for the Softone ERP system are
 2. Install dependencies:
    ```
    # Core dependencies
-   pip install fastapi uvicorn pandas openpyxl
+   pip install fastapi uvicorn pandas openpyxl python-dotenv
 
    # For start_server.py script (process management)
    pip install psutil
@@ -46,7 +46,16 @@ The application ensures that all required columns for the Softone ERP system are
    pip install gunicorn
    ```
 
-3. Run the application:
+3. Configure environment variables:
+   Create a `.env` file in the root directory with the following variables:
+   ```
+   GMAIL_USER="your-gmail-username"
+   GMAIL_PASS="your-gmail-app-password"
+   MAIL_FOLDER="INBOX"
+   ```
+   Note: If you're using Gmail with 2FA, you'll need to create an App Password. Go to your Google Account > Security > App Passwords.
+
+4. Run the application:
    ```
    # Option 1: Using uvicorn directly
    uvicorn main:api --reload

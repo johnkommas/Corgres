@@ -498,14 +498,123 @@
             100% { transform: scale(1); }
         }
 
+        /* Fade in up animation for cards */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .heart-pulse {
             display: inline-block;
             animation: heartbeat 1.5s ease infinite;
             transform-origin: center;
         }
+
+        /* Email card styles */
+        .email-card {
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .email-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .email-card-header {
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            color: white;
+            border-radius: 0.5rem 0.5rem 0 0;
+            padding: 0.75rem 1rem;
+        }
+
+        .email-card-footer {
+            background-color: var(--light-color);
+            border-radius: 0 0 0.5rem 0.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        .email-attachment-badge {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            transition: all 0.2s ease;
+            cursor: default;
+        }
+
+        .email-attachment-badge:hover {
+            background-color: var(--muted-color);
+            transform: scale(1.05);
+        }
+
+        .email-action-button {
+            transition: all 0.2s ease;
+        }
+
+        .email-action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .email-subject {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body>
+    <!-- Email Scanning Popup Modal -->
+    <div class="modal fade" id="emailScanModal" tabindex="-1" aria-labelledby="emailScanModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="emailScanModalLabel">Scan Emails for Attachments</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Email Scanning Spinner -->
+                    <div id="modalEmailScanningSpinner">
+                        <div class="d-flex justify-content-center my-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Scanning emails...</span>
+                            </div>
+                        </div>
+                        <p class="text-center text-muted">Scanning emails, please wait...</p>
+                    </div>
+
+                    <!-- Email Results Section -->
+                    <div id="modalEmailResultsSection" style="display: none;">
+                        <h5 class="mb-3">Found Emails with Attachments</h5>
+                        <div class="row" id="modalEmailsContainer">
+                            <!-- Email results will be populated here as cards -->
+                        </div>
+                        <div class="alert alert-info mt-3" id="modalNoEmailsFound" style="display: none;">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No emails with Excel attachments found in the specified time period.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="container-fluid position-relative">
         <nav class="navbar navbar-expand-lg navbar-light mb-4 py-3">
@@ -514,7 +623,7 @@
                 <a class="navbar-brand d-flex align-items-center" href="/">
 
                     <img src="/images/mylogo.png" alt="Softone ERP Logo" height="36">
-                    <span class="fw-bold me-2" style="color: var(--dark-color);">Cogres Σταγάκης</span>
+                    <span class="fw-bold me-2" style="color: var(--dark-color);">Corgres Σταγάκης</span>
                     <span class="text-muted d-none d-md-inline me-2">|</span>
                     <span class="text-muted d-none d-md-inline me-2">Softone ERP Excel Formatter</span>
 
@@ -579,7 +688,7 @@
             </div>
         </div>
 
-        <!-- Step 1: Upload Excel File -->
+        <!-- Step 1: Upload Excel File or Scan Emails -->
         <div class="section section-enter" id="uploadSection">
             <div class="d-flex align-items-center mb-4">
                 <div class="step-icon-wrapper me-3">
@@ -587,18 +696,103 @@
                         <i class="fas fa-upload"></i>
                     </div>
                 </div>
-                <h3 class="mb-0">Step 1: Upload Excel File</h3>
+                <h3 class="mb-0">Step 1: Get Excel File</h3>
             </div>
-            <p class="mt-4">Select an Excel file (.xls or .xlsx) to upload:</p>
-            <form id="uploadForm" enctype="multipart/form-data">
-                <div class="mb-3">
-                    <div class="input-group glass-input-group">
-                        <input class="form-control glass-input" type="file" id="excelFile" accept=".xls,.xlsx" required aria-label="Select Excel file" aria-describedby="fileHelp">
-                        <button type="submit" class="btn btn-glass" aria-label="Upload file"><i class="fas fa-cloud-upload-alt me-2" aria-hidden="true"></i>Upload</button>
+
+            <!-- Upload/Scan Options -->
+            <div class="mb-4">
+                <ul class="nav nav-tabs" id="fileSourceTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-content" type="button" role="tab" aria-controls="upload-content" aria-selected="true">
+                            <i class="fas fa-file-upload me-2"></i>Upload File
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="email-tab" data-bs-toggle="tab" data-bs-target="#email-content" type="button" role="tab" aria-controls="email-content" aria-selected="false">
+                            <i class="fas fa-envelope me-2"></i>Scan Emails
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content mt-3" id="fileSourceTabContent">
+                    <!-- Upload File Tab -->
+                    <div class="tab-pane fade show active" id="upload-content" role="tabpanel" aria-labelledby="upload-tab">
+                        <p>Select an Excel file (.xls or .xlsx) to upload:</p>
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <div class="input-group glass-input-group">
+                                    <input class="form-control glass-input" type="file" id="excelFile" accept=".xls,.xlsx" required aria-label="Select Excel file" aria-describedby="fileHelp">
+                                    <button type="submit" class="btn btn-glass" aria-label="Upload file"><i class="fas fa-cloud-upload-alt me-2" aria-hidden="true"></i>Upload</button>
+                                </div>
+                                <small id="fileHelp" class="form-text text-muted mt-2">Please select an Excel file (.xls or .xlsx) to upload. Maximum file size: 10MB.</small>
+                            </div>
+                        </form>
                     </div>
-                    <small id="fileHelp" class="form-text text-muted mt-2">Please select an Excel file (.xls or .xlsx) to upload. Maximum file size: 10MB.</small>
+
+                    <!-- Scan Emails Tab -->
+                    <div class="tab-pane fade" id="email-content" role="tabpanel" aria-labelledby="email-tab">
+                        <p>Scan your email folder for Excel attachments:</p>
+                        <div class="mb-3">
+                            <div class="input-group mb-3">
+                                <span class="input-group-text">Days to look back</span>
+                                <input type="number" class="form-control" id="emailDays" value="7" min="1" max="30">
+                                <button class="btn btn-primary" id="scanEmailsBtn" type="button">
+                                    <i class="fas fa-search me-2"></i>Scan Emails
+                                </button>
+                                <button class="btn btn-outline-secondary" id="checkFoldersBtn" type="button" title="Check available mail folders">
+                                    <i class="fas fa-folder me-2"></i>Check Folders
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">This will scan your configured email folder for Excel attachments received in the specified number of days.</small>
+
+                            <!-- Mail Folders Section -->
+                            <div id="mailFoldersSection" style="display: none;" class="mt-3">
+                                <h5 class="mb-3">Available Mail Folders</h5>
+                                <div class="alert alert-info" id="configuredFolderInfo">
+                                    Checking mail folders...
+                                </div>
+                                <div class="mb-3">
+                                    <button type="button" class="btn btn-sm btn-outline-primary me-2" id="selectAllFoldersBtn">
+                                        <i class="fas fa-check-square me-1"></i> Select All
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllFoldersBtn">
+                                        <i class="fas fa-square me-1"></i> Deselect All
+                                    </button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover" id="foldersTable">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 40px;"><input type="checkbox" class="form-check-input" id="selectAllFoldersCheckbox"></th>
+                                                <th>Folder Name</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="foldersTableBody">
+                                            <!-- Folders will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="alert alert-warning mt-3" id="noFolderSelectedWarning" style="display: none;">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Please select at least one folder to scan.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Note about popup window -->
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            When you click "Scan Emails", a popup window will appear showing the scanning process and allowing you to select an attachment to download.
+                        </div>
+
+                        <!-- Hidden elements for backward compatibility -->
+                        <div id="emailResultsSection" style="display: none;"></div>
+                        <div id="emailScanningSpinner" style="display: none;"></div>
+                    </div>
                 </div>
-            </form>
+            </div>
+
             <div class="alert alert-success glass-alert mt-3" id="uploadSuccess" style="display: none;"></div>
             <div class="alert alert-danger glass-alert mt-3" id="uploadError" style="display: none;"></div>
         </div>
@@ -684,7 +878,7 @@
                     <div class="col-md-4 text-md-start mb-3 mb-md-0">
                         <a href="/" class="d-inline-flex align-items-center text-decoration-none">
                             <img src="/images/mylogo.png" alt="Softone ERP Logo" height="30" class="me-2">
-                            <span class="fw-bold" style="color: var(--dark-color);">Cogres Σταγάκης</span>
+                            <span class="fw-bold" style="color: var(--dark-color);">Corgres Σταγάκης</span>
                         </a>
                     </div>
                     <div class="col-md-4 mb-3 mb-md-0">
@@ -1275,6 +1469,12 @@
                 stepInfo.querySelector('.text-center').innerHTML = `<small class="text-muted">${stepDescription}</small>`;
             }
 
+            // Function to hide upload messages
+            function hideUploadMessages() {
+                document.getElementById('uploadSuccess').style.display = 'none';
+                document.getElementById('uploadError').style.display = 'none';
+            }
+
             // Handle file upload
             document.getElementById('uploadForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
@@ -1316,6 +1516,582 @@
                     showUploadError(error.message);
                 }
             });
+
+            // Handle email scanning
+            document.getElementById('scanEmailsBtn').addEventListener('click', async function() {
+                // Hide any previous messages
+                hideUploadMessages();
+
+                // Check if folders have been selected
+                if (window.selectedFolders && window.selectedFolders.length === 0) {
+                    // Show the warning if no folders are selected
+                    document.getElementById('mailFoldersSection').style.display = 'block';
+                    document.getElementById('noFolderSelectedWarning').style.display = 'block';
+
+                    // Scroll to the warning
+                    document.getElementById('noFolderSelectedWarning').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return;
+                }
+
+                // Initialize the modal
+                document.getElementById('modalEmailResultsSection').style.display = 'none';
+                document.getElementById('modalEmailScanningSpinner').style.display = 'block';
+
+                // Show the modal
+                const emailScanModal = new bootstrap.Modal(document.getElementById('emailScanModal'));
+                emailScanModal.show();
+
+                const days = document.getElementById('emailDays').value || 7;
+
+                try {
+                    console.log(`Scanning emails for the last ${days} days...`);
+
+                    // Create URL with selected folders
+                    let url = `/scan-emails/?days=${days}`;
+
+                    // Add selected folders to the URL if available
+                    if (window.selectedFolders && window.selectedFolders.length > 0) {
+                        const foldersParam = window.selectedFolders.map(encodeURIComponent).join(',');
+                        url += `&folders=${foldersParam}`;
+                    }
+
+                    const response = await fetch(url);
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error('Email scanning failed:', errorData);
+                        throw new Error(errorData.detail || 'Email scanning failed');
+                    }
+
+                    const data = await response.json();
+                    console.log('Email scanning response:', data);
+
+                    // Hide spinner
+                    document.getElementById('modalEmailScanningSpinner').style.display = 'none';
+
+                    // Display results in the modal
+                    displayEmailResultsInModal(data.emails);
+
+                } catch (error) {
+                    console.error('Error scanning emails:', error);
+                    // Hide spinner
+                    document.getElementById('modalEmailScanningSpinner').style.display = 'none';
+
+                    // Show a more detailed error message
+                    let errorMessage = error.message;
+                    if (errorMessage.includes('Failed to connect to Gmail') || 
+                        errorMessage.includes('Authentication failed') ||
+                        errorMessage.includes('login to Gmail')) {
+                        errorMessage += '<br><br>Please check your Gmail credentials in the server configuration.';
+                        errorMessage += '<br>If you\'re using Gmail with 2FA, make sure you\'re using an App Password.';
+                    } else if (errorMessage.includes('Failed to select mail folder')) {
+                        errorMessage += '<br><br>One or more of the selected mail folders could not be found.';
+                        errorMessage += '<br>Please check your folder selections.';
+                    }
+
+                    // Close the modal
+                    emailScanModal.hide();
+
+                    showUploadError(errorMessage);
+                }
+            });
+
+            // Handle check folders button
+            document.getElementById('checkFoldersBtn').addEventListener('click', async function() {
+                // Show the mail folders section
+                document.getElementById('mailFoldersSection').style.display = 'block';
+                document.getElementById('configuredFolderInfo').innerHTML = 'Checking mail folders...';
+                document.getElementById('foldersTableBody').innerHTML = '';
+
+                try {
+                    console.log('Checking available mail folders...');
+                    const response = await fetch('/mail-folders/');
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error('Failed to get mail folders:', errorData);
+                        throw new Error(errorData.detail || 'Failed to get mail folders');
+                    }
+
+                    const data = await response.json();
+                    console.log('Mail folders response:', data);
+
+                    // Display the configured folder info
+                    const configuredFolder = data.configured_folder;
+                    const folderExists = data.folder_exists;
+
+                    let infoHtml = '';
+                    if (folderExists) {
+                        infoHtml = `<div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Configured folder <strong>${configuredFolder}</strong> exists and is available.
+                        </div>`;
+                    } else {
+                        infoHtml = `<div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Configured folder <strong>${configuredFolder}</strong> does not exist in your Gmail account.
+                            <br>Please check your MAIL_FOLDER setting or use one of the available folders listed below.
+                        </div>`;
+                    }
+                    document.getElementById('configuredFolderInfo').innerHTML = infoHtml;
+
+                    // Display the folders
+                    const tableBody = document.getElementById('foldersTableBody');
+                    tableBody.innerHTML = '';
+
+                    // Create an array to store selected folders
+                    window.selectedFolders = [];
+
+                    if (data.folders && data.folders.length > 0) {
+                        data.folders.forEach(folder => {
+                            const row = document.createElement('tr');
+
+                            // Checkbox cell
+                            const checkboxCell = document.createElement('td');
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.className = 'form-check-input folder-checkbox';
+                            checkbox.value = folder;
+                            checkbox.dataset.folder = folder;
+
+                            // Pre-select the configured folder
+                            if (folder === configuredFolder) {
+                                checkbox.checked = true;
+                                window.selectedFolders.push(folder);
+                            }
+
+                            // Add event listener to update selectedFolders array
+                            checkbox.addEventListener('change', function() {
+                                if (this.checked) {
+                                    window.selectedFolders.push(folder);
+                                } else {
+                                    const index = window.selectedFolders.indexOf(folder);
+                                    if (index > -1) {
+                                        window.selectedFolders.splice(index, 1);
+                                    }
+                                }
+
+                                // Show/hide warning based on selection
+                                document.getElementById('noFolderSelectedWarning').style.display = 
+                                    window.selectedFolders.length === 0 ? 'block' : 'none';
+
+                                // Update the "Select All" checkbox state
+                                updateSelectAllCheckboxState();
+                            });
+
+                            checkboxCell.appendChild(checkbox);
+                            row.appendChild(checkboxCell);
+
+                            // Folder name cell
+                            const nameCell = document.createElement('td');
+                            nameCell.textContent = folder;
+                            row.appendChild(nameCell);
+
+                            // Status cell
+                            const statusCell = document.createElement('td');
+                            if (folder === configuredFolder) {
+                                statusCell.innerHTML = '<span class="badge bg-primary">Currently Selected</span>';
+                            } else {
+                                statusCell.innerHTML = '<span class="badge bg-light text-dark">Available</span>';
+                            }
+                            row.appendChild(statusCell);
+
+                            tableBody.appendChild(row);
+                        });
+                    } else {
+                        const row = document.createElement('tr');
+                        const cell = document.createElement('td');
+                        cell.colSpan = 3; // Updated to span 3 columns
+                        cell.textContent = 'No folders found';
+                        row.appendChild(cell);
+                        tableBody.appendChild(row);
+                    }
+
+                    // Function to update the "Select All" checkbox state
+                    function updateSelectAllCheckboxState() {
+                        const selectAllCheckbox = document.getElementById('selectAllFoldersCheckbox');
+                        const folderCheckboxes = document.querySelectorAll('.folder-checkbox');
+
+                        if (folderCheckboxes.length === 0) {
+                            selectAllCheckbox.checked = false;
+                            selectAllCheckbox.disabled = true;
+                            return;
+                        }
+
+                        selectAllCheckbox.disabled = false;
+
+                        // Check if all checkboxes are checked
+                        const allChecked = Array.from(folderCheckboxes).every(cb => cb.checked);
+                        const anyChecked = Array.from(folderCheckboxes).some(cb => cb.checked);
+
+                        selectAllCheckbox.checked = allChecked;
+                        selectAllCheckbox.indeterminate = anyChecked && !allChecked;
+                    }
+
+                    // Initialize the "Select All" checkbox state
+                    updateSelectAllCheckboxState();
+
+                    // Add event listeners for the "Select All" checkbox
+                    document.getElementById('selectAllFoldersCheckbox').addEventListener('change', function() {
+                        const folderCheckboxes = document.querySelectorAll('.folder-checkbox');
+                        const checked = this.checked;
+
+                        // Clear the selected folders array
+                        window.selectedFolders = [];
+
+                        // Update all checkboxes and the selected folders array
+                        folderCheckboxes.forEach(cb => {
+                            cb.checked = checked;
+                            if (checked) {
+                                window.selectedFolders.push(cb.dataset.folder);
+                            }
+                        });
+
+                        // Show/hide warning based on selection
+                        document.getElementById('noFolderSelectedWarning').style.display = 
+                            window.selectedFolders.length === 0 ? 'block' : 'none';
+                    });
+
+                    // Add event listeners for the Select All and Deselect All buttons
+                    document.getElementById('selectAllFoldersBtn').addEventListener('click', function() {
+                        document.getElementById('selectAllFoldersCheckbox').checked = true;
+                        document.getElementById('selectAllFoldersCheckbox').dispatchEvent(new Event('change'));
+                    });
+
+                    document.getElementById('deselectAllFoldersBtn').addEventListener('click', function() {
+                        document.getElementById('selectAllFoldersCheckbox').checked = false;
+                        document.getElementById('selectAllFoldersCheckbox').dispatchEvent(new Event('change'));
+                    });
+
+                } catch (error) {
+                    console.error('Error checking mail folders:', error);
+                    document.getElementById('configuredFolderInfo').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            Error checking mail folders: ${error.message}
+                        </div>
+                    `;
+                }
+            });
+
+            // Function to display email scanning results in the modal
+            function displayEmailResultsInModal(emails) {
+                const resultsSection = document.getElementById('modalEmailResultsSection');
+                const emailsContainer = document.getElementById('modalEmailsContainer');
+                const noEmailsFound = document.getElementById('modalNoEmailsFound');
+
+                // Clear previous results
+                emailsContainer.innerHTML = '';
+
+                if (emails && emails.length > 0) {
+                    // Show container, hide no results message
+                    resultsSection.style.display = 'block';
+                    noEmailsFound.style.display = 'none';
+
+                    // Populate container with cards
+                    emails.forEach((email, emailIndex) => {
+                        // Create card column with responsive sizing
+                        const cardCol = document.createElement('div');
+                        cardCol.className = 'col-12 col-md-6 col-xl-4 mb-4';
+
+                        // Create card with hover effect and animation
+                        const card = document.createElement('div');
+                        card.className = 'card h-100 email-card';
+                        card.style.animation = `fadeInUp 0.5s ease ${emailIndex * 0.1}s forwards`;
+                        card.style.opacity = '0'; // Initial state for animation
+
+                        // Create card header with date
+                        const cardHeader = document.createElement('div');
+                        cardHeader.className = 'card-header email-card-header';
+
+                        const dateText = document.createElement('div');
+                        dateText.className = 'd-flex align-items-center';
+                        dateText.innerHTML = `<i class="fas fa-calendar-alt me-2"></i> ${email.date}`;
+                        cardHeader.appendChild(dateText);
+
+                        // Create card body
+                        const cardBody = document.createElement('div');
+                        cardBody.className = 'card-body';
+
+                        // From section
+                        const fromSection = document.createElement('div');
+                        fromSection.className = 'mb-3';
+                        fromSection.innerHTML = `
+                            <div class="text-muted small mb-1"><i class="fas fa-user me-1"></i> From:</div>
+                            <div class="fw-bold text-truncate" title="${email.from}">${email.from}</div>
+                        `;
+                        cardBody.appendChild(fromSection);
+
+                        // Subject section
+                        const subjectSection = document.createElement('div');
+                        subjectSection.className = 'mb-3';
+                        subjectSection.innerHTML = `
+                            <div class="text-muted small mb-1"><i class="fas fa-envelope me-1"></i> Subject:</div>
+                            <div class="fw-bold email-subject" title="${email.subject}">${email.subject}</div>
+                        `;
+                        cardBody.appendChild(subjectSection);
+
+                        // Attachments section
+                        if (email.attachments && email.attachments.length > 0) {
+                            const attachmentsSection = document.createElement('div');
+                            attachmentsSection.className = 'mb-3';
+
+                            const attachmentsTitle = document.createElement('div');
+                            attachmentsTitle.className = 'text-muted small mb-2';
+                            attachmentsTitle.innerHTML = `<i class="fas fa-paperclip me-1"></i> Attachments (${email.attachments.length}):`;
+                            attachmentsSection.appendChild(attachmentsTitle);
+
+                            const attachmentsContainer = document.createElement('div');
+                            attachmentsContainer.className = 'd-flex flex-wrap gap-2';
+
+                            email.attachments.forEach((attachment, index) => {
+                                const badge = document.createElement('div');
+                                badge.className = 'badge email-attachment-badge';
+
+                                // Get a shorter version of the filename if it's too long
+                                const maxLength = 15;
+                                let displayName = attachment.filename;
+                                if (displayName.length > maxLength) {
+                                    const extension = displayName.split('.').pop();
+                                    const baseName = displayName.substring(0, displayName.lastIndexOf('.'));
+                                    displayName = baseName.substring(0, maxLength - extension.length - 3) + '...' + extension;
+                                }
+
+                                badge.innerHTML = `<i class="fas fa-file-excel text-success me-1"></i> ${displayName}`;
+                                badge.title = attachment.filename; // Full filename as tooltip
+
+                                attachmentsContainer.appendChild(badge);
+                            });
+
+                            attachmentsSection.appendChild(attachmentsContainer);
+                            cardBody.appendChild(attachmentsSection);
+                        }
+
+                        // Create card footer with action buttons
+                        const cardFooter = document.createElement('div');
+                        cardFooter.className = 'card-footer email-card-footer';
+
+                        if (email.attachments && email.attachments.length > 0) {
+                            email.attachments.forEach((attachment, index) => {
+                                const fetchBtn = document.createElement('button');
+                                fetchBtn.className = 'btn btn-sm btn-primary email-action-button';
+                                fetchBtn.innerHTML = `<i class="fas fa-download me-1"></i> Use ${email.attachments.length > 1 ? `#${index + 1}` : ''}`;
+                                fetchBtn.dataset.emailId = email.id;
+                                fetchBtn.dataset.attachmentIndex = index;
+                                fetchBtn.addEventListener('click', fetchAttachmentFromModal);
+
+                                cardFooter.appendChild(fetchBtn);
+                            });
+                        }
+
+                        // Assemble the card
+                        card.appendChild(cardHeader);
+                        card.appendChild(cardBody);
+                        card.appendChild(cardFooter);
+                        cardCol.appendChild(card);
+
+                        // Add the card to the container
+                        emailsContainer.appendChild(cardCol);
+                    });
+                } else {
+                    // Show no results message
+                    resultsSection.style.display = 'block';
+                    noEmailsFound.style.display = 'block';
+                }
+            }
+
+            // Keep the original function for backward compatibility
+            function displayEmailResults(emails) {
+                const resultsSection = document.getElementById('emailResultsSection');
+                const tableBody = document.getElementById('emailsTableBody');
+                const noEmailsFound = document.getElementById('noEmailsFound');
+
+                // Clear previous results
+                tableBody.innerHTML = '';
+
+                if (emails && emails.length > 0) {
+                    // Show table, hide no results message
+                    resultsSection.style.display = 'block';
+                    noEmailsFound.style.display = 'none';
+
+                    // Populate table
+                    emails.forEach(email => {
+                        const row = document.createElement('tr');
+
+                        // Date column
+                        const dateCell = document.createElement('td');
+                        dateCell.textContent = email.date;
+                        row.appendChild(dateCell);
+
+                        // From column
+                        const fromCell = document.createElement('td');
+                        fromCell.textContent = email.from;
+                        row.appendChild(fromCell);
+
+                        // Subject column
+                        const subjectCell = document.createElement('td');
+                        subjectCell.textContent = email.subject;
+                        row.appendChild(subjectCell);
+
+                        // Attachments column
+                        const attachmentsCell = document.createElement('td');
+                        if (email.attachments && email.attachments.length > 0) {
+                            const attachmentsList = document.createElement('ul');
+                            attachmentsList.className = 'list-unstyled mb-0';
+
+                            email.attachments.forEach((attachment, index) => {
+                                const attachmentItem = document.createElement('li');
+                                attachmentItem.innerHTML = `<i class="fas fa-file-excel text-success me-1"></i> ${attachment.filename}`;
+                                attachmentsList.appendChild(attachmentItem);
+                            });
+
+                            attachmentsCell.appendChild(attachmentsList);
+                        }
+                        row.appendChild(attachmentsCell);
+
+                        // Action column
+                        const actionCell = document.createElement('td');
+                        if (email.attachments && email.attachments.length > 0) {
+                            email.attachments.forEach((attachment, index) => {
+                                const fetchBtn = document.createElement('button');
+                                fetchBtn.className = 'btn btn-sm btn-primary mb-1';
+                                fetchBtn.innerHTML = `<i class="fas fa-download me-1"></i> Use`;
+                                fetchBtn.dataset.emailId = email.id;
+                                fetchBtn.dataset.attachmentIndex = index;
+                                fetchBtn.addEventListener('click', fetchAttachment);
+
+                                if (index > 0) {
+                                    actionCell.appendChild(document.createElement('br'));
+                                }
+                                actionCell.appendChild(fetchBtn);
+                            });
+                        }
+                        row.appendChild(actionCell);
+
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    // Show no results message, hide table
+                    resultsSection.style.display = 'block';
+                    noEmailsFound.style.display = 'block';
+                }
+            }
+
+            // Function to fetch an attachment from an email
+            async function fetchAttachment(e) {
+                const emailId = e.currentTarget.dataset.emailId;
+                const attachmentIndex = e.currentTarget.dataset.attachmentIndex;
+
+                // Disable the button and show loading state
+                const button = e.currentTarget;
+                const originalButtonText = button.innerHTML;
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Fetching...';
+
+                // Hide any previous messages
+                hideUploadMessages();
+
+                try {
+                    const formData = new FormData();
+                    formData.append('email_id', emailId);
+                    formData.append('attachment_index', attachmentIndex);
+
+                    const response = await fetch('/fetch-attachment/', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || 'Failed to fetch attachment');
+                    }
+
+                    const data = await response.json();
+                    uploadedFilename = data.filename;
+                    availableColumns = data.column_names || [];
+
+                    showUploadSuccess(`Attachment "${data.filename}" fetched successfully`);
+                    loadColumnMappingTemplate();
+
+                    // Update stepper to step 2
+                    updateStepper(2);
+
+                    // Add animation class to mapping section
+                    document.getElementById('mappingSection').classList.add('section-enter');
+
+                } catch (error) {
+                    showUploadError(error.message);
+
+                    // Reset button state
+                    button.disabled = false;
+                    button.innerHTML = originalButtonText;
+                }
+            }
+
+            // Function to fetch an attachment from an email in the modal
+            async function fetchAttachmentFromModal(e) {
+                const emailId = e.currentTarget.dataset.emailId;
+                const attachmentIndex = e.currentTarget.dataset.attachmentIndex;
+
+                // Disable the button and show loading state
+                const button = e.currentTarget;
+                const originalButtonText = button.innerHTML;
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Fetching...';
+
+                // Hide any previous messages
+                hideUploadMessages();
+
+                // Get the modal instance
+                const emailScanModal = bootstrap.Modal.getInstance(document.getElementById('emailScanModal'));
+
+                try {
+                    const formData = new FormData();
+                    formData.append('email_id', emailId);
+                    formData.append('attachment_index', attachmentIndex);
+
+                    // Add selected folders if available
+                    if (window.selectedFolders && window.selectedFolders.length > 0) {
+                        formData.append('folders', window.selectedFolders.join(','));
+                    }
+
+                    const response = await fetch('/fetch-attachment/', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || 'Failed to fetch attachment');
+                    }
+
+                    const data = await response.json();
+                    uploadedFilename = data.filename;
+                    availableColumns = data.column_names || [];
+
+                    // Close the modal
+                    emailScanModal.hide();
+
+                    showUploadSuccess(`Attachment "${data.filename}" fetched successfully`);
+                    loadColumnMappingTemplate();
+
+                    // Update stepper to step 2
+                    updateStepper(2);
+
+                    // Add animation class to mapping section
+                    document.getElementById('mappingSection').classList.add('section-enter');
+
+                } catch (error) {
+                    // Close the modal
+                    emailScanModal.hide();
+
+                    showUploadError(error.message);
+
+                    // Reset button state
+                    button.disabled = false;
+                    button.innerHTML = originalButtonText;
+                }
+            }
 
             // Load column mapping template
             async function loadColumnMappingTemplate() {
@@ -1562,5 +2338,7 @@
             }
         });
     </script>
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

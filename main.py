@@ -1,4 +1,8 @@
 import socket
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,6 +19,7 @@ import re
 
 from etl import process_excel_file, get_column_mapping_template
 from utils.logger import get_api_logger, get_app_logger, get_data_processing_logger, get_error_logger, get_all_logs
+from email_scanner import get_emails_with_attachments, save_attachment_from_email, list_mail_folders
 
 # Function to process logs and generate statistics
 def process_logs_for_stats(logs, log_type='all', days=7, start_date=None, end_date=None):
@@ -309,6 +314,178 @@ async def upload_file(file: UploadFile = File(...)):
         column_names = []
 
     return {"filename": filename, "file_path": file_path, "column_names": column_names}
+
+@api.get("/mail-folders/")
+async def get_mail_folders():
+    """
+    List all available mail folders in the Gmail account
+
+    Returns:
+        List of available mail folders
+    """
+    api_logger.info("Listing available mail folders")
+
+    try:
+        # Check if the required environment variables are set
+        gmail_user = os.getenv("GMAIL_USER")
+        gmail_pass = os.getenv("GMAIL_PASS")
+
+        if not gmail_user or not gmail_pass:
+            error_msg = "Missing Gmail credentials. Please check your environment variables."
+            error_logger.error(error_msg)
+            raise HTTPException(status_code=500, detail=error_msg)
+
+        # Get all available mail folders
+        folders = list_mail_folders()
+
+        # Check if the configured folder exists
+        configured_folder = os.getenv("MAIL_FOLDER", "INBOX")
+        folder_exists = configured_folder in folders
+
+        return {
+            "folders": folders,
+            "configured_folder": configured_folder,
+            "folder_exists": folder_exists
+        }
+    except Exception as e:
+        error_msg = f"Error listing mail folders: {str(e)}"
+        error_logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+
+@api.get("/scan-emails/")
+async def scan_emails(days: int = 7, folders: str = None):
+    """
+    Scan emails for Excel attachments
+
+    Args:
+        days (int): Number of days to look back for emails
+        folders (str): Comma-separated list of folders to scan
+
+    Returns:
+        List of emails with Excel attachments
+    """
+    api_logger.info(f"Scanning emails for Excel attachments (last {days} days)")
+
+    try:
+        # Check if the required environment variables are set
+        gmail_user = os.getenv("GMAIL_USER")
+        gmail_pass = os.getenv("GMAIL_PASS")
+
+        # Parse folders parameter or use default from environment
+        mail_folders = []
+        if folders:
+            mail_folders = folders.split(',')
+            api_logger.info(f"Using folders from request: {mail_folders}")
+        else:
+            # If no folders specified, use the configured folder from environment
+            default_folder = os.getenv("MAIL_FOLDER", "INBOX")
+            mail_folders = [default_folder]
+            api_logger.info(f"Using default folder from environment: {default_folder}")
+
+        if not gmail_user or not gmail_pass:
+            error_msg = "Missing Gmail credentials. Please check your environment variables."
+            error_logger.error(error_msg)
+            raise HTTPException(status_code=500, detail=error_msg)
+
+        api_logger.info(f"Scanning folders: {mail_folders}")
+
+        # Get emails with attachments from all selected folders
+        emails = get_emails_with_attachments(days, mail_folders)
+
+        # If no emails were found, it could be due to an error or just no matching emails
+        if not emails:
+            # Check the error logs to see if there was an error
+            # This is a simple approach - in a production app, you might want to use a more robust method
+            api_logger.info("No emails with Excel attachments found. This could be normal or due to an error.")
+
+        # Remove raw attachment data from response
+        for email in emails:
+            if "_raw_attachments" in email:
+                del email["_raw_attachments"]
+
+        return {"emails": emails}
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_msg = f"Error scanning emails: {str(e)}"
+        error_logger.error(error_msg)
+
+        # Provide more specific error messages based on the exception
+        if "authentication failed" in str(e).lower() or "login failed" in str(e).lower():
+            error_msg = "Gmail authentication failed. Please check your credentials."
+        elif "select failed" in str(e).lower() or "folder not found" in str(e).lower():
+            error_msg = f"Failed to select mail folder '{os.getenv('MAIL_FOLDER', 'INBOX')}'. The folder may not exist."
+        elif "network" in str(e).lower() or "connect" in str(e).lower():
+            error_msg = "Network error while connecting to Gmail. Please check your internet connection."
+
+        raise HTTPException(status_code=500, detail=error_msg)
+
+@api.post("/fetch-attachment/")
+async def fetch_attachment(email_id: str = Form(...), attachment_index: int = Form(0), folders: str = Form(None)):
+    """
+    Fetch an attachment from an email and save it to the uploads directory
+
+    Args:
+        email_id (str): ID of the email
+        attachment_index (int): Index of the attachment to fetch
+        folders (str): Comma-separated list of folders to scan
+
+    Returns:
+        Information about the saved attachment
+    """
+    api_logger.info(f"Fetching attachment {attachment_index} from email {email_id}")
+
+    try:
+        # Parse folders parameter
+        mail_folders = None
+        if folders:
+            mail_folders = folders.split(',')
+            api_logger.info(f"Using folders from request: {mail_folders}")
+
+        # Get all emails with attachments from the specified folders
+        emails = get_emails_with_attachments(folders=mail_folders)
+
+        # Find the email with the specified ID
+        email_data = None
+        for email in emails:
+            if email["id"] == email_id:
+                email_data = email
+                break
+
+        if not email_data:
+            error_msg = f"Email with ID {email_id} not found"
+            error_logger.error(error_msg)
+            raise HTTPException(status_code=404, detail=error_msg)
+
+        # Save the attachment
+        file_path = save_attachment_from_email(email_data, attachment_index)
+
+        if not file_path:
+            error_msg = f"Failed to save attachment from email {email_id}"
+            error_logger.error(error_msg)
+            raise HTTPException(status_code=500, detail=error_msg)
+
+        # Get the filename from the path
+        filename = os.path.basename(file_path)
+
+        # Read the Excel file to get column names
+        from etl import read_excel
+        try:
+            df = read_excel(file_path)
+            column_names = df.columns.tolist()
+            data_logger.info(f"Read Excel file with {len(df)} rows and {len(column_names)} columns")
+        except Exception as e:
+            error_msg = f"Error reading column names: {str(e)}"
+            error_logger.error(error_msg)
+            column_names = []
+
+        return {"filename": filename, "file_path": file_path, "column_names": column_names}
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_msg = f"Error fetching attachment: {str(e)}"
+        error_logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
 
 @api.get("/column-mapping-template/")
 async def get_mapping_template():
