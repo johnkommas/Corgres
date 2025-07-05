@@ -1,7 +1,9 @@
 import os
 import pandas as pd
 import tempfile
-from etl import read_excel, map_columns, transform_data, export_to_excel, process_excel_file
+import sys
+sys.path.append('../')
+from data.etl import read_excel, map_columns, transform_data, export_to_excel, process_excel_file
 
 def create_test_excel():
     """Create a test Excel file with sample data"""
@@ -104,7 +106,10 @@ def test_transform_data():
         'Weight': ['1.5', '2.3', '5.0'],
         'Height': ['10', '15', '20'],
         'Width': ['5', '8', '12'],
-        'Length': ['20', '25', '30']
+        'Length': ['20', '25', '30'],
+        'Palette Height': [10, 15, None],
+        'Palette Width': [None, 8, 12],
+        'Palette Length': [20, None, 30]
     }
     df = pd.DataFrame(data)
 
@@ -117,17 +122,27 @@ def test_transform_data():
     assert pd.api.types.is_numeric_dtype(transformed_df['Width'])
     assert pd.api.types.is_numeric_dtype(transformed_df['Length'])
 
-    print("✅ transform_data test passed")
+    # Check if default values were set for Palette Width and Length when Height is present but they are not
+    # Row 0: Palette Height is present, Palette Width is missing, should be set to 1.20
+    assert transformed_df['Palette Width'].iloc[0] == 1.20
+    # Row 1: Palette Height is present, Palette Length is missing, should be set to 0.80
+    assert transformed_df['Palette Length'].iloc[1] == 0.80
+    # Row 2: Palette Height is missing, no defaults should be set
+    assert pd.isna(transformed_df['Palette Height'].iloc[2])
+
+    print("✅ transform_data test passed with palette dimension default values verified")
 
 def test_export_to_excel():
     """Test exporting to Excel"""
     # Create a test DataFrame with barcodes that include leading zeros
     # to verify they're preserved when formatted as text
+    # Also include unit measurement values with both numeric and text parts
     data = {
         'Product Barcode': ['0123456789012', '2345678901234', '3456789012345'],
         'Pallete Barcode': ['0000PLT001', 'PLT002', 'PLT003'],
         'Description': ['Product 1', 'Product 2', 'Product 3'],
-        'Main Unit Measurement': ['PCS', 'KG', 'BOX'],
+        'Main Unit Measurement': ['101 ΤΕΜ', '102 ΚΙΛ', '104 ΜΕΤ'],
+        'Alternative Unit Measurement': ['116 ΚΙΒ', '101 ΤΕΜ', '102 ΚΙΛ'],
         'Vat Category': ['24%', '13%', '24%']
     }
     df = pd.DataFrame(data)
@@ -147,7 +162,7 @@ def test_export_to_excel():
         # Use dtype=str for barcode columns to ensure they're read as text
         df_read = pd.read_excel(
             result_path, 
-            dtype={'Product Barcode': str, 'Pallete Barcode': str}
+            dtype={'Product Barcode': str, 'Pallete Barcode': str, 'Main Unit Measurement': str, 'Alternative Unit Measurement': str}
         )
 
         # Basic checks
@@ -159,7 +174,16 @@ def test_export_to_excel():
         assert df_read['Product Barcode'].iloc[0] == '0123456789012'
         assert df_read['Pallete Barcode'].iloc[0] == '0000PLT001'
 
-        print("✅ export_to_excel test passed with barcode text formatting verified")
+        # Check if only the numeric part of unit measurement values is stored in Excel
+        assert df_read['Main Unit Measurement'].iloc[0] == '101'
+        assert df_read['Main Unit Measurement'].iloc[1] == '102'
+        assert df_read['Main Unit Measurement'].iloc[2] == '104'
+
+        assert df_read['Alternative Unit Measurement'].iloc[0] == '116'
+        assert df_read['Alternative Unit Measurement'].iloc[1] == '101'
+        assert df_read['Alternative Unit Measurement'].iloc[2] == '102'
+
+        print("✅ export_to_excel test passed with barcode text formatting and unit measurement numeric extraction verified")
     finally:
         # Clean up
         if os.path.exists(temp_path):
@@ -168,12 +192,14 @@ def test_export_to_excel():
 def test_process_excel_file():
     """Test the complete ETL process"""
     # Create a test Excel file with data that includes barcodes with leading zeros
+    # and unit measurement values with both numeric and text parts
     # First, create a DataFrame with our test data
     data = {
         'Item Barcode': ['0123456789012', '2345678901234', '3456789012345'],
         'Pallet Code': ['0000PLT001', 'PLT002', 'PLT003'],
         'Item Name': ['Product 1', 'Product 2', 'Product 3'],
-        'UOM': ['PCS', 'KG', 'BOX'],
+        'UOM': ['101 ΤΕΜ', '102 ΚΙΛ', '104 ΜΕΤ'],
+        'AUM': ['116 ΚΙΒ', '101 ΤΕΜ', '102 ΚΙΛ'],
         'VAT': ['24%', '13%', '24%'],
         'Item Weight': [1.5, 2.3, 5.0],
         'Item Height': [10, 15, 20],
@@ -203,6 +229,7 @@ def test_process_excel_file():
         'Pallete Barcode': 'Pallet Code',
         'Description': 'Item Name',
         'Main Unit Measurement': 'UOM',
+        'Alternative Unit Measurement': 'AUM',
         'Vat Category': 'VAT',
         'Weight': 'Item Weight',
         'Height': 'Item Height',
@@ -222,10 +249,15 @@ def test_process_excel_file():
         assert os.path.exists(result_path)
 
         # Read the file back and check if the data is correct
-        # Use dtype=str for barcode columns to ensure they're read as text
+        # Use dtype=str for barcode columns and unit measurement columns to ensure they're read as text
         df_read = pd.read_excel(
             result_path,
-            dtype={'Product Barcode': str, 'Pallete Barcode': str}
+            dtype={
+                'Product Barcode': str, 
+                'Pallete Barcode': str,
+                'Main Unit Measurement': str,
+                'Alternative Unit Measurement': str
+            }
         )
 
         # Check if all required columns are present
@@ -233,6 +265,7 @@ def test_process_excel_file():
         assert 'Pallete Barcode' in df_read.columns
         assert 'Description' in df_read.columns
         assert 'Main Unit Measurement' in df_read.columns
+        assert 'Alternative Unit Measurement' in df_read.columns
         assert 'Vat Category' in df_read.columns
 
         # Check if the data was mapped correctly
@@ -242,7 +275,16 @@ def test_process_excel_file():
         assert df_read['Product Barcode'].iloc[0] == '0123456789012'
         assert df_read['Pallete Barcode'].iloc[0] == '0000PLT001'
 
-        print("✅ process_excel_file test passed with barcode text formatting verified")
+        # Check if only the numeric part of unit measurement values is stored in Excel
+        assert df_read['Main Unit Measurement'].iloc[0] == '101'
+        assert df_read['Main Unit Measurement'].iloc[1] == '102'
+        assert df_read['Main Unit Measurement'].iloc[2] == '104'
+
+        assert df_read['Alternative Unit Measurement'].iloc[0] == '116'
+        assert df_read['Alternative Unit Measurement'].iloc[1] == '101'
+        assert df_read['Alternative Unit Measurement'].iloc[2] == '102'
+
+        print("✅ process_excel_file test passed with barcode text formatting and unit measurement numeric extraction verified")
     finally:
         # Clean up
         if os.path.exists(test_file):

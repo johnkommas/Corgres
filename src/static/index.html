@@ -2575,8 +2575,8 @@
                                 uniqueValuesDiv.textContent = `${suggestedColumn} || ${formattedValues}`;
                                 uniqueValuesDiv.style.display = 'block';
 
-                                // Check if this is the Main Unit Measurement column
-                                if (targetCol === 'Main Unit Measurement') {
+                                // Check if this is the Main Unit Measurement or Alternative Unit Measurement column
+                                if (targetCol === 'Main Unit Measurement' || targetCol === 'Alternative Unit Measurement') {
                                     // Define acceptable values from .env
                                     const acceptableValues = ["ΤΕΜΑΧΙΟ", "ΜΕΤΡΟ", "ΚΙΛΟ"];
 
@@ -2614,8 +2614,8 @@
                                 uniqueValuesDiv.textContent = `${selectedColumn} || ${formattedValues}`;
                                 uniqueValuesDiv.style.display = 'block';
 
-                                // Check if this is the Main Unit Measurement column
-                                if (targetCol === 'Main Unit Measurement') {
+                                // Check if this is the Main Unit Measurement or Alternative Unit Measurement column
+                                if (targetCol === 'Main Unit Measurement' || targetCol === 'Alternative Unit Measurement') {
                                     // Define acceptable values from .env
                                     const acceptableValues = ["ΤΕΜΑΧΙΟ", "ΜΕΤΡΟ", "ΚΙΛΟ"];
 

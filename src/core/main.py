@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 import re
 
-from src.data.etl import process_excel_file, get_column_mapping_template, validate_main_unit_measurement, read_excel, validate_column_values, load_row_mappings, add_row_mapping
+from src.data.etl import process_excel_file, get_column_mapping_template, validate_main_unit_measurement, validate_alternative_unit_measurement, read_excel, validate_column_values, load_row_mappings, add_row_mapping
 from src.utils.logger import get_api_logger, get_app_logger, get_data_processing_logger, get_error_logger, get_all_logs
 from src.email.email_scanner import get_emails_with_attachments, save_attachment_from_email, list_mail_folders
 from src.data.column_mapper import add_mapping, get_suggestions
@@ -624,39 +624,94 @@ async def process_file(
 
         # Validate Main Unit Measurement values
         validation_result = validate_main_unit_measurement(df)
-        data_logger.info(f"Validation result: {validation_result}")
+        data_logger.info(f"Main Unit Measurement validation result: {validation_result}")
 
-        # If validation failed and no value mapping provided, return validation result
-        if not validation_result["valid"] and not value_mapping:
+        # Validate Alternative Unit Measurement values
+        alt_validation_result = validate_alternative_unit_measurement(df)
+        data_logger.info(f"Alternative Unit Measurement validation result: {alt_validation_result}")
+
+        # If either validation failed and no value mapping provided, return validation result
+        if ((not validation_result["valid"] or not alt_validation_result["valid"]) and not value_mapping):
             api_logger.info("Validation failed. Returning validation result to frontend.")
-            return {
-                "validation_required": True,
-                "validation_result": validation_result
-            }
+            # If Main Unit Measurement validation failed, mark Alternative Unit Measurement as invalid too
+            if not validation_result["valid"]:
+                # Create a combined validation result that includes both fields
+                combined_result = validation_result.copy()
+                combined_result["alt_unit_invalid"] = True
+                combined_result["alt_unit_column"] = alt_validation_result.get("column", "Alternative Unit Measurement")
+                # Include the detailed validation result for Alternative Unit Measurement
+                combined_result["alt_validation_result"] = alt_validation_result
+                return {
+                    "validation_required": True,
+                    "validation_result": combined_result
+                }
+            # If only Alternative Unit Measurement validation failed, return that result
+            elif not alt_validation_result["valid"]:
+                return {
+                    "validation_required": True,
+                    "validation_result": alt_validation_result
+                }
 
         # If value mapping provided, apply it to the data
         if value_mapping_dict:
-            # Get the column name from the validation result
-            column = validation_result.get("column", "Main Unit Measurement")
+            # Determine which column to apply the mapping to
+            # If Main Unit Measurement validation failed, use that column
+            if not validation_result["valid"]:
+                primary_column = validation_result.get("column", "Main Unit Measurement")
+                # Also apply to Alternative Unit Measurement if Main Unit Measurement failed
+                secondary_column = "Alternative Unit Measurement"
+                apply_to_both = True
+            # If Alternative Unit Measurement validation failed, use that column
+            elif not alt_validation_result["valid"]:
+                primary_column = alt_validation_result.get("column", "Alternative Unit Measurement")
+                secondary_column = None
+                apply_to_both = False
+            # Default to Main Unit Measurement if neither failed
+            else:
+                primary_column = validation_result.get("column", "Main Unit Measurement")
+                secondary_column = None
+                apply_to_both = False
 
-            if column in df.columns:
-                data_logger.info(f"Applying value mapping to {column}")
+            # Apply mapping to primary column
+            if primary_column in df.columns:
+                data_logger.info(f"Applying value mapping to {primary_column}")
                 # Replace values according to the mapping
-                df[column] = df[column].map(
+                df[primary_column] = df[primary_column].map(
                     lambda x: value_mapping_dict.get(x, x) if x in value_mapping_dict else x
                 )
 
                 # Store the mappings for future use
                 for original_value, mapped_value in value_mapping_dict.items():
-                    add_row_mapping(column, original_value, mapped_value)
+                    add_row_mapping(primary_column, original_value, mapped_value)
+
+                # Apply the same mapping to secondary column if needed
+                if apply_to_both and secondary_column in df.columns:
+                    data_logger.info(f"Also applying value mapping to {secondary_column}")
+                    # Replace values according to the mapping
+                    df[secondary_column] = df[secondary_column].map(
+                        lambda x: value_mapping_dict.get(x, x) if x in value_mapping_dict else x
+                    )
+
+                    # Store the mappings for future use for the secondary column as well
+                    for original_value, mapped_value in value_mapping_dict.items():
+                        add_row_mapping(secondary_column, original_value, mapped_value)
 
                 # Validate again after mapping
-                validation_result = validate_column_values(df, column)
+                # Use the same acceptable values as the first validation
+                if primary_column == 'Main Unit Measurement':
+                    validation_result = validate_main_unit_measurement(df)
+                    # Also validate Alternative Unit Measurement if we applied mapping to both
+                    if apply_to_both:
+                        alt_validation_result = validate_alternative_unit_measurement(df)
+                elif primary_column == 'Alternative Unit Measurement':
+                    validation_result = validate_alternative_unit_measurement(df)
+                else:
+                    validation_result = validate_column_values(df, primary_column)
                 data_logger.info(f"Validation result after mapping: {validation_result}")
 
                 # If still invalid, return error
-                if not validation_result["valid"]:
-                    error_msg = f"Invalid {column} values after mapping"
+                if not validation_result["valid"] or (apply_to_both and not alt_validation_result["valid"]):
+                    error_msg = f"Invalid values after mapping"
                     error_logger.error(error_msg)
                     raise HTTPException(status_code=400, detail=error_msg)
 

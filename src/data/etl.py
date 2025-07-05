@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import json
+import re
 from typing import List, Dict, Any, Optional, Tuple
 import logging
 from dotenv import load_dotenv
@@ -14,20 +15,19 @@ logger = logging.getLogger(__name__)
 
 # Define the required columns for the Softone ERP system
 REQUIRED_COLUMNS = [
+    'Supplier Code',
     'Product Barcode',
-    'Pallete Barcode',
     'Description',
     'Main Unit Measurement',
-    'Vat Category',
-    # Logistics information
-    'Weight',
-    'Height',
-    'Width',
-    'Length',
-    'Storage Location',
-    'Min Stock Level',
-    'Max Stock Level',
-    'Reorder Point'
+    'Alternative Unit Measurement',
+    'Relation with MUM',
+    'Box Barcode',
+    'Box Height',
+    'Box Width',
+    'Box Length',
+    'Palette Height',
+    'Palette Width',
+    'Palette Length',
 ]
 
 def read_excel(file_path: str) -> pd.DataFrame:
@@ -106,10 +106,14 @@ def transform_data(df: pd.DataFrame) -> pd.DataFrame:
         # For example, data type conversions, calculations, etc.
 
         # Example: Convert numeric columns to appropriate types
-        numeric_cols = ['Weight', 'Height', 'Width', 'Length', 'Min Stock Level', 'Max Stock Level', 'Reorder Point']
+        numeric_cols = ['Weight', 'Height', 'Width', 'Length', 'Min Stock Level', 'Max Stock Level', 'Reorder Point', 
+                        'Palette Height', 'Palette Width', 'Palette Length']
         for col in numeric_cols:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce')
+
+        # Note: Default values for Palette Width and Length are now set in the export_to_excel function
+        # to ensure they are applied just before the Excel file is created
 
         logger.info("Data transformation completed")
         return df
@@ -137,6 +141,165 @@ def load_row_mappings() -> Dict[str, Dict[str, str]]:
     except Exception as e:
         logger.error(f"Error loading row mappings: {str(e)}")
         return {}
+
+def update_column_mappings() -> bool:
+    """
+    Update the column mappings with all fields mentioned in the issue description.
+
+    Returns:
+        True if mappings were updated successfully, False otherwise
+    """
+    try:
+        logger.info("Updating column mappings")
+
+        # Define the column mappings
+        column_mappings = {
+            "Supplier Code": [
+                "Supplier Code",
+                "SUPPLIER_CODE"
+            ],
+            "Product Barcode": [
+                "Barcode",
+                "BARCODE",
+                "Product Barcode"
+            ],
+            "Description": [
+                "ΠΕΡΙΓΡΑΦΗ",
+                "Description"
+            ],
+            "Main Unit Measurement": [
+                "MM",
+                "Main Unit Measurement",
+                "MUM"
+            ],
+            "Alternative Unit Measurement": [
+                "Alternative Unit Measurement",
+                "AUM"
+            ],
+            "Relation with MUM": [
+                "Relation with MUM",
+                "MUM_RELATION"
+            ],
+            "Box Barcode": [
+                "Box Barcode",
+                "BOX_BARCODE"
+            ],
+            "Box Height": [
+                "Box Height",
+                "BOX_HEIGHT"
+            ],
+            "Box Width": [
+                "Box Width",
+                "BOX_WIDTH"
+            ],
+            "Box Length": [
+                "Box Length",
+                "BOX_LENGTH"
+            ],
+            "Palette Height": [
+                "Palette Height",
+                "PALETTE_HEIGHT"
+            ],
+            "Palette Width": [
+                "Palette Width",
+                "PALETTE_WIDTH"
+            ],
+            "Palette Length": [
+                "Palette Length",
+                "PALETTE_LENGTH"
+            ],
+            "Vat Category": [
+                "VAT",
+                "Vat Category"
+            ]
+        }
+
+        # Save column mappings
+        with open("src/config/column_mappings.json", "w") as f:
+            json.dump(column_mappings, f, indent=2)
+
+        logger.info("Column mappings updated successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Error updating column mappings: {str(e)}")
+        return False
+
+def update_unit_measurement_mappings() -> bool:
+    """
+    Update the row mappings for Main Unit Measurement and Alternative Unit Measurement
+    with the standard codes and values.
+
+    Returns:
+        True if mappings were updated successfully, False otherwise
+    """
+    try:
+        logger.info("Updating unit measurement mappings")
+
+        # Define the standard mappings for unit measurements
+        unit_measurement_mappings = {
+            "100": "100 ΖΕΥΓ",
+            "101": "101 ΤΕΜ",
+            "102": "102 ΚΙΛ",
+            "103": "103 ΤΟΝ",
+            "104": "104 ΜΕΤ",
+            "105": "105 m2",
+            "106": "106 ΔΟΧ",
+            "107": "107 ΧΚΙΒ",
+            "109": "109 ΚΟΥ",
+            "110": "110 ΣΑΚ",
+            "112": "112 ΛΙΤ",
+            "113": "113 ΜΜΗΚ",
+            "114": "114 ΚΑΝ",
+            "116": "116 ΚΙΒ",
+            "120": "120 ΣΕΤ"
+        }
+
+        # Also add mappings for the unit names themselves
+        unit_name_mappings = {
+            "ΖΕΥΓ": "100 ΖΕΥΓ",
+            "ΤΕΜ": "101 ΤΕΜ",
+            "ΚΙΛ": "102 ΚΙΛ",
+            "ΤΟΝ": "103 ΤΟΝ",
+            "ΜΕΤ": "104 ΜΕΤ",
+            "m2": "105 m2",
+            "ΔΟΧ": "106 ΔΟΧ",
+            "ΧΚΙΒ": "107 ΧΚΙΒ",
+            "ΚΟΥ": "109 ΚΟΥ",
+            "ΣΑΚ": "110 ΣΑΚ",
+            "ΛΙΤ": "112 ΛΙΤ",
+            "ΜΜΗΚ": "113 ΜΜΗΚ",
+            "ΚΑΝ": "114 ΚΑΝ",
+            "ΚΙΒ": "116 ΚΙΒ",
+            "ΣΕΤ": "120 ΣΕΤ"
+        }
+
+        # Combine both mappings
+        combined_mappings = {**unit_measurement_mappings, **unit_name_mappings}
+
+        # Load existing mappings
+        mappings = load_row_mappings()
+
+        # Update mappings for Main Unit Measurement
+        if "Main Unit Measurement" not in mappings:
+            mappings["Main Unit Measurement"] = {}
+
+        mappings["Main Unit Measurement"] = {**mappings["Main Unit Measurement"], **combined_mappings}
+
+        # Update mappings for Alternative Unit Measurement
+        if "Alternative Unit Measurement" not in mappings:
+            mappings["Alternative Unit Measurement"] = {}
+
+        mappings["Alternative Unit Measurement"] = {**mappings["Alternative Unit Measurement"], **combined_mappings}
+
+        # Save updated mappings
+        with open("src/config/rown_mapping.json", "w") as f:
+            json.dump(mappings, f, indent=2)
+
+        logger.info("Unit measurement mappings updated successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Error updating unit measurement mappings: {str(e)}")
+        return False
 
 def add_row_mapping(column: str, value: str, mapped_value: str) -> bool:
     """
@@ -171,6 +334,57 @@ def add_row_mapping(column: str, value: str, mapped_value: str) -> bool:
     except Exception as e:
         logger.error(f"Error adding row mapping: {str(e)}")
         return False
+
+def get_unit_measurement_description(value: str) -> str:
+    """
+    Get the full description for a unit measurement code or name
+
+    Args:
+        value: Unit measurement code or name
+
+    Returns:
+        Full description of the unit measurement
+    """
+    # Define mappings between codes/names and their full descriptions
+    unit_measurement_mappings = {
+        "100": "100 ΖΕΥΓ",
+        "101": "101 ΤΕΜ",
+        "102": "102 ΚΙΛ",
+        "103": "103 ΤΟΝ",
+        "104": "104 ΜΕΤ",
+        "105": "105 m2",
+        "106": "106 ΔΟΧ",
+        "107": "107 ΧΚΙΒ",
+        "109": "109 ΚΟΥ",
+        "110": "110 ΣΑΚ",
+        "112": "112 ΛΙΤ",
+        "113": "113 ΜΜΗΚ",
+        "114": "114 ΚΑΝ",
+        "116": "116 ΚΙΒ",
+        "120": "120 ΣΕΤ",
+        "ΖΕΥΓ": "100 ΖΕΥΓ",
+        "ΤΕΜ": "101 ΤΕΜ",
+        "ΚΙΛ": "102 ΚΙΛ",
+        "ΤΟΝ": "103 ΤΟΝ",
+        "ΜΕΤ": "104 ΜΕΤ",
+        "m2": "105 m2",
+        "ΔΟΧ": "106 ΔΟΧ",
+        "ΧΚΙΒ": "107 ΧΚΙΒ",
+        "ΚΟΥ": "109 ΚΟΥ",
+        "ΣΑΚ": "110 ΣΑΚ",
+        "ΛΙΤ": "112 ΛΙΤ",
+        "ΜΜΗΚ": "113 ΜΜΗΚ",
+        "ΚΑΝ": "114 ΚΑΝ",
+        "ΚΙΒ": "116 ΚΙΒ",
+        "ΣΕΤ": "120 ΣΕΤ"
+    }
+
+    # If the value is already a full description, return it
+    if value in unit_measurement_mappings.values():
+        return value
+
+    # Otherwise, return the mapped description or the original value if not found
+    return unit_measurement_mappings.get(value, value)
 
 def validate_column_values(df: pd.DataFrame, column: str, acceptable_values: List[str] = None) -> Dict[str, Any]:
     """
@@ -225,13 +439,42 @@ def validate_column_values(df: pd.DataFrame, column: str, acceptable_values: Lis
 
         if invalid_values:
             logger.warning(f"Invalid {column} values found: {invalid_values}")
-            return {
-                "valid": False,
-                "message": f"Invalid {column} values found",
-                "invalid_values": invalid_values,
-                "acceptable_values": acceptable_values,
-                "column": column
-            }
+
+            # For unit measurement columns, add descriptions to the validation result
+            if column in ['Main Unit Measurement', 'Alternative Unit Measurement']:
+                # Map invalid values to their full descriptions
+                invalid_values_with_descriptions = []
+                for val in invalid_values:
+                    invalid_values_with_descriptions.append({
+                        'value': val,
+                        'description': get_unit_measurement_description(val)
+                    })
+
+                # Map acceptable values to their full descriptions
+                acceptable_values_with_descriptions = []
+                for val in acceptable_values:
+                    acceptable_values_with_descriptions.append({
+                        'value': val,
+                        'description': get_unit_measurement_description(val)
+                    })
+
+                return {
+                    "valid": False,
+                    "message": f"Invalid {column} values found",
+                    "invalid_values": invalid_values,
+                    "invalid_values_with_descriptions": invalid_values_with_descriptions,
+                    "acceptable_values": acceptable_values,
+                    "acceptable_values_with_descriptions": acceptable_values_with_descriptions,
+                    "column": column
+                }
+            else:
+                return {
+                    "valid": False,
+                    "message": f"Invalid {column} values found",
+                    "invalid_values": invalid_values,
+                    "acceptable_values": acceptable_values,
+                    "column": column
+                }
         else:
             logger.info(f"All {column} values are valid")
             return {
@@ -247,7 +490,7 @@ def validate_column_values(df: pd.DataFrame, column: str, acceptable_values: Lis
 
 def validate_main_unit_measurement(df: pd.DataFrame) -> Dict[str, Any]:
     """
-    Validate Main Unit Measurement values against acceptable values from .env file
+    Validate Main Unit Measurement values against acceptable values
 
     Args:
         df: Source DataFrame
@@ -255,7 +498,56 @@ def validate_main_unit_measurement(df: pd.DataFrame) -> Dict[str, Any]:
     Returns:
         Dictionary with validation results
     """
-    return validate_column_values(df, 'Main Unit Measurement')
+    # Define acceptable values for Main Unit Measurement - include all formats
+    acceptable_values = ["100", "101", "102", "103", "104", "105", "106", "107", "109", 
+                         "110", "112", "113", "114", "116", "120",
+                         "ΖΕΥΓ", "ΤΕΜ", "ΚΙΛ", "ΤΟΝ", "ΜΕΤ", "m2", "ΔΟΧ", "ΧΚΙΒ", "ΚΟΥ", 
+                         "ΣΑΚ", "ΛΙΤ", "ΜΜΗΚ", "ΚΑΝ", "ΚΙΒ", "ΣΕΤ",
+                         "100 ΖΕΥΓ", "101 ΤΕΜ", "102 ΚΙΛ", "103 ΤΟΝ", "104 ΜΕΤ", "105 m2", 
+                         "106 ΔΟΧ", "107 ΧΚΙΒ", "109 ΚΟΥ", "110 ΣΑΚ", "112 ΛΙΤ", 
+                         "113 ΜΜΗΚ", "114 ΚΑΝ", "116 ΚΙΒ", "120 ΣΕΤ"]
+
+    return validate_column_values(df, 'Main Unit Measurement', acceptable_values)
+
+def validate_alternative_unit_measurement(df: pd.DataFrame) -> Dict[str, Any]:
+    """
+    Validate Alternative Unit Measurement values against acceptable values
+
+    Args:
+        df: Source DataFrame
+
+    Returns:
+        Dictionary with validation results
+    """
+    # Define acceptable values for Alternative Unit Measurement - only include combined format
+    acceptable_values = ["100 ΖΕΥΓ", "101 ΤΕΜ", "102 ΚΙΛ", "103 ΤΟΝ", "104 ΜΕΤ", "105 m2", 
+                         "106 ΔΟΧ", "107 ΧΚΙΒ", "109 ΚΟΥ", "110 ΣΑΚ", "112 ΛΙΤ", 
+                         "113 ΜΜΗΚ", "114 ΚΑΝ", "116 ΚΙΒ", "120 ΣΕΤ"]
+
+    return validate_column_values(df, 'Alternative Unit Measurement', acceptable_values)
+
+def extract_numeric_part(value):
+    """
+    Extract the numeric part from a unit measurement value
+
+    Args:
+        value: Unit measurement value (e.g., "102 ΚΙΛ")
+
+    Returns:
+        Numeric part of the value (e.g., "102")
+    """
+    if value is None:
+        return value
+
+    # Convert to string
+    value_str = str(value)
+
+    # Check if the value starts with a number
+    match = re.match(r'^(\d+)', value_str)
+    if match:
+        return match.group(1)
+
+    return value
 
 def export_to_excel(df: pd.DataFrame, output_path: str) -> str:
     """
@@ -273,32 +565,62 @@ def export_to_excel(df: pd.DataFrame, output_path: str) -> str:
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
 
+        # Create a copy of the DataFrame to avoid modifying the original
+        export_df = df.copy()
+
+        # Set default values for Palette Width and Length if Palette Height has a value but they are empty
+        # This ensures the default values are applied just before creating the Excel file
+        if 'Palette Height' in export_df.columns and 'Palette Width' in export_df.columns and 'Palette Length' in export_df.columns:
+            # Check if Palette Height has a value but Palette Width is empty
+            mask_width = (~export_df['Palette Height'].isna()) & (export_df['Palette Width'].isna())
+            if mask_width.any():
+                logger.info(f"Setting default Palette Width (1.20) for {mask_width.sum()} rows before export")
+                export_df.loc[mask_width, 'Palette Width'] = 1.20
+
+            # Check if Palette Height has a value but Palette Length is empty
+            mask_length = (~export_df['Palette Height'].isna()) & (export_df['Palette Length'].isna())
+            if mask_length.any():
+                logger.info(f"Setting default Palette Length (0.80) for {mask_length.sum()} rows before export")
+                export_df.loc[mask_length, 'Palette Length'] = 0.80
+
+        # Extract numeric part from unit measurement columns
+        if 'Main Unit Measurement' in export_df.columns:
+            logger.info("Extracting numeric part from Main Unit Measurement values")
+            export_df['Main Unit Measurement'] = export_df['Main Unit Measurement'].apply(extract_numeric_part)
+
+        if 'Alternative Unit Measurement' in export_df.columns:
+            logger.info("Extracting numeric part from Alternative Unit Measurement values")
+            export_df['Alternative Unit Measurement'] = export_df['Alternative Unit Measurement'].apply(extract_numeric_part)
+
         # Create a writer with the specified output path
         with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
             # Convert barcode columns to string to ensure they're treated as text
-            if 'Product Barcode' in df.columns:
-                df['Product Barcode'] = df['Product Barcode'].astype(str)
+            if 'Product Barcode' in export_df.columns:
+                export_df['Product Barcode'] = export_df['Product Barcode'].astype(str)
 
-            if 'Pallete Barcode' in df.columns:
-                df['Pallete Barcode'] = df['Pallete Barcode'].astype(str)
+            if 'Box Barcode' in export_df.columns:
+                export_df['Box Barcode'] = export_df['Box Barcode'].astype(str)
+
+            if 'Pallete Barcode' in export_df.columns:
+                export_df['Pallete Barcode'] = export_df['Pallete Barcode'].astype(str)
 
             # Export to Excel
-            df.to_excel(writer, index=False)
+            export_df.to_excel(writer, index=False)
 
             # Get the worksheet
             worksheet = writer.sheets['Sheet1']
 
             # Format barcode columns as text
-            for col_idx, col_name in enumerate(df.columns):
-                if col_name in ['Product Barcode', 'Pallete Barcode']:
+            for col_idx, col_name in enumerate(export_df.columns):
+                if col_name in ['Product Barcode', 'Box Barcode', 'Pallete Barcode']:
                     # Excel column letters start from A
                     col_letter = chr(65 + col_idx)
                     # Format all cells in the column as text (skip header row)
-                    for row_idx in range(2, len(df) + 2):  # +2 because Excel is 1-indexed and we have a header row
+                    for row_idx in range(2, len(export_df) + 2):  # +2 because Excel is 1-indexed and we have a header row
                         cell = f"{col_letter}{row_idx}"
                         worksheet[cell].number_format = '@'
 
-        logger.info(f"Successfully exported {len(df)} rows to Excel file with barcode columns formatted as text")
+        logger.info(f"Successfully exported {len(export_df)} rows to Excel file with barcode columns formatted as text")
         return output_path
     except Exception as e:
         logger.error(f"Error exporting to Excel: {str(e)}")
@@ -319,6 +641,12 @@ def process_excel_file(input_path: str, output_path: str, column_mapping: Dict[s
     try:
         logger.info(f"Processing Excel file: {input_path}")
 
+        # Update column mappings
+        update_column_mappings()
+
+        # Update unit measurement mappings
+        update_unit_measurement_mappings()
+
         # Read the Excel file
         df = read_excel(input_path)
 
@@ -327,6 +655,15 @@ def process_excel_file(input_path: str, output_path: str, column_mapping: Dict[s
 
         # Transform data
         df = transform_data(df)
+
+        # Validate unit measurements
+        main_unit_result = validate_main_unit_measurement(df)
+        if not main_unit_result["valid"]:
+            logger.warning(f"Main Unit Measurement validation: {main_unit_result['message']}")
+
+        alt_unit_result = validate_alternative_unit_measurement(df)
+        if not alt_unit_result["valid"]:
+            logger.warning(f"Alternative Unit Measurement validation: {alt_unit_result['message']}")
 
         # Export to Excel
         result_path = export_to_excel(df, output_path)
