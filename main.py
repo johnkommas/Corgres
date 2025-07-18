@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
@@ -12,10 +12,11 @@ import os
 import json
 import shutil
 import uuid
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Set
 from datetime import datetime, timedelta
 from collections import defaultdict
 import re
+import asyncio
 
 from src.data.etl import process_excel_file, get_column_mapping_template, validate_main_unit_measurement, validate_alternative_unit_measurement, read_excel, validate_column_values, load_row_mappings, add_row_mapping
 from src.utils.logger import get_api_logger, get_app_logger, get_data_processing_logger, get_error_logger, get_all_logs
@@ -200,6 +201,313 @@ api.add_middleware(
     allow_headers=["*"],
 )
 
+# WebSocket connection manager
+class ConnectionManager:
+    def __init__(self):
+        # Active connections
+        self.active_connections: List[WebSocket] = []
+        # Active users per application
+        self.active_users: Dict[str, List[str]] = {
+            "excel-formatter": []
+        }
+        # Dictionary to track unique visitors by visitor ID
+        self.unique_visitors: Dict[str, Dict] = {}
+        # Dictionary to map connection IDs to visitor IDs
+        self.connection_to_visitor: Dict[str, str] = {}
+        # Dictionary to track browsers per visitor
+        self.visitor_browsers: Dict[str, Set[str]] = {}
+        # Dictionary to track tabs per visitor
+        self.visitor_tabs: Dict[str, Set[str]] = {}
+        # Dictionary to track platform information per visitor
+        self.visitor_platforms: Dict[str, Dict[str, str]] = {}
+        # Dictionary to track last heartbeat time for each connection
+        self.last_heartbeat: Dict[str, datetime] = {}
+        # Heartbeat timeout in seconds (30 seconds)
+        self.heartbeat_timeout = 30
+
+    async def connect(self, websocket: WebSocket, connection_id: str):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+        # Record initial heartbeat
+        self.last_heartbeat[connection_id] = datetime.now()
+        # Send current state to the new connection
+        await self.send_personal_message({"active_users": self.active_users}, websocket)
+
+    def disconnect(self, websocket: WebSocket, connection_id: str = None):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+        # Remove heartbeat record if connection_id is provided
+        if connection_id and connection_id in self.last_heartbeat:
+            del self.last_heartbeat[connection_id]
+
+    def record_heartbeat(self, connection_id: str):
+        """Record a heartbeat for the given connection"""
+        self.last_heartbeat[connection_id] = datetime.now()
+
+    async def cleanup_stale_connections(self):
+        """Check for stale connections and clean them up"""
+        now = datetime.now()
+        stale_connections = []
+
+        # Find stale connections
+        for connection_id, last_time in list(self.last_heartbeat.items()):
+            if (now - last_time).total_seconds() > self.heartbeat_timeout:
+                stale_connections.append(connection_id)
+
+        # Clean up stale connections
+        for connection_id in stale_connections:
+            api_logger.info(f"Cleaning up stale connection: {connection_id}")
+
+            # Remove from last_heartbeat
+            if connection_id in self.last_heartbeat:
+                del self.last_heartbeat[connection_id]
+
+            # If we have a visitor ID for this connection, update their data
+            if connection_id in self.connection_to_visitor:
+                visitor_id = self.connection_to_visitor[connection_id]
+                if visitor_id in self.unique_visitors and "connections" in self.unique_visitors[visitor_id]:
+                    if connection_id in self.unique_visitors[visitor_id]["connections"]:
+                        self.unique_visitors[visitor_id]["connections"].remove(connection_id)
+
+                    # If this was the last connection for this visitor, clean up their data
+                    if len(self.unique_visitors[visitor_id]["connections"]) == 0:
+                        # Remove tabs for this visitor
+                        if visitor_id in self.visitor_tabs:
+                            del self.visitor_tabs[visitor_id]
+
+                        # Remove browsers for this visitor
+                        if visitor_id in self.visitor_browsers:
+                            del self.visitor_browsers[visitor_id]
+
+                        # Remove platform info for this visitor
+                        if visitor_id in self.visitor_platforms:
+                            del self.visitor_platforms[visitor_id]
+
+                        # Remove visitor from unique_visitors
+                        del self.unique_visitors[visitor_id]
+
+                # Remove the connection mapping
+                del self.connection_to_visitor[connection_id]
+
+            # Remove the user from all apps
+            for app in self.active_users:
+                if connection_id in self.active_users[app]:
+                    self.active_users[app].remove(connection_id)
+
+        # If we cleaned up any connections, broadcast the updated state
+        if stale_connections:
+            await self.broadcast({"active_users": self.active_users})
+
+    async def broadcast(self, message: dict):
+        # Add total active users and unique visitors to the message
+        message["total_active_users"] = sum(len(users) for users in self.active_users.values())
+        message["unique_visitors"] = len(self.unique_visitors)
+
+        # Add browser and tab statistics if available
+        browsers_count = sum(len(browsers) for browsers in self.visitor_browsers.values())
+        tabs_count = sum(len(tabs) for tabs in self.visitor_tabs.values())
+        message["browser_count"] = browsers_count
+        message["tab_count"] = tabs_count
+
+        # Add visitor hierarchy data for the diagram
+        message["visitor_hierarchy"] = self.get_visitor_hierarchy()
+
+        for connection in self.active_connections:
+            await connection.send_json(message)
+
+    async def send_personal_message(self, message: dict, websocket: WebSocket):
+        # Add total active users and unique visitors to the message
+        message["total_active_users"] = sum(len(users) for users in self.active_users.values())
+        message["unique_visitors"] = len(self.unique_visitors)
+
+        # Add browser and tab statistics if available
+        browsers_count = sum(len(browsers) for browsers in self.visitor_browsers.values())
+        tabs_count = sum(len(tabs) for tabs in self.visitor_tabs.values())
+        message["browser_count"] = browsers_count
+        message["tab_count"] = tabs_count
+
+        # Add visitor hierarchy data for the diagram
+        message["visitor_hierarchy"] = self.get_visitor_hierarchy()
+
+        await websocket.send_json(message)
+
+    def get_visitor_hierarchy(self):
+        """
+        Generate a hierarchical data structure for visualization
+
+        Returns:
+            dict: A hierarchical data structure with visitors, devices, browsers, and tabs
+        """
+        # Create the root node for the hierarchy
+        hierarchy = {
+            "name": "Unique Users",
+            "value": len(self.unique_visitors),
+            "children": []
+        }
+
+        # Group visitors by platform (device type)
+        platforms = {}
+
+        for visitor_id, visitor_data in self.unique_visitors.items():
+            # Get all browsers used by this visitor
+            browsers = self.visitor_browsers.get(visitor_id, set())
+
+            for browser in browsers:
+                # Get platform information from stored data
+                platform = "Unknown"
+
+                # Check if we have platform information for this browser
+                if visitor_id in self.visitor_platforms and browser in self.visitor_platforms[visitor_id]:
+                    platform_info = self.visitor_platforms[visitor_id][browser]
+
+                    # Use platform information to determine device type
+                    if platform_info == "iPhone":
+                        platform = "iPhone"
+                    elif platform_info == "iPad":
+                        platform = "Tablet"
+                    elif "Mac" in platform_info:
+                        platform = "Laptop"
+                    elif "Win" in platform_info:
+                        platform = "PC"
+                    elif "Android" in platform_info:
+                        platform = "Android Phone"
+                    else:
+                        # Check user agent for additional clues
+                        if visitor_id in self.visitor_platforms and "user_agents" in self.visitor_platforms[visitor_id] and browser in self.visitor_platforms[visitor_id]["user_agents"]:
+                            user_agent = self.visitor_platforms[visitor_id]["user_agents"][browser]
+
+                            if "iPhone" in user_agent:
+                                platform = "iPhone"
+                            elif "iPad" in user_agent:
+                                platform = "Tablet"
+                            elif "Android" in user_agent:
+                                platform = "Android Phone"
+                            elif "Mobile" in user_agent:
+                                platform = "Mobile"
+                            elif "Windows" in user_agent:
+                                platform = "PC"
+                            elif "Macintosh" in user_agent:
+                                platform = "Laptop"
+                            else:
+                                # Fallback to browser-based detection
+                                if "Mobile" in browser or "Android" in browser or "iPhone" in browser or "iPad" in browser:
+                                    if "iPad" in browser:
+                                        platform = "Tablet"
+                                    elif "iPhone" in browser:
+                                        platform = "iPhone"
+                                    elif "Android" in browser:
+                                        platform = "Android Phone"
+                                    else:
+                                        platform = "Mobile"
+                                elif "Windows" in browser:
+                                    platform = "PC"
+                                elif "Mac" in browser or "Safari" in browser:
+                                    platform = "Laptop"
+                                else:
+                                    platform = "Other"
+                        else:
+                            # Fallback to browser-based detection
+                            if "Mobile" in browser or "Android" in browser or "iPhone" in browser or "iPad" in browser:
+                                if "iPad" in browser:
+                                    platform = "Tablet"
+                                elif "iPhone" in browser:
+                                    platform = "iPhone"
+                                elif "Android" in browser:
+                                    platform = "Android Phone"
+                                else:
+                                    platform = "Mobile"
+                            elif "Windows" in browser:
+                                platform = "PC"
+                            elif "Mac" in browser or "Safari" in browser:
+                                platform = "Laptop"
+                            else:
+                                platform = "Other"
+                else:
+                    # Fallback to browser-based detection
+                    if "Mobile" in browser or "Android" in browser or "iPhone" in browser or "iPad" in browser:
+                        if "iPad" in browser:
+                            platform = "Tablet"
+                        elif "iPhone" in browser:
+                            platform = "iPhone"
+                        elif "Android" in browser:
+                            platform = "Android Phone"
+                        else:
+                            platform = "Mobile"
+                    elif "Windows" in browser:
+                        platform = "PC"
+                    elif "Mac" in browser or "Safari" in browser:
+                        platform = "Laptop"
+                    else:
+                        platform = "Other"
+
+                # Add to platforms dictionary
+                if platform not in platforms:
+                    platforms[platform] = {
+                        "name": platform,
+                        "value": 0,
+                        "children": {}
+                    }
+
+                # Increment count for this platform
+                platforms[platform]["value"] += 1
+
+                # Add browser to this platform if not already present
+                if browser not in platforms[platform]["children"]:
+                    platforms[platform]["children"][browser] = {
+                        "name": browser,
+                        "value": 0,
+                        "children": []
+                    }
+
+                # Increment count for this browser
+                platforms[platform]["children"][browser]["value"] += 1
+
+                # Add tabs for this visitor and browser
+                tabs = self.visitor_tabs.get(visitor_id, set())
+                for tab in tabs:
+                    platforms[platform]["children"][browser]["children"].append({
+                        "name": f"Tab {tab[:8]}...",
+                        "value": 1
+                    })
+
+        # Convert the platforms dictionary to a list for the hierarchy
+        for platform, platform_data in platforms.items():
+            platform_node = {
+                "name": f"{platform} ({platform_data['value']} Users)",
+                "value": platform_data["value"],
+                "children": []
+            }
+
+            # Add browsers as children of the platform
+            for browser, browser_data in platform_data["children"].items():
+                browser_node = {
+                    "name": f"{browser} ({browser_data['value']} Users)",
+                    "value": browser_data["value"],
+                    "children": browser_data["children"]
+                }
+                platform_node["children"].append(browser_node)
+
+            hierarchy["children"].append(platform_node)
+
+        return hierarchy
+
+    async def add_user_to_app(self, app: str, user_id: str):
+        if app not in self.active_users:
+            self.active_users[app] = []
+
+        if user_id not in self.active_users[app]:
+            self.active_users[app].append(user_id)
+            await self.broadcast({"active_users": self.active_users})
+
+    async def remove_user_from_app(self, app: str, user_id: str):
+        if app in self.active_users and user_id in self.active_users[app]:
+            self.active_users[app].remove(user_id)
+            await self.broadcast({"active_users": self.active_users})
+
+# Initialize connection manager
+manager = ConnectionManager()
+
 # Serve static files
 api.mount("/static", StaticFiles(directory="src/static"), name="static")
 api.mount("/images", StaticFiles(directory="src/static/images"), name="images")
@@ -207,11 +515,185 @@ api.mount("/images", StaticFiles(directory="src/static/images"), name="images")
 @api.get("/", response_class=HTMLResponse)
 async def root():
     """
-    Root endpoint that serves the index.html file
+    Root endpoint that serves the selection.html file
     """
-    api_logger.info("Serving index.html")
+    api_logger.info("Serving selection.html")
+    with open("src/static/selection.html") as f:
+        return f.read()
+
+@api.get("/excel-formatter", response_class=HTMLResponse)
+async def excel_formatter():
+    """
+    Endpoint that serves the Excel Formatter application (index.html)
+    """
+    api_logger.info("Serving Excel Formatter (index.html)")
     with open("src/static/index.html") as f:
         return f.read()
+
+@api.websocket("/ws/app-status")
+async def websocket_app_status(websocket: WebSocket):
+    """
+    WebSocket endpoint for app status updates
+    """
+    # Generate a unique ID for this connection
+    connection_id = str(uuid.uuid4())
+    visitor_id = None
+
+    try:
+        await manager.connect(websocket, connection_id)
+        api_logger.info(f"WebSocket connection established: {connection_id}")
+
+        # Start background task to clean up stale connections
+        background_tasks = BackgroundTasks()
+        background_tasks.add_task(cleanup_stale_connections_task)
+
+        while True:
+            # Wait for messages from the client with a timeout
+            try:
+                data = await asyncio.wait_for(websocket.receive_json(), timeout=manager.heartbeat_timeout)
+                api_logger.info(f"WebSocket message received: {data}")
+
+                # Record heartbeat for this connection
+                manager.record_heartbeat(connection_id)
+
+                # Process the message
+                if "action" in data:
+                    # Handle heartbeat
+                    if data["action"] == "heartbeat":
+                        # Send a pong response
+                        await websocket.send_json({"action": "pong"})
+                        continue
+
+                    # Handle visitor identification
+                    if data["action"] == "identify" and "visitorId" in data:
+                        visitor_id = data["visitorId"]
+                        browser_info = data.get("browserInfo", {})
+                        tab_id = data.get("tabId", "unknown_tab")
+
+                        # Store the mapping from connection to visitor
+                        manager.connection_to_visitor[connection_id] = visitor_id
+
+                        # Add or update visitor information
+                        if visitor_id not in manager.unique_visitors:
+                            manager.unique_visitors[visitor_id] = {
+                                "first_seen": datetime.now().isoformat(),
+                                "connections": [connection_id]
+                            }
+                            manager.visitor_browsers[visitor_id] = set()
+                            manager.visitor_tabs[visitor_id] = set()
+                            manager.visitor_platforms[visitor_id] = {}
+                        else:
+                            if connection_id not in manager.unique_visitors[visitor_id]["connections"]:
+                                manager.unique_visitors[visitor_id]["connections"].append(connection_id)
+
+                        # Update browser information if available
+                        if browser_info and "browser" in browser_info:
+                            browser_name = browser_info["browser"]
+                            manager.visitor_browsers[visitor_id].add(browser_name)
+
+                            # Store platform information
+                            if "platform" in browser_info:
+                                platform_name = browser_info["platform"]
+                                manager.visitor_platforms[visitor_id][browser_name] = platform_name
+
+                            # Store user agent for additional device detection
+                            if "userAgent" in browser_info:
+                                user_agent = browser_info["userAgent"]
+                                if "user_agents" not in manager.visitor_platforms[visitor_id]:
+                                    manager.visitor_platforms[visitor_id]["user_agents"] = {}
+                                manager.visitor_platforms[visitor_id]["user_agents"][browser_name] = user_agent
+
+                        # Update tab information
+                        if tab_id:
+                            manager.visitor_tabs[visitor_id].add(tab_id)
+
+                        api_logger.info(f"Identified visitor: {visitor_id} using {browser_info.get('browser', 'unknown')} browser, tab: {tab_id}")
+
+                        # Broadcast updated stats
+                        await manager.broadcast({"active_users": manager.active_users})
+
+                    # Handle app actions if app is specified
+                    elif "app" in data:
+                        app = data["app"]
+                        # Use visitor_id if available, otherwise use connection_id
+                        user_id = visitor_id if visitor_id else connection_id
+
+                        if data["action"] == "join":
+                            await manager.add_user_to_app(app, user_id)
+                            api_logger.info(f"User {user_id} joined {app}")
+
+                        elif data["action"] == "leave":
+                            await manager.remove_user_from_app(app, user_id)
+                            api_logger.info(f"User {user_id} left {app}")
+
+            except asyncio.TimeoutError:
+                # Connection timed out, check if it's still active
+                if connection_id in manager.last_heartbeat:
+                    now = datetime.now()
+                    last_time = manager.last_heartbeat[connection_id]
+                    if (now - last_time).total_seconds() > manager.heartbeat_timeout:
+                        # Connection is stale, close it
+                        api_logger.info(f"Connection timed out: {connection_id}")
+                        break
+                else:
+                    # No heartbeat record, close the connection
+                    api_logger.info(f"No heartbeat record for connection: {connection_id}")
+                    break
+
+    except WebSocketDisconnect:
+        api_logger.info(f"WebSocket disconnected: {connection_id}")
+    except Exception as e:
+        api_logger.error(f"WebSocket error: {str(e)}")
+    finally:
+        # Clean up when the connection is closed
+        manager.disconnect(websocket, connection_id)
+
+        # If we have a visitor ID for this connection, update their data
+        if connection_id in manager.connection_to_visitor:
+            visitor_id = manager.connection_to_visitor[connection_id]
+            if visitor_id in manager.unique_visitors and "connections" in manager.unique_visitors[visitor_id]:
+                if connection_id in manager.unique_visitors[visitor_id]["connections"]:
+                    manager.unique_visitors[visitor_id]["connections"].remove(connection_id)
+
+                    # If this was the last connection for this visitor, clean up their data
+                    if len(manager.unique_visitors[visitor_id]["connections"]) == 0:
+                        # Remove tabs for this visitor
+                        if visitor_id in manager.visitor_tabs:
+                            del manager.visitor_tabs[visitor_id]
+
+                        # Remove browsers for this visitor
+                        if visitor_id in manager.visitor_browsers:
+                            del manager.visitor_browsers[visitor_id]
+
+                        # Remove platform info for this visitor
+                        if visitor_id in manager.visitor_platforms:
+                            del manager.visitor_platforms[visitor_id]
+
+                        # Remove visitor from unique_visitors
+                        del manager.unique_visitors[visitor_id]
+
+            # Remove the connection mapping
+            if connection_id in manager.connection_to_visitor:
+                del manager.connection_to_visitor[connection_id]
+
+        # Remove the user from all apps
+        for app in manager.active_users:
+            if connection_id in manager.active_users[app]:
+                await manager.remove_user_from_app(app, connection_id)
+
+        api_logger.info(f"WebSocket connection closed: {connection_id}")
+
+# Background task to clean up stale connections
+async def cleanup_stale_connections_task():
+    """Background task to periodically clean up stale connections"""
+    while True:
+        try:
+            await manager.cleanup_stale_connections()
+        except Exception as e:
+            error_logger.error(f"Error cleaning up stale connections: {str(e)}")
+
+        # Wait for 30 seconds before checking again
+        await asyncio.sleep(30)
 
 @api.get("/logs", response_class=HTMLResponse)
 async def logs_page():
@@ -875,12 +1357,24 @@ def ensure_folders_exist():
             app_logger.info(f"Folder exists: {folder}")
 
 if __name__ == "__main__":
+    # Check if websockets package is installed, if not install it
+    try:
+        import websockets
+    except ImportError:
+        import subprocess
+        import sys
+        app_logger.info("Installing websockets package...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "websockets"])
+        app_logger.info("websockets package installed successfully")
+
     import uvicorn
-    my_ip = get_ip_address()  # Use 0.0.0.0 to listen on all available network interfaces
+    host = "0.0.0.0"  # Listen on all available network interfaces
+    my_ip = get_ip_address()  # Get the actual IP address for display purposes
     port = 3000
 
     # Ensure required folders exist
     ensure_folders_exist()
 
     app_logger.info(f"Starting server on {my_ip}:{port}")
-    uvicorn.run("src.core.main:api", host=my_ip, port=port, log_level="info", reload=False)
+    app_logger.info(f"Server will be accessible at http://{my_ip}:{port} from other devices on the network")
+    uvicorn.run("main:api", host=my_ip, port=port, log_level="info", reload=False)
