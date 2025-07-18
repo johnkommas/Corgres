@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Corgres Application Selection Page">
+    <meta name="theme-color" content="#e11d48">
+    <meta name="author" content="Ioannis E. Kommas">
+    <title>Corgres - Application Selection</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/images/mylogo.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #e11d48;
+            --secondary-color: #be123c;
+            --background-color: #fffbfa;
+            --card-bg-color: #ffffff;
+            --text-color: #1e293b;
+            --light-text-color: #64748b;
+            --border-color: #fee2e2;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --transition-speed: 0.3s;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            /* Preserve original colors for specific functionality */
+            --completed-color: #10b981;
+            --current-color: #e11d48;
+            --upcoming-color: #fee2e2;
+            /* Additional colors from original theme */
+            --accent-color: #f43f5e;
+            --light-color: #fffbfa;
+            --dark-color: #0f172a;
+            /* New colors */
+            --highlight-color: #fecdd3;
+            --muted-color: #fff1f2;
+        }
+
+        /* Heart pulse animation */
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.1); }
+            50% { transform: scale(1); }
+            75% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .heart-pulse {
+            display: inline-block;
+            animation: heartbeat 1.5s ease infinite;
+            transform-origin: center;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1.5rem 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            flex: 1;
+            padding: 2rem 0;
+        }
+
+        .app-card {
+            background-color: var(--card-bg-color);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all var(--transition-speed) ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .app-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .app-card.active {
+            border: 3px solid var(--primary-color);
+            box-shadow: 0 10px 20px rgba(225, 29, 72, 0.2);
+        }
+
+        .app-card-header {
+            background-color: var(--light-color);
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .app-card-body {
+            padding: 1.5rem;
+            flex: 1;
+        }
+
+        .app-card-footer {
+            padding: 1rem 1.5rem;
+            background-color: var(--light-color);
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .app-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .btn-app {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-app:hover {
+            background-color: var(--secondary-color);
+            transform: scale(1.05);
+        }
+
+        .footer {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 1.5rem 0;
+            text-align: center;
+            margin-top: auto;
+        }
+
+        .user-count {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        /* Status indicator */
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .status-available {
+            background-color: #10b981;
+        }
+
+        .status-in-use {
+            background-color: #f59e0b;
+        }
+
+        /* Visitor diagram styles - Apple-inspired design */
+        #visitor-diagram {
+            width: 100%;
+            height: 70vh;
+            max-height: 600px;
+            background-color: #f5f5f7;
+            margin: 0 auto;
+            overflow: auto;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            padding: 30px;
+        }
+
+        /* Apps container takes full width now that visitor stats is in a popup */
+        @media (min-width: 992px) {
+            .apps-container {
+                width: 100%;
+                float: none;
+            }
+        }
+
+        /* Visitor Statistics Popup Styles - Apple-inspired design */
+        .visitor-stats-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow: auto;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .visitor-stats-popup-content {
+            position: relative;
+            background: #ffffff;
+            margin: 5% auto;
+            padding: 40px;
+            width: 90%;
+            max-width: 900px;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            animation: slideDown 0.3s ease-out;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .visitor-stats-popup-content h2 {
+            color: #1d1d1f;
+            margin: 0 0 40px 0;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            position: relative;
+            display: inline-block;
+        }
+
+        .close-visitor-stats {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #86868b;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .close-visitor-stats:hover {
+            color: #1d1d1f;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Stats summary hover effect - Apple-inspired */
+        .stats-summary {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+
+        .stats-summary:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Clean design without decorative elements - Apple-inspired */
+
+        /* CSS-based tree structure - Apple-inspired clean design */
+        .tree {
+            margin: 0 auto;
+            padding: 30px 0;
+            text-align: center;
+            width: 100%;
+            animation: fadeIn 0.5s ease-out;
+            display: flex;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .tree ul {
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .tree li {
+            list-style-type: none;
+            position: relative;
+            padding: 25px 10px 0 10px;
+            display: inline-block;
+            text-align: center;
+            transition: all 0.3s ease;
+            animation: nodeAppear 0.4s ease-out;
+        }
+
+        @keyframes nodeAppear {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Connector lines - Apple-inspired clean design */
+        .tree li::before, .tree li::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 50%;
+            width: 50%;
+            height: 20px;
+            border-top: 1px solid #d2d2d7;
+        }
+
+        .tree li::after {
+            right: auto;
+            left: 50%;
+            border-left: 1px solid #d2d2d7;
+        }
+
+        /* Remove left connector from first child and right connector from last child */
+        .tree li:first-child::before, .tree li:last-child::after {
+            border: 0 none;
+        }
+
+        /* Add back the vertical connector to the last node */
+        .tree li:last-child::before {
+            border-right: 1px solid #d2d2d7;
+            border-radius: 0 5px 0 0;
+        }
+
+        .tree li:first-child::after {
+            border-radius: 5px 0 0 0;
+        }
+
+        /* Remove connector from single child */
+        .tree li:only-child::before, .tree li:only-child::after {
+            display: none;
+        }
+
+        /* Add vertical connector from parent - Apple-inspired clean design */
+        .tree ul ul::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 0;
+            height: 20px;
+            border-left: 1px solid #d2d2d7;
+        }
+
+        /* Node styling - Apple-inspired clean design */
+        .tree li .node {
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            background: #0071e3;
+            color: white;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .tree li .node i {
+            font-size: 24px;
+        }
+
+        .tree li .node:hover {
+            background: #0077ed;
+            transform: scale(1.05);
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Node label - Apple-inspired clean design */
+        .tree li .node-label {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: 12px;
+            color: #1d1d1f;
+            font-weight: 500;
+            padding: 2px 6px;
+            transition: all 0.2s ease;
+        }
+
+        .tree li .node:hover + .node-label {
+            font-weight: 600;
+        }
+
+        /* Different colors for different levels - Apple-inspired flat colors */
+        .tree > ul > li > .node {
+            background: #0071e3; /* Apple blue */
+        }
+
+        .tree > ul > li > .node:hover {
+            background: #0077ed;
+        }
+
+        .tree > ul > li > ul > li > .node {
+            background: #06c;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .tree > ul > li > ul > li > .node:hover {
+            background: #007aff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .tree > ul > li > ul > li > ul > li > .node {
+            background: #34c759; /* Apple green */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .tree > ul > li > ul > li > ul > li > .node:hover {
+            background: #30d158;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .tree > ul > li > ul > li > ul > li > ul > li > .node {
+            background: #ff9f0a; /* Apple orange */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .tree > ul > li > ul > li > ul > li > ul > li > .node:hover {
+            background: #ffb340;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Tooltip - Apple-inspired clean design */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 400;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            z-index: 1000;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            transform: translateY(0);
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+            transform: translateY(-3px);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1><i class="fas fa-th-large me-2"></i> Corgres Application Hub</h1>
+            <p class="mb-0">Select an application to get started</p>
+            <div class="mt-2 text-light">
+                <div id="stats-summary" class="stats-summary">
+                    <span id="total-active-users">0 active users</span> | 
+                    <span id="unique-visitors">0 unique visitors</span> | 
+                    <span id="browser-count">0 browsers</span> | 
+                    <span id="tab-count">0 tabs</span>
+                    <i class="fas fa-chart-bar ms-2"></i>
+                </div>
+                <div class="mt-2">
+                    <a href="/logs" class="btn btn-sm btn-outline-light" style="transition: all 0.2s ease;">
+                        <i class="fas fa-list-alt me-1"></i> Logs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visitor Statistics Popup -->
+    <div id="visitor-stats-popup" class="visitor-stats-popup">
+        <div class="visitor-stats-popup-content">
+            <h2>Visitor Statistics</h2>
+            <button id="close-visitor-stats" class="close-visitor-stats">&times;</button>
+            <div id="visitor-diagram"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row mb-4 apps-container">
+            <div class="col-12">
+                <h2 class="text-center mb-4">Available Applications</h2>
+            </div>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            <!-- Excel Formatter Card -->
+            <div class="col">
+                <div class="app-card" id="excel-formatter-card">
+                    <div class="app-card-header">
+                        <i class="fas fa-file-excel app-icon"></i>
+                        <h3>Excel Formatter</h3>
+                        <div class="status">
+                            <span class="status-indicator status-available" id="excel-formatter-status"></span>
+                            <span id="excel-formatter-status-text">Available</span>
+                        </div>
+                        <div class="user-count" id="excel-formatter-users">0 users</div>
+                    </div>
+                    <div class="app-card-body">
+                        <p>Transform your Excel files into Softone ERP compatible format with just a few clicks.</p>
+                    </div>
+                    <div class="app-card-footer">
+                        <a href="/excel-formatter" class="btn btn-app" id="excel-formatter-btn">Launch</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Analytics Card -->
+            <div class="col">
+                <div class="app-card">
+                    <div class="app-card-header">
+                        <i class="fas fa-chart-line app-icon"></i>
+                        <h3>Data Analytics</h3>
+                        <div class="status">
+                            <span class="status-indicator status-available"></span>
+                            <span>Coming Soon</span>
+                        </div>
+                    </div>
+                    <div class="app-card-body">
+                        <p>Analyze your business data with powerful visualization tools and insights.</p>
+                    </div>
+                    <div class="app-card-footer">
+                        <button class="btn btn-secondary" disabled>Coming Soon</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Management Card -->
+            <div class="col">
+                <div class="app-card">
+                    <div class="app-card-header">
+                        <i class="fas fa-boxes app-icon"></i>
+                        <h3>Inventory Management</h3>
+                        <div class="status">
+                            <span class="status-indicator status-available"></span>
+                            <span>Coming Soon</span>
+                        </div>
+                    </div>
+                    <div class="app-card-body">
+                        <p>Track and manage your inventory with real-time updates and alerts.</p>
+                    </div>
+                    <div class="app-card-footer">
+                        <button class="btn btn-secondary" disabled>Coming Soon</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Portal Card -->
+            <div class="col">
+                <div class="app-card">
+                    <div class="app-card-header">
+                        <i class="fas fa-users app-icon"></i>
+                        <h3>Customer Portal</h3>
+                        <div class="status">
+                            <span class="status-indicator status-available"></span>
+                            <span>Coming Soon</span>
+                        </div>
+                    </div>
+                    <div class="app-card-body">
+                        <p>Provide your customers with a dedicated portal to access their information.</p>
+                    </div>
+                    <div class="app-card-footer">
+                        <button class="btn btn-secondary" disabled>Coming Soon</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Generator Card -->
+            <div class="col">
+                <div class="app-card">
+                    <div class="app-card-header">
+                        <i class="fas fa-file-alt app-icon"></i>
+                        <h3>Report Generator</h3>
+                        <div class="status">
+                            <span class="status-indicator status-available"></span>
+                            <span>Coming Soon</span>
+                        </div>
+                    </div>
+                    <div class="app-card-body">
+                        <p>Generate custom reports based on your business data and requirements.</p>
+                    </div>
+                    <div class="app-card-footer">
+                        <button class="btn btn-secondary" disabled>Coming Soon</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Document Management Card -->
+            <div class="col">
+                <div class="app-card">
+                    <div class="app-card-header">
+                        <i class="fas fa-folder-open app-icon"></i>
+                        <h3>Document Management</h3>
+                        <div class="status">
+                            <span class="status-indicator status-available"></span>
+                            <span>Coming Soon</span>
+                        </div>
+                    </div>
+                    <div class="app-card-body">
+                        <p>Store, organize, and share your business documents securely.</p>
+                    </div>
+                    <div class="app-card-footer">
+                        <button class="btn btn-secondary" disabled>Coming Soon</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Integration Card -->
+            <div class="col">
+                <div class="app-card">
+                    <div class="app-card-header">
+                        <i class="fas fa-plug app-icon"></i>
+                        <h3>API Integration</h3>
+                        <div class="status">
+                            <span class="status-indicator status-available"></span>
+                            <span>Coming Soon</span>
+                        </div>
+                    </div>
+                    <div class="app-card-body">
+                        <p>Connect your business systems with third-party applications and services.</p>
+                    </div>
+                    <div class="app-card-footer">
+                        <button class="btn btn-secondary" disabled>Coming Soon</button>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-5 pt-5 text-center">
+        <div class="container-fluid">
+            <div class="py-4 border-top">
+                <div class="row align-items-center">
+                    <div class="col-md-4 text-md-start mb-3 mb-md-0">
+                        <a href="/" class="d-inline-flex align-items-center text-decoration-none">
+                            <img src="/images/mylogo.png" alt="Softone ERP Logo" height="30" class="me-2">
+                            <span class="fw-bold" style="color: var(--dark-color);">Corgres Σταγάκης</span>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-heart heart-pulse" style="color: var(--primary-color);"></i> Made with care
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <p class="text-muted mb-0">
+                            &copy; <span id="currentYear"></span> Ioannis E. Kommas. All rights Reserved
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // WebSocket connection for real-time updates
+        let socket;
+        let activeUsers = {};
+        let visitorId;
+        let browserInfo;
+        let tabId;
+
+        // Generate or retrieve visitor ID
+        function getVisitorId() {
+            // Check if visitor ID exists in localStorage
+            let id = localStorage.getItem('visitorId');
+            if (!id) {
+                // Generate a new ID if none exists
+                id = 'visitor_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+                localStorage.setItem('visitorId', id);
+            }
+            return id;
+        }
+
+        // Get browser information
+        function getBrowserInfo() {
+            const ua = navigator.userAgent;
+            let browserName;
+
+            if (ua.indexOf("Firefox") > -1) {
+                browserName = "Firefox";
+            } else if (ua.indexOf("SamsungBrowser") > -1) {
+                browserName = "Samsung Browser";
+            } else if (ua.indexOf("Opera") > -1 || ua.indexOf("OPR") > -1) {
+                browserName = "Opera";
+            } else if (ua.indexOf("Trident") > -1) {
+                browserName = "Internet Explorer";
+            } else if (ua.indexOf("Edge") > -1) {
+                browserName = "Edge";
+            } else if (ua.indexOf("Chrome") > -1) {
+                browserName = "Chrome";
+            } else if (ua.indexOf("Safari") > -1) {
+                browserName = "Safari";
+            } else {
+                browserName = "Unknown";
+            }
+
+            return {
+                browser: browserName,
+                userAgent: ua,
+                platform: navigator.platform
+            };
+        }
+
+        // Generate a unique tab ID
+        function generateTabId() {
+            // Use sessionStorage to store tab ID (persists only for this tab)
+            let id = sessionStorage.getItem('tabId');
+            if (!id) {
+                id = 'tab_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+                sessionStorage.setItem('tabId', id);
+            }
+            return id;
+        }
+
+        let heartbeatInterval;
+
+        function connectWebSocket() {
+            // Initialize IDs and info
+            visitorId = getVisitorId();
+            browserInfo = getBrowserInfo();
+            tabId = generateTabId();
+
+            // Get the current host
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.host;
+
+            // Create WebSocket connection
+            socket = new WebSocket(`${protocol}//${host}/ws/app-status`);
+
+            // Connection opened
+            socket.addEventListener('open', (event) => {
+                console.log('Connected to WebSocket server');
+
+                // Send visitor information to server
+                socket.send(JSON.stringify({
+                    action: 'identify',
+                    visitorId: visitorId,
+                    browserInfo: browserInfo,
+                    tabId: tabId
+                }));
+
+                // Start sending heartbeats
+                startHeartbeat();
+            });
+
+            // Listen for messages
+            socket.addEventListener('message', (event) => {
+                const data = JSON.parse(event.data);
+                console.log('Message from server:', data);
+
+                // Update active users
+                activeUsers = data.active_users || {};
+                updateAppStatus(data);
+            });
+
+            // Connection closed
+            socket.addEventListener('close', (event) => {
+                console.log('Disconnected from WebSocket server');
+                // Stop heartbeat
+                stopHeartbeat();
+                // Try to reconnect after 5 seconds
+                setTimeout(connectWebSocket, 5000);
+            });
+
+            // Connection error
+            socket.addEventListener('error', (event) => {
+                console.error('WebSocket error:', event);
+                // Stop heartbeat
+                stopHeartbeat();
+            });
+        }
+
+        // Start sending heartbeats
+        function startHeartbeat() {
+            // Clear any existing interval
+            stopHeartbeat();
+
+            // Send heartbeat every 15 seconds
+            heartbeatInterval = setInterval(() => {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    console.log('Sending heartbeat');
+                    socket.send(JSON.stringify({
+                        action: 'heartbeat',
+                        visitorId: visitorId,
+                        tabId: tabId
+                    }));
+                } else {
+                    // If socket is not open, stop heartbeat
+                    stopHeartbeat();
+                }
+            }, 15000);
+        }
+
+        // Stop sending heartbeats
+        function stopHeartbeat() {
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+                heartbeatInterval = null;
+            }
+        }
+
+        // D3.js diagram rendering
+        let visitorDiagram = null;
+
+        function renderVisitorDiagram(data) {
+            // Clear previous diagram
+            const diagramContainer = document.getElementById('visitor-diagram');
+            diagramContainer.innerHTML = "";
+
+            if (!data || !data.children || data.children.length === 0) {
+                diagramContainer.innerHTML = '<div class="text-center p-5">No visitor data available yet.</div>';
+                return;
+            }
+
+            // Create tooltip element
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tooltip';
+            diagramContainer.appendChild(tooltip);
+
+            // Create tree structure
+            const tree = document.createElement('div');
+            tree.className = 'tree';
+            diagramContainer.appendChild(tree);
+
+            // Create root level
+            const rootUl = document.createElement('ul');
+            tree.appendChild(rootUl);
+
+            // Create root node (Users)
+            const rootLi = document.createElement('li');
+            rootUl.appendChild(rootLi);
+
+            // Create root node element with icon
+            const rootNode = document.createElement('div');
+            rootNode.className = 'node';
+            rootNode.innerHTML = '<i class="fas fa-users"></i>';
+            rootNode.setAttribute('data-count', data.value);
+            rootLi.appendChild(rootNode);
+
+            // Create root node label
+            const rootLabel = document.createElement('div');
+            rootLabel.className = 'node-label';
+            rootLabel.textContent = `${data.value} Users`;
+            rootNode.appendChild(rootLabel);
+
+            // Add tooltip event listeners to root node
+            addTooltipEvents(rootNode, `Unique Users: ${data.value}`);
+
+            // If there are children (platforms), create the platform level
+            if (data.children && data.children.length > 0) {
+                const platformsUl = document.createElement('ul');
+                rootLi.appendChild(platformsUl);
+
+                // Create platform nodes
+                data.children.forEach(platform => {
+                    const platformLi = document.createElement('li');
+                    platformsUl.appendChild(platformLi);
+
+                    // Create platform node with icon
+                    const platformNode = document.createElement('div');
+                    platformNode.className = 'node';
+
+                    // Choose icon based on platform name
+                    let platformIcon = '';
+                    if (platform.name.includes('PC')) {
+                        platformIcon = '<i class="fas fa-desktop"></i>';
+                    } else if (platform.name.includes('Laptop')) {
+                        platformIcon = '<i class="fas fa-laptop"></i>';
+                    } else if (platform.name.includes('iPhone')) {
+                        platformIcon = '<i class="fas fa-mobile-alt"></i>';
+                    } else if (platform.name.includes('Android')) {
+                        platformIcon = '<i class="fab fa-android"></i>';
+                    } else if (platform.name.includes('Tablet')) {
+                        platformIcon = '<i class="fas fa-tablet-alt"></i>';
+                    } else {
+                        platformIcon = '<i class="fas fa-question"></i>';
+                    }
+
+                    platformNode.innerHTML = platformIcon;
+                    platformNode.setAttribute('data-count', platform.value);
+                    platformLi.appendChild(platformNode);
+
+                    // Create platform node label
+                    const platformLabel = document.createElement('div');
+                    platformLabel.className = 'node-label';
+                    platformLabel.textContent = `${platform.value} Users`;
+                    platformNode.appendChild(platformLabel);
+
+                    // Add tooltip event listeners to platform node
+                    addTooltipEvents(platformNode, platform.name);
+
+                    // If there are children (browsers), create the browser level
+                    if (platform.children && platform.children.length > 0) {
+                        const browsersUl = document.createElement('ul');
+                        platformLi.appendChild(browsersUl);
+
+                        // Create browser nodes
+                        platform.children.forEach(browser => {
+                            const browserLi = document.createElement('li');
+                            browsersUl.appendChild(browserLi);
+
+                            // Create browser node with icon
+                            const browserNode = document.createElement('div');
+                            browserNode.className = 'node';
+
+                            // Choose icon based on browser name
+                            let browserIcon = '';
+                            if (browser.name.includes('Chrome')) {
+                                browserIcon = '<i class="fab fa-chrome"></i>';
+                            } else if (browser.name.includes('Firefox')) {
+                                browserIcon = '<i class="fab fa-firefox"></i>';
+                            } else if (browser.name.includes('Safari')) {
+                                browserIcon = '<i class="fab fa-safari"></i>';
+                            } else if (browser.name.includes('Edge')) {
+                                browserIcon = '<i class="fab fa-edge"></i>';
+                            } else if (browser.name.includes('Opera')) {
+                                browserIcon = '<i class="fab fa-opera"></i>';
+                            } else if (browser.name.includes('Internet Explorer')) {
+                                browserIcon = '<i class="fab fa-internet-explorer"></i>';
+                            } else {
+                                browserIcon = '<i class="fas fa-globe"></i>';
+                            }
+
+                            browserNode.innerHTML = browserIcon;
+                            browserNode.setAttribute('data-count', browser.value);
+                            browserLi.appendChild(browserNode);
+
+                            // Create browser node label
+                            const browserLabel = document.createElement('div');
+                            browserLabel.className = 'node-label';
+                            browserLabel.textContent = `${browser.value} Users`;
+                            browserNode.appendChild(browserLabel);
+
+                            // Add tooltip event listeners to browser node
+                            addTooltipEvents(browserNode, browser.name);
+
+                            // If there are children (tabs), create the tab level
+                            if (browser.children && browser.children.length > 0) {
+                                const tabsUl = document.createElement('ul');
+                                browserLi.appendChild(tabsUl);
+
+                                // Create tab nodes (limit to 5 to avoid overcrowding)
+                                const maxTabs = Math.min(browser.children.length, 5);
+                                for (let i = 0; i < maxTabs; i++) {
+                                    const tab = browser.children[i];
+                                    const tabLi = document.createElement('li');
+                                    tabsUl.appendChild(tabLi);
+
+                                    // Create tab node with icon
+                                    const tabNode = document.createElement('div');
+                                    tabNode.className = 'node';
+                                    tabNode.innerHTML = '<i class="fas fa-window-maximize"></i>';
+                                    tabLi.appendChild(tabNode);
+
+                                    // Add tooltip event listeners to tab node
+                                    addTooltipEvents(tabNode, tab.name);
+                                }
+
+                                // If there are more tabs than we're showing, add a "more" node
+                                if (browser.children.length > maxTabs) {
+                                    const moreLi = document.createElement('li');
+                                    tabsUl.appendChild(moreLi);
+
+                                    const moreNode = document.createElement('div');
+                                    moreNode.className = 'node';
+                                    moreNode.innerHTML = '<i class="fas fa-ellipsis-h"></i>';
+                                    moreLi.appendChild(moreNode);
+
+                                    // Add tooltip for more node
+                                    addTooltipEvents(moreNode, `${browser.children.length - maxTabs} more tabs`);
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Helper function to add tooltip event listeners
+            function addTooltipEvents(element, tooltipText) {
+                element.addEventListener('mouseover', function(event) {
+                    tooltip.innerHTML = tooltipText;
+                    tooltip.classList.add('visible');
+                    tooltip.style.left = (event.pageX + 10) + 'px';
+                    tooltip.style.top = (event.pageY - 28) + 'px';
+                });
+
+                element.addEventListener('mouseout', function() {
+                    tooltip.classList.remove('visible');
+                });
+
+                element.addEventListener('mousemove', function(event) {
+                    tooltip.style.left = (event.pageX + 10) + 'px';
+                    tooltip.style.top = (event.pageY - 28) + 'px';
+                });
+            }
+        }
+
+        function updateAppStatus(data) {
+            // Update Excel Formatter status
+            const excelFormatterUsers = activeUsers['excel-formatter'] || [];
+            const excelFormatterCount = excelFormatterUsers.length;
+
+            const excelFormatterCard = document.getElementById('excel-formatter-card');
+            const excelFormatterStatus = document.getElementById('excel-formatter-status');
+            const excelFormatterStatusText = document.getElementById('excel-formatter-status-text');
+            const excelFormatterUsersElement = document.getElementById('excel-formatter-users');
+
+            if (excelFormatterCount > 0) {
+                excelFormatterStatus.className = 'status-indicator status-in-use';
+                excelFormatterStatusText.textContent = 'In Use';
+                excelFormatterUsersElement.textContent = `${excelFormatterCount} user${excelFormatterCount > 1 ? 's' : ''}`;
+            } else {
+                excelFormatterStatus.className = 'status-indicator status-available';
+                excelFormatterStatusText.textContent = 'Available';
+                excelFormatterUsersElement.textContent = '0 users';
+            }
+
+            // Update total active users and unique visitors
+            const totalActiveUsersElement = document.getElementById('total-active-users');
+            const uniqueVisitorsElement = document.getElementById('unique-visitors');
+            const browserCountElement = document.getElementById('browser-count');
+            const tabCountElement = document.getElementById('tab-count');
+
+            if (data.total_active_users !== undefined) {
+                const count = data.total_active_users;
+                totalActiveUsersElement.textContent = `${count} active user${count !== 1 ? 's' : ''}`;
+            }
+
+            if (data.unique_visitors !== undefined) {
+                const count = data.unique_visitors;
+                uniqueVisitorsElement.textContent = `${count} unique visitor${count !== 1 ? 's' : ''}`;
+            }
+
+            if (data.browser_count !== undefined) {
+                const count = data.browser_count;
+                browserCountElement.textContent = `${count} browser${count !== 1 ? 's' : ''}`;
+            }
+
+            if (data.tab_count !== undefined) {
+                const count = data.tab_count;
+                tabCountElement.textContent = `${count} tab${count !== 1 ? 's' : ''}`;
+            }
+
+            // Update visitor diagram if hierarchy data is available
+            if (data.visitor_hierarchy) {
+                renderVisitorDiagram(data.visitor_hierarchy);
+            }
+        }
+
+        // Handle Excel Formatter button click
+        document.getElementById('excel-formatter-btn').addEventListener('click', function(event) {
+            // Send message to server that user is using Excel Formatter
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    action: 'join',
+                    app: 'excel-formatter',
+                    visitorId: visitorId,
+                    browserInfo: browserInfo,
+                    tabId: tabId
+                }));
+            }
+        });
+
+        // Visitor Statistics Popup functionality
+        const statsPopup = document.getElementById('visitor-stats-popup');
+        const statsSummary = document.getElementById('stats-summary');
+        const closeStatsBtn = document.getElementById('close-visitor-stats');
+
+        // Show popup when clicking on stats summary
+        statsSummary.addEventListener('click', function() {
+            statsPopup.style.display = 'block';
+            document.body.style.overflow = 'hidden'; // Prevent scrolling behind modal
+        });
+
+        // Close popup when clicking the close button
+        closeStatsBtn.addEventListener('click', function() {
+            statsPopup.style.display = 'none';
+            document.body.style.overflow = ''; // Restore scrolling
+        });
+
+        // Close popup when clicking outside the popup content
+        statsPopup.addEventListener('click', function(event) {
+            if (event.target === statsPopup) {
+                statsPopup.style.display = 'none';
+                document.body.style.overflow = ''; // Restore scrolling
+            }
+        });
+
+        // Close popup when pressing Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && statsPopup.style.display === 'block') {
+                statsPopup.style.display = 'none';
+                document.body.style.overflow = ''; // Restore scrolling
+            }
+        });
+
+        // Connect to WebSocket when page loads
+        window.addEventListener('load', function() {
+            connectWebSocket();
+            // Set current year in footer
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+        });
+
+        // Send leave message when user leaves the page
+        window.addEventListener('beforeunload', function() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    action: 'leave',
+                    app: 'excel-formatter',
+                    visitorId: visitorId,
+                    browserInfo: browserInfo,
+                    tabId: tabId
+                }));
+            }
+        });
+    </script>
+</body>
+</html>
