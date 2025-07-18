@@ -49,11 +49,8 @@ The application ensures that all required columns for the Softone ERP system are
 
 2. Εγκαταστήστε τις εξαρτήσεις:
    ```
-   # Βασικές εξαρτήσεις
-   pip install fastapi uvicorn pandas openpyxl python-dotenv
-
-   # Για το script start_server.py (διαχείριση διεργασιών)
-   pip install psutil
+   # Εγκατάσταση όλων των απαιτούμενων εξαρτήσεων
+   pip install -r requirements.txt
 
    # Προαιρετικά: για ανάπτυξη σε περιβάλλον παραγωγής
    pip install gunicorn
