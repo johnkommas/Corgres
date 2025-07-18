@@ -200,7 +200,7 @@
             }
         }
 
-        /* Visitor Statistics Popup Styles - Apple-inspired design */
+        /* Online Visitors Map Popup Styles - Apple-inspired design */
         .visitor-stats-popup {
             display: none;
             position: fixed;
@@ -396,29 +396,39 @@
         }
 
         .tree li .node:hover {
-            background: #0077ed;
-            transform: scale(1.05);
+            background: #8e8e93; /* Grey color on hover */
+            transform: scale(1.8); /* A lot bigger size on hover */
             cursor: pointer;
             z-index: 10;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
-        /* Node label - Apple-inspired clean design */
-        .tree li .node-label {
-            position: absolute;
-            bottom: -25px;
-            left: 50%;
-            transform: translateX(-50%);
-            white-space: nowrap;
-            font-size: 12px;
-            color: #1d1d1f;
-            font-weight: 500;
-            padding: 2px 6px;
-            transition: all 0.2s ease;
+        .tree li .node:hover i {
+            opacity: 0; /* Hide the icon on hover */
         }
 
-        .tree li .node:hover + .node-label {
+        .tree li .node:hover::after {
+            opacity: 1; /* Show the count on hover */
+        }
+
+        /* Node label - Hidden as per requirement */
+        .tree li .node-label {
+            display: none;
+        }
+
+        /* Node count display inside icon on hover */
+        .tree li .node::after {
+            content: attr(data-count);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
             font-weight: 600;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
         }
 
         /* Different colors for different levels - Apple-inspired flat colors */
@@ -427,7 +437,7 @@
         }
 
         .tree > ul > li > .node:hover {
-            background: #0077ed;
+            background: #8e8e93; /* Grey color on hover */
         }
 
         .tree > ul > li > ul > li > .node {
@@ -436,7 +446,7 @@
         }
 
         .tree > ul > li > ul > li > .node:hover {
-            background: #007aff;
+            background: #8e8e93; /* Grey color on hover */
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
@@ -446,7 +456,7 @@
         }
 
         .tree > ul > li > ul > li > ul > li > .node:hover {
-            background: #30d158;
+            background: #8e8e93; /* Grey color on hover */
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
@@ -456,7 +466,7 @@
         }
 
         .tree > ul > li > ul > li > ul > li > ul > li > .node:hover {
-            background: #ffb340;
+            background: #8e8e93; /* Grey color on hover */
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
@@ -505,10 +515,10 @@
         </div>
     </div>
 
-    <!-- Visitor Statistics Popup -->
+    <!-- Online Visitors Map Popup -->
     <div id="visitor-stats-popup" class="visitor-stats-popup">
         <div class="visitor-stats-popup-content">
-            <h2>Visitor Statistics</h2>
+            <h2>Online Visitors Map</h2>
             <button id="close-visitor-stats" class="close-visitor-stats">&times;</button>
             <div id="visitor-diagram"></div>
         </div>
@@ -877,11 +887,7 @@
             rootNode.setAttribute('data-count', data.value);
             rootLi.appendChild(rootNode);
 
-            // Create root node label
-            const rootLabel = document.createElement('div');
-            rootLabel.className = 'node-label';
-            rootLabel.textContent = `${data.value} Users`;
-            rootNode.appendChild(rootLabel);
+            // Root node label removed - count now shown on hover inside icon
 
             // Add tooltip event listeners to root node
             addTooltipEvents(rootNode, `Unique Users: ${data.value}`);
@@ -920,11 +926,7 @@
                     platformNode.setAttribute('data-count', platform.value);
                     platformLi.appendChild(platformNode);
 
-                    // Create platform node label
-                    const platformLabel = document.createElement('div');
-                    platformLabel.className = 'node-label';
-                    platformLabel.textContent = `${platform.value} Users`;
-                    platformNode.appendChild(platformLabel);
+                    // Platform node label removed - count now shown on hover inside icon
 
                     // Add tooltip event listeners to platform node
                     addTooltipEvents(platformNode, platform.name);
@@ -965,11 +967,7 @@
                             browserNode.setAttribute('data-count', browser.value);
                             browserLi.appendChild(browserNode);
 
-                            // Create browser node label
-                            const browserLabel = document.createElement('div');
-                            browserLabel.className = 'node-label';
-                            browserLabel.textContent = `${browser.value} Users`;
-                            browserNode.appendChild(browserLabel);
+                            // Browser node label removed - count now shown on hover inside icon
 
                             // Add tooltip event listeners to browser node
                             addTooltipEvents(browserNode, browser.name);
@@ -1101,7 +1099,7 @@
             }
         });
 
-        // Visitor Statistics Popup functionality
+        // Online Visitors Map Popup functionality
         const statsPopup = document.getElementById('visitor-stats-popup');
         const statsSummary = document.getElementById('stats-summary');
         const closeStatsBtn = document.getElementById('close-visitor-stats');
