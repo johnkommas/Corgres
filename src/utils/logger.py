@@ -87,7 +87,7 @@ def get_all_logs(max_entries=100):
     Get all logs from all log files
 
     Args:
-        max_entries: Maximum number of log entries to return
+        max_entries: Maximum number of log entries to return. If None, returns all logs.
 
     Returns:
         List of log entries sorted by date (newest first)
@@ -162,5 +162,8 @@ def get_all_logs(max_entries=100):
     # Sort logs by timestamp (newest first)
     logs.sort(key=lambda x: x["timestamp"], reverse=True)
 
-    # Limit number of entries
-    return logs[:max_entries]
+    # Limit number of entries if max_entries is not None
+    if max_entries is not None:
+        return logs[:max_entries]
+    else:
+        return logs
