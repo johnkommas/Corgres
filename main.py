@@ -709,9 +709,12 @@ async def logs_page():
         raise HTTPException(status_code=404, detail="Logs page not found")
 
 @api.get("/api/logs")
-async def get_logs(limit: int = 100):
+async def get_logs(limit: int = None):
     """
     API endpoint to get logs
+
+    Args:
+        limit: Maximum number of log entries to return. If None, returns all logs.
     """
     api_logger.info(f"Retrieving logs with limit {limit}")
     try:
@@ -728,7 +731,7 @@ async def get_log_stats(
     days: int = 7,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    limit: int = 1000
+    limit: int = None
 ):
     """
     API endpoint to get log statistics for charts
@@ -738,7 +741,7 @@ async def get_log_stats(
         days: Number of days to include
         start_date: Start date for filtering (format: YYYY-MM-DD)
         end_date: End date for filtering (format: YYYY-MM-DD)
-        limit: Maximum number of log entries to process
+        limit: Maximum number of log entries to process. If None, processes all logs.
 
     Returns:
         Dictionary with log statistics
