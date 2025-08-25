@@ -1,0 +1,25 @@
+{
+"bands": [
+{ "min_kg": 1, "max_kg": 100, "flat_eur": 74 },
+{ "min_kg": 101, "max_kg": 200, "flat_eur": 93 },
+{ "min_kg": 201, "max_kg": 400, "flat_eur": 110 },
+{ "min_kg": 401, "max_kg": 500, "flat_eur": 144 },
+{ "min_kg": 501, "max_kg": 600, "flat_eur": 150 },
+{ "min_kg": 601, "max_kg": 1000, "flat_eur": 182 },
+{ "min_kg": 1001, "max_kg": 1500, "flat_eur": 227 },
+{ "min_kg": 1501, "max_kg": 2000, "flat_eur": 286 },
+{ "min_kg": 2001, "max_kg": 2500, "flat_eur": 358 },
+{ "min_kg": 2501, "max_kg": 3000, "flat_eur": 407 },
+{ "min_kg": 3001, "max_kg": 4000, "eur_per_kg": 0.126 },
+{ "min_kg": 4001, "max_kg": 5000, "eur_per_kg": 0.120 },
+{ "min_kg": 5001, "max_kg": 6000, "eur_per_kg": 0.116 },
+{ "min_kg": 6001, "max_kg": 7000, "eur_per_kg": 0.115 },
+{ "min_kg": 7001, "max_kg": 10000, "eur_per_kg": 0.102 },
+{ "min_kg": 10001, "max_kg": 14000, "eur_per_kg": 0.098 },
+{ "min_kg": 14001, "max_kg": 18000, "eur_per_kg": 0.094 },
+{ "min_kg": 18001, "max_kg": 26000, "eur_per_kg": 0.092 },
+{ "min_kg": 26001, "max_kg": 30000, "eur_per_kg": 0.0935 }
+],
+"default_eur_per_kg": 0.0935,
+"notes": "For >30000 kg: €0.0935/kg + €50 Italy stop"
+}

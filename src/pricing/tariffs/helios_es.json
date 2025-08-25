@@ -1,0 +1,11 @@
+{
+  "bands": [
+    { "min_kg": 0,    "max_kg": 100,   "flat_eur": 95 },
+    { "min_kg": 101,  "max_kg": 200,   "flat_eur": 110 },
+    { "min_kg": 201,  "max_kg": 400,   "flat_eur": 130 },
+    { "min_kg": 401,  "max_kg": 700,   "flat_eur": 160 },
+    { "min_kg": 701,  "max_kg": 1000,  "flat_eur": 185 },
+    { "min_kg": 1001, "max_kg": 10000, "eur_per_kg": 0.185 },
+    { "min_kg": 10001, "max_kg": 23000, "eur_per_kg": 0.180 }
+  ]
+}

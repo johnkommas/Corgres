@@ -551,6 +551,27 @@
                 </div>
             </div>
 
+            <!-- Retail Pricing Calculator Card -->
+            <div class="col">
+                <div class="app-card" id="retail-pricing-card">
+                    <div class="app-card-header">
+                        <i class="fas fa-tags app-icon"></i>
+                        <h3>Retail Pricing Calculator</h3>
+                        <div class="status">
+                            <span class="status-indicator status-available" id="retail-pricing-status"></span>
+                            <span id="retail-pricing-status-text">Available</span>
+                        </div>
+                        <div class="user-count" id="retail-pricing-users">0 users</div>
+                    </div>
+                    <div class="app-card-body">
+                        <p>Υπολογίστε αναλυτικά το κόστος και τη λιανική τιμή ανά m² με γραφική παρουσίαση.</p>
+                    </div>
+                    <div class="app-card-footer">
+                        <a href="/pricing" class="btn btn-app" id="retail-pricing-btn">Launch</a>
+                    </div>
+                </div>
+            </div>
+
             <!-- Data Analytics Card -->
             <div class="col">
                 <div class="app-card">
@@ -1098,6 +1119,22 @@
                 }));
             }
         });
+
+        // Handle Retail Pricing button click
+        const pricingBtn = document.getElementById('retail-pricing-btn');
+        if (pricingBtn) {
+            pricingBtn.addEventListener('click', function() {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({
+                        action: 'join',
+                        app: 'retail-pricing',
+                        visitorId: visitorId,
+                        browserInfo: browserInfo,
+                        tabId: tabId
+                    }));
+                }
+            });
+        }
 
         // Online Visitors Map Popup functionality
         const statsPopup = document.getElementById('visitor-stats-popup');

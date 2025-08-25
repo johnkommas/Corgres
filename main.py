@@ -12,7 +12,7 @@ import os
 import json
 import shutil
 import uuid
-from typing import Dict, Optional, List, Set
+from typing import Dict, Optional, List, Set, Any
 from datetime import datetime, timedelta
 from collections import defaultdict
 import re
@@ -22,6 +22,8 @@ from src.data.etl import process_excel_file, get_column_mapping_template, valida
 from src.utils.logger import get_api_logger, get_app_logger, get_data_processing_logger, get_error_logger, get_all_logs
 from src.email.email_scanner import get_emails_with_attachments, save_attachment_from_email, list_mail_folders
 from src.data.column_mapper import add_mapping, get_suggestions
+from src.pricing.engine import PricingEngine, PricingRequest, load_tariffs, KG_PER_M2
+from fastapi import Request
 
 # Function to process logs and generate statistics
 def process_logs_for_stats(logs, log_type='all', days=7, start_date=None, end_date=None):
@@ -180,6 +182,17 @@ error_logger = get_error_logger()
 os.makedirs("src/static", exist_ok=True)
 os.makedirs("src/data/uploads", exist_ok=True)
 os.makedirs("src/data/processed", exist_ok=True)
+
+# Initialize pricing engine tariffs
+TARIFFS_BASE = os.path.join("src", "pricing", "tariffs")
+try:
+    PRICING_TARIFFS = load_tariffs(TARIFFS_BASE)
+    PRICING_ENGINE = PricingEngine(PRICING_TARIFFS)
+    app_logger.info("Pricing engine initialized with tariffs")
+except Exception as e:
+    PRICING_TARIFFS = None
+    PRICING_ENGINE = None
+    error_logger.error(f"Failed to initialize pricing engine: {e}")
 
 api = FastAPI(
     title="Softone ERP Excel Formatter",
@@ -528,6 +541,15 @@ async def excel_formatter():
     """
     api_logger.info("Serving Excel Formatter (index.html)")
     with open("src/static/index.html") as f:
+        return f.read()
+
+@api.get("/pricing", response_class=HTMLResponse)
+async def retail_pricing():
+    """
+    Endpoint that serves the Retail Pricing Calculator (pricing.html)
+    """
+    api_logger.info("Serving Retail Pricing Calculator (pricing.html)")
+    with open("src/static/pricing.html") as f:
         return f.read()
 
 @api.websocket("/ws/app-status")
@@ -939,7 +961,8 @@ async def fetch_attachment(email_id: str = Form(...), attachment_index: int = Fo
             api_logger.info(f"Using folders from request: {mail_folders}")
 
         # Get all emails with attachments from the specified folders
-        emails = get_emails_with_attachments(folders=mail_folders)
+        # Use a reasonable default search range to cover older emails
+        emails = get_emails_with_attachments(days=30, folders=mail_folders)
 
         # Find the email with the specified ID
         email_data = None
@@ -948,8 +971,21 @@ async def fetch_attachment(email_id: str = Form(...), attachment_index: int = Fo
                 email_data = email
                 break
 
+        # If email not found, try with broader search (all folders, extended time range)
         if not email_data:
-            error_msg = f"Email with ID {email_id} not found"
+            api_logger.info(f"Email {email_id} not found with initial search, trying broader search")
+            # Try searching in all available folders with extended time range (60 days)
+            emails_broader = get_emails_with_attachments(days=60, folders=None)
+            for email in emails_broader:
+                if email["id"] == email_id:
+                    email_data = email
+                    api_logger.info(f"Found email {email_id} in broader search")
+                    break
+
+        if not email_data:
+            # Provide more helpful error message
+            folder_info = f" in folders {mail_folders}" if mail_folders else ""
+            error_msg = f"Email with ID {email_id} not found{folder_info}. The email may be in a different folder or older than the search range."
             error_logger.error(error_msg)
             raise HTTPException(status_code=404, detail=error_msg)
 
@@ -1338,6 +1374,48 @@ async def get_files_count():
         error_msg = f"Error counting files: {str(e)}"
         error_logger.error(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
+
+
+@api.post("/api/pricing/calc")
+async def pricing_calc(payload: Dict[str, Any]):
+    """
+    Calculate Retail Price and detailed costs using the PricingEngine.
+    Expects JSON with keys: qty_m2, buy_price_eur_m2, pallets_count, pallet_type, origin, destination, margin.
+    Defaults applied if missing.
+    """
+    api_logger.info(f"Pricing calculation requested: {payload}")
+    if PRICING_ENGINE is None:
+        raise HTTPException(status_code=500, detail="Pricing engine not initialized")
+
+    try:
+        # Apply defaults and validate types
+        qty_m2 = float(payload.get("qty_m2", 0))
+        buy_price = float(payload.get("buy_price_eur_m2", 0))
+        pallets_count = int(payload.get("pallets_count", 1))
+        pallet_type = str(payload.get("pallet_type", "eu"))
+        origin = str(payload.get("origin", "ES"))
+        destination = str(payload.get("destination", "GR-mainland"))
+        margin = float(payload.get("margin", 0.40))
+
+        req = PricingRequest(
+            buy_price_eur_m2=buy_price,
+            qty_m2=qty_m2,
+            kg_per_m2=float(payload.get("kg_per_m2", KG_PER_M2)),
+            pallets_count=pallets_count,
+            pallet_type=pallet_type,  # type: ignore
+            origin=origin,            # type: ignore
+            destination=destination,  # type: ignore
+            margin=margin
+        )
+        result = PRICING_ENGINE.calculate(req)
+        api_logger.info("Pricing calculation completed successfully")
+        return JSONResponse(content=result)
+    except ValueError as ve:
+        error_logger.error(f"Pricing validation error: {ve}")
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        error_logger.error(f"Pricing calculation failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal error during pricing calculation")
 
 def get_ip_address():
     """

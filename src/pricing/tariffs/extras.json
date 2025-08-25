@@ -1,0 +1,15 @@
+{
+  "gr_extras": {
+    "crete_eur_per_kg": 0.038
+  },
+  "pallets": {
+    "eu": { "weight_kg": 22, "cost_eur": 10 },
+    "industrial": { "weight_kg": 29, "cost_eur": 30 }
+  },
+  "pt_extras": {
+    "surcharge_eur_per_m2": 1.5
+  },
+  "it_extras": {
+    "industrial_pallet_extra_eur": 40
+  }
+}

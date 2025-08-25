@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="IssueNavigationConfiguration">
+    <option name="links">
+      <list>
+        <IssueNavigationLink>
+          <option name="issueRegexp" value="(?x)\b(ESHOP|CKAP|PHIL|EMH|GKK|00|S1|SK)-\d+\b#YouTrack" />
+          <option name="linkRegexp" value="https://kommas.myjetbrains.com/issue/$0" />
+        </IssueNavigationLink>
+      </list>
+    </option>
+  </component>
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
   </component>
