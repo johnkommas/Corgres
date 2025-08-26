@@ -540,7 +540,7 @@
                             <span class="status-indicator status-available" id="excel-formatter-status"></span>
                             <span id="excel-formatter-status-text">Available</span>
                         </div>
-                        <div class="user-count" id="excel-formatter-users">0 users</div>
+                        <div class="user-count" id="excel-formatter-users">0 unique visitors</div>
                     </div>
                     <div class="app-card-body">
                         <p>Transform your Excel files into Softone ERP compatible format with just a few clicks.</p>
@@ -561,7 +561,7 @@
                             <span class="status-indicator status-available" id="retail-pricing-status"></span>
                             <span id="retail-pricing-status-text">Available</span>
                         </div>
-                        <div class="user-count" id="retail-pricing-users">0 users</div>
+                        <div class="user-count" id="retail-pricing-users">0 unique visitors</div>
                     </div>
                     <div class="app-card-body">
                         <p>Υπολογίστε αναλυτικά το κόστος και τη λιανική τιμή ανά m² με γραφική παρουσίαση.</p>
@@ -1067,11 +1067,29 @@
             if (excelFormatterCount > 0) {
                 excelFormatterStatus.className = 'status-indicator status-in-use';
                 excelFormatterStatusText.textContent = 'In Use';
-                excelFormatterUsersElement.textContent = `${excelFormatterCount} user${excelFormatterCount > 1 ? 's' : ''}`;
+                excelFormatterUsersElement.textContent = `${excelFormatterCount} unique visitor${excelFormatterCount !== 1 ? 's' : ''}`;
             } else {
                 excelFormatterStatus.className = 'status-indicator status-available';
                 excelFormatterStatusText.textContent = 'Available';
-                excelFormatterUsersElement.textContent = '0 users';
+                excelFormatterUsersElement.textContent = '0 unique visitors';
+            }
+
+            // Update Retail Pricing status
+            const retailPricingUsers = activeUsers['retail-pricing'] || [];
+            const retailPricingCount = retailPricingUsers.length;
+
+            const retailPricingStatus = document.getElementById('retail-pricing-status');
+            const retailPricingStatusText = document.getElementById('retail-pricing-status-text');
+            const retailPricingUsersElement = document.getElementById('retail-pricing-users');
+
+            if (retailPricingCount > 0) {
+                retailPricingStatus.className = 'status-indicator status-in-use';
+                retailPricingStatusText.textContent = 'In Use';
+                retailPricingUsersElement.textContent = `${retailPricingCount} unique visitor${retailPricingCount !== 1 ? 's' : ''}`;
+            } else {
+                retailPricingStatus.className = 'status-indicator status-available';
+                retailPricingStatusText.textContent = 'Available';
+                retailPricingUsersElement.textContent = '0 unique visitors';
             }
 
             // Update total active users and unique visitors

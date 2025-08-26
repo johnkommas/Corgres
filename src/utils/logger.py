@@ -16,7 +16,8 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 def get_logger(name, log_file, level=logging.INFO):
     """
-    Create a logger with the specified name and log file
+    Create or retrieve a logger with the specified name and log file.
+    Ensures handlers are not added multiple times to avoid duplicate log lines.
 
     Args:
         name: Logger name
@@ -28,13 +29,19 @@ def get_logger(name, log_file, level=logging.INFO):
     """
     logger = logging.getLogger(name)
     logger.setLevel(level)
+    # Prevent propagation to root to avoid double logging via root handlers
+    logger.propagate = False
+
+    # If handlers already exist, reuse the existing logger (avoid duplicates)
+    if logger.handlers:
+        return logger
 
     # Create formatter
     formatter = logging.Formatter(LOG_FORMAT, DATE_FORMAT)
 
     # Create file handler for logging to a file
     file_handler = RotatingFileHandler(
-        log_file, 
+        log_file,
         maxBytes=10*1024*1024,  # 10 MB
         backupCount=5
     )

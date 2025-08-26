@@ -219,9 +219,15 @@ class ConnectionManager:
     def __init__(self):
         # Active connections
         self.active_connections: List[WebSocket] = []
-        # Active users per application
+        # Active users per application (kept for backward compatibility with frontend; populated from app_visitors)
         self.active_users: Dict[str, List[str]] = {
-            "excel-formatter": []
+            "excel-formatter": [],
+            "retail-pricing": []
+        }
+        # Unique visitor IDs per application (authoritative source for per-app unique counts)
+        self.app_visitors: Dict[str, Set[str]] = {
+            "excel-formatter": set(),
+            "retail-pricing": set()
         }
         # Dictionary to track unique visitors by visitor ID
         self.unique_visitors: Dict[str, Dict] = {}
@@ -297,6 +303,12 @@ class ConnectionManager:
                         if visitor_id in self.visitor_platforms:
                             del self.visitor_platforms[visitor_id]
 
+                        # Remove visitor from all apps (unique visitor tracking)
+                        for app_name, vset in self.app_visitors.items():
+                            if visitor_id in vset:
+                                vset.remove(visitor_id)
+                                # Sync list representation
+                                self.active_users[app_name] = list(vset)
                         # Remove visitor from unique_visitors
                         del self.unique_visitors[visitor_id]
 
@@ -505,17 +517,27 @@ class ConnectionManager:
 
         return hierarchy
 
-    async def add_user_to_app(self, app: str, user_id: str):
+    async def add_user_to_app(self, app: str, visitor_id: str):
+        # Ensure structures exist for the app
+        if app not in self.app_visitors:
+            self.app_visitors[app] = set()
         if app not in self.active_users:
             self.active_users[app] = []
-
-        if user_id not in self.active_users[app]:
-            self.active_users[app].append(user_id)
+        # Add visitor to the app's unique visitor set
+        before_count = len(self.app_visitors[app])
+        self.app_visitors[app].add(visitor_id)
+        # Keep active_users list in sync (for frontend consumption)
+        self.active_users[app] = list(self.app_visitors[app])
+        # Only broadcast if there was a change in unique visitors
+        if len(self.app_visitors[app]) != before_count:
             await self.broadcast({"active_users": self.active_users})
 
-    async def remove_user_from_app(self, app: str, user_id: str):
-        if app in self.active_users and user_id in self.active_users[app]:
-            self.active_users[app].remove(user_id)
+    async def remove_user_from_app(self, app: str, visitor_id: str):
+        # Remove from authoritative set if present
+        if app in self.app_visitors and visitor_id in self.app_visitors[app]:
+            self.app_visitors[app].remove(visitor_id)
+            # Sync list representation
+            self.active_users[app] = list(self.app_visitors[app])
             await self.broadcast({"active_users": self.active_users})
 
 # Initialize connection manager
@@ -637,16 +659,16 @@ async def websocket_app_status(websocket: WebSocket):
                     # Handle app actions if app is specified
                     elif "app" in data:
                         app = data["app"]
-                        # Use visitor_id if available, otherwise use connection_id
-                        user_id = visitor_id if visitor_id else connection_id
+                        # Resolve visitor id robustly
+                        vid = data.get("visitorId") or visitor_id or manager.connection_to_visitor.get(connection_id) or connection_id
 
                         if data["action"] == "join":
-                            await manager.add_user_to_app(app, user_id)
-                            api_logger.info(f"User {user_id} joined {app}")
+                            await manager.add_user_to_app(app, vid)
+                            api_logger.info(f"User {vid} joined {app}")
 
                         elif data["action"] == "leave":
-                            await manager.remove_user_from_app(app, user_id)
-                            api_logger.info(f"User {user_id} left {app}")
+                            await manager.remove_user_from_app(app, vid)
+                            api_logger.info(f"User {vid} left {app}")
 
             except asyncio.TimeoutError:
                 # Connection timed out, check if it's still active
@@ -698,10 +720,26 @@ async def websocket_app_status(websocket: WebSocket):
             if connection_id in manager.connection_to_visitor:
                 del manager.connection_to_visitor[connection_id]
 
-        # Remove the user from all apps
-        for app in manager.active_users:
-            if connection_id in manager.active_users[app]:
-                await manager.remove_user_from_app(app, connection_id)
+        # Remove the user from all apps. If this visitor has no more connections, remove their visitor_id from apps.
+        # Determine visitor id for this connection (from earlier mapping if available)
+        vid_to_remove = manager.connection_to_visitor.get(connection_id) if connection_id in manager.connection_to_visitor else None
+        # Determine if this was the last connection for this visitor
+        last_conn = False
+        if vid_to_remove is None:
+            # Fallback: we can only remove by connection id (in case join used connection id)
+            for app in manager.active_users:
+                if connection_id in manager.active_users[app]:
+                    await manager.remove_user_from_app(app, connection_id)
+        else:
+            # If visitor entry no longer exists or has zero connections, it's the last
+            if vid_to_remove not in manager.unique_visitors:
+                last_conn = True
+            else:
+                if len(manager.unique_visitors[vid_to_remove].get("connections", [])) == 0:
+                    last_conn = True
+            if last_conn:
+                for app in list(manager.app_visitors.keys()):
+                    await manager.remove_user_from_app(app, vid_to_remove)
 
         api_logger.info(f"WebSocket connection closed: {connection_id}")
 

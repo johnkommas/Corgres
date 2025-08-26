@@ -3199,5 +3199,76 @@
             </div>
         </div>
     </div>
+    <!-- App status WebSocket for accurate in-use tracking -->
+    <script>
+      (function(){
+        try {
+          var socket, heartbeatInterval;
+          // persistent visitor id
+          function getVisitorId(){
+            try{
+              var id = localStorage.getItem('visitorId');
+              if(!id){ id = 'visitor_' + Math.random().toString(36).substr(2,9) + '_' + Date.now(); localStorage.setItem('visitorId', id);} 
+              return id;
+            }catch(e){ return 'visitor_fallback_' + Date.now(); }
+          }
+          function getBrowserInfo(){
+            var ua = navigator.userAgent;
+            var name = ua.indexOf('Firefox')>-1?'Firefox': ua.indexOf('SamsungBrowser')>-1?'Samsung Browser': ua.indexOf('OPR')>-1||ua.indexOf('Opera')>-1?'Opera': ua.indexOf('Trident')>-1?'Internet Explorer': ua.indexOf('Edge')>-1?'Edge': ua.indexOf('Chrome')>-1?'Chrome': ua.indexOf('Safari')>-1?'Safari':'Unknown';
+            return {browser:name, userAgent:ua, platform:navigator.platform};
+          }
+          function getTabId(){
+            try{
+              var id = sessionStorage.getItem('tabId');
+              if(!id){ id = 'tab_' + Math.random().toString(36).substr(2,9) + '_' + Date.now(); sessionStorage.setItem('tabId', id);} 
+              return id;
+            }catch(e){ return 'tab_fallback_' + Date.now(); }
+          }
+          var visitorId = getVisitorId();
+          var browserInfo = getBrowserInfo();
+          var tabId = getTabId();
+
+          function startHeartbeat(){
+            stopHeartbeat();
+            heartbeatInterval = setInterval(function(){
+              if(socket && socket.readyState === WebSocket.OPEN){
+                socket.send(JSON.stringify({action:'heartbeat', visitorId: visitorId, tabId: tabId}));
+              } else {
+                stopHeartbeat();
+              }
+            }, 15000);
+          }
+          function stopHeartbeat(){ if(heartbeatInterval){ clearInterval(heartbeatInterval); heartbeatInterval = null; } }
+
+          function connect(){
+            var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            var host = window.location.host;
+            socket = new WebSocket(protocol + '//' + host + '/ws/app-status');
+            socket.addEventListener('open', function(){
+              try{
+                socket.send(JSON.stringify({action:'identify', visitorId: visitorId, browserInfo: browserInfo, tabId: tabId}));
+                socket.send(JSON.stringify({action:'join', app:'excel-formatter', visitorId: visitorId, browserInfo: browserInfo, tabId: tabId}));
+                startHeartbeat();
+              }catch(e){}
+            });
+            socket.addEventListener('close', function(){ stopHeartbeat(); setTimeout(connect, 5000); });
+            socket.addEventListener('error', function(){ stopHeartbeat(); });
+          }
+
+          window.addEventListener('beforeunload', function(){
+            try{
+              if(socket && socket.readyState === WebSocket.OPEN){
+                socket.send(JSON.stringify({action:'leave', app:'excel-formatter', visitorId: visitorId, browserInfo: browserInfo, tabId: tabId}));
+              }
+            }catch(e){}
+          });
+
+          // kick off
+          connect();
+        } catch(err) {
+          console.warn('App-status WS init failed:', err);
+        }
+      })();
+    </script>
 </body>
 </html>
