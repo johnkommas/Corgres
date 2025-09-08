@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Corgres - Υπολογισμός Λιανικής Τιμής</title>
+  <link rel="icon" type="image/png" href="/images/mylogo.png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+  <style>
+    :root { --dark-color: #0f172a; --primary-color: #e11d48; --bs-secondary: #6c757d; /* neutral palette for default hints */ --neutral-50: #f8fafc; --neutral-100: #f8f9fa; --neutral-200: #e9ecef; --neutral-300: #ced4da; --neutral-400: #94a3b8; }
+    body { background-color: #fffbfa; }
+    .section { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+
+    /* Pretty controls */
+    .btn-outline-primary, .btn-outline-secondary { border-radius: 999px; }
+    .input-group .form-control { border-left: none; border-right: none; }
+    .input-group .btn, .input-group .input-group-text { border-radius: 999px; }
+    .input-group > .btn:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+    .input-group > .form-control { border-radius: 0; }
+    .input-group > .btn:last-child { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+
+    #margin_badge { font-weight: 600; min-width: 90px; text-align: center; }
+
+    /* Simple flag placeholders (optional, kept neutral) */
+    .flag { display: inline-block; width: 0.9em; height: 0.9em; background: #e5e7eb; border-radius: 2px; }
+
+    /* Grey unit/currency badges (use same neutral greys as defaults) */
+    .unit-grey {
+      background-color: var(--neutral-100) !important;
+      border-color: var(--neutral-300) !important;
+      color: inherit !important;
+    }
+
+    /* Grey background for default-looking inputs */
+    .default-grey-input {
+      background-color: var(--neutral-100) !important;
+      border-color: var(--neutral-300) !important;
+      color: inherit !important;
+    }
+
+    /* Darker secondary background (matches default-selected 5/6/7 buttons) */
+    .default-secondary-input-dark {
+      background-color: var(--bs-secondary, #6c757d) !important;
+      border-color: var(--bs-secondary, #6c757d) !important;
+      color: #ffffff !important;
+      caret-color: #ffffff !important;
+    }
+    .default-secondary-input-dark::placeholder {
+      color: rgba(255,255,255,0.85) !important;
+    }
+
+    /* Unified secondary input-group: make -, input, +, and unit badge one body */
+    .input-group.unified-secondary .btn,
+    .input-group.unified-secondary .input-group-text,
+    .input-group.unified-secondary .form-control {
+      background-color: var(--bs-secondary, #6c757d) !important;
+      border-color: var(--bs-secondary, #6c757d) !important;
+      color: #ffffff !important;
+    }
+    .input-group.unified-secondary .btn i { color: #ffffff !important; }
+    .input-group.unified-secondary .form-control::placeholder { color: rgba(255,255,255,0.85) !important; }
+    .input-group.unified-secondary .btn:hover,
+    .input-group.unified-secondary .btn:active,
+    .input-group.unified-secondary .btn:focus {
+      background-color: #5c636a !important; /* slightly darker than #6c757d */
+      border-color: #5c636a !important;
+      color: #ffffff !important;
+      box-shadow: none !important;
+    }
+    .input-group.unified-secondary .form-control:focus {
+      box-shadow: none !important;
+    }
+
+    /* Validation color states for input-groups (used by 1. Ποσότητα) */
+    .input-group.validation-invalid .btn,
+    .input-group.validation-invalid .input-group-text,
+    .input-group.validation-invalid .form-control {
+      background-color: #dc3545 !important; /* Bootstrap danger */
+      border-color: #dc3545 !important;
+      color: #ffffff !important;
+    }
+    .input-group.validation-invalid .form-control::placeholder { color: rgba(255,255,255,0.85) !important; }
+    .input-group.validation-invalid .btn i { color: #ffffff !important; }
+    .input-group.validation-invalid .btn:hover,
+    .input-group.validation-invalid .btn:active,
+    .input-group.validation-invalid .btn:focus {
+      background-color: #bb2d3b !important; /* darker danger */
+      border-color: #bb2d3b !important;
+      color: #ffffff !important;
+      box-shadow: none !important;
+    }
+
+    .input-group.validation-valid .btn,
+    .input-group.validation-valid .input-group-text,
+    .input-group.validation-valid .form-control {
+      background-color: #198754 !important; /* Bootstrap success */
+      border-color: #198754 !important;
+      color: #ffffff !important;
+    }
+    .input-group.validation-valid .form-control::placeholder { color: rgba(255,255,255,0.85) !important; }
+    .input-group.validation-valid .btn i { color: #ffffff !important; }
+    .input-group.validation-valid .btn:hover,
+    .input-group.validation-valid .btn:active,
+    .input-group.validation-valid .btn:focus {
+      background-color: #157347 !important; /* darker success */
+      border-color: #157347 !important;
+      color: #ffffff !important;
+      box-shadow: none !important;
+    }
+
+
+    /* Beautiful and mobile-friendly Calc button */
+    .btn-calc {
+      background: linear-gradient(135deg, #ef476f, #e11d48);
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding-left: 1.25rem;
+      padding-right: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      box-shadow: 0 10px 20px rgba(225, 29, 72, 0.25);
+      transition: transform .15s ease, box-shadow .2s ease, filter .2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .25rem;
+    }
+    .btn-calc:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px rgba(225, 29, 72, 0.28);
+      filter: brightness(1.03);
+    }
+    .btn-calc:active {
+      transform: translateY(0);
+      box-shadow: 0 8px 16px rgba(225, 29, 72, 0.22);
+      filter: brightness(0.98);
+    }
+    .btn-calc:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(225,29,72,.15), 0 10px 20px rgba(225,29,72,.25);
+    }
+    .btn-calc .btn-icon { display: inline-flex; }
+    .btn-calc[disabled], .btn-calc[aria-busy="true"] {
+      opacity: .85;
+      cursor: not-allowed;
+      filter: saturate(.9) brightness(.96);
+    }
+    /* Valid/invalid state variants for Calc button */
+    .btn-calc.is-valid {
+      background: linear-gradient(135deg, #10b981, #059669) !important; /* green */
+      box-shadow: 0 10px 20px rgba(16, 185, 129, 0.25) !important;
+    }
+    .btn-calc.is-invalid {
+      background: linear-gradient(135deg, #ef476f, #e11d48) !important; /* keep red */
+    }
+
+    /* Make button full-width and comfy on small screens */
+    @media (max-width: 576px) {
+      .btn-calc { font-size: 1.05rem; padding-top: .9rem; padding-bottom: .9rem; width: 100%; }
+    }
+  
+    /* Heart pulse animation for footer icon */
+    @keyframes heartbeat {
+      0% { transform: scale(1); }
+      25% { transform: scale(1.1); }
+      50% { transform: scale(1); }
+      75% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    .heart-pulse {
+      display: inline-block;
+      animation: heartbeat 1.5s ease infinite;
+      transform-origin: center;
+    }
+
+    /* Retail Pricing color consistency */
+    :root { --rp-success: #198754; --rp-success-darker: #157347; --rp-danger: #dc3545; --rp-danger-darker: #bb2d3b; }
+
+    /* Unified retail badge style (was inline gradient) */
+    .retail-badge {
+      background: linear-gradient(135deg, var(--rp-success), var(--rp-success-darker));
+      color: #fff;
+    }
+
+    /* Override calc button states to the same rp colors */
+    .btn-calc.is-valid {
+      background: linear-gradient(135deg, var(--rp-success), var(--rp-success-darker)) !important;
+      box-shadow: 0 10px 20px rgba(25, 135, 84, 0.25) !important;
+    }
+    .btn-calc.is-invalid {
+      background: linear-gradient(135deg, var(--rp-danger), var(--rp-danger-darker)) !important;
+    }
+
+    /* Harmonize validation group colors via rp variables */
+    .input-group.validation-valid .btn,
+    .input-group.validation-valid .input-group-text,
+    .input-group.validation-valid .form-control {
+      background-color: var(--rp-success) !important;
+      border-color: var(--rp-success) !important;
+      color: #ffffff !important;
+    }
+    .input-group.validation-valid .btn:hover,
+    .input-group.validation-valid .btn:active,
+    .input-group.validation-valid .btn:focus {
+      background-color: var(--rp-success-darker) !important;
+      border-color: var(--rp-success-darker) !important;
+    }
+
+    .input-group.validation-invalid .btn,
+    .input-group.validation-invalid .input-group-text,
+    .input-group.validation-invalid .form-control {
+      background-color: var(--rp-danger) !important;
+      border-color: var(--rp-danger) !important;
+      color: #ffffff !important;
+    }
+    .input-group.validation-invalid .btn:hover,
+    .input-group.validation-invalid .btn:active,
+    .input-group.validation-invalid .btn:focus {
+      background-color: var(--rp-danger-darker) !important;
+      border-color: var(--rp-danger-darker) !important;
+    }
+
+    /* Make Bootstrap success/danger utilities match rp colors locally */
+    .badge.text-bg-success, .progress-bar.bg-success, .bg-success { background-color: var(--rp-success) !important; border-color: var(--rp-success) !important; }
+    .badge.text-bg-danger, .progress-bar.bg-danger, .bg-danger { background-color: var(--rp-danger) !important; border-color: var(--rp-danger) !important; }
+    .text-success { color: var(--rp-success) !important; }
+    .text-danger { color: var(--rp-danger) !important; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light mb-4 py-3">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center" href="/">
+        <img src="/images/mylogo.png" alt="Corgres" height="36">
+        <span class="fw-bold ms-2" style="color: var(--dark-color);">Corgres Σταγάκης</span>
+        <span class="text-muted d-none d-md-inline mx-2">|</span>
+        <span class="text-muted d-none d-md-inline">Retail Pricing</span>
+      </a>
+      <div class="ms-auto">
+        <a class="btn btn-outline-secondary" href="/"><i class="fas fa-home me-2"></i>Hub</a>
+        <a class="btn btn-outline-secondary ms-2" href="/logs"><i class="fas fa-list-alt me-2"></i>Logs</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="section" id="pricingSection">
+      <h3 class="mb-3"><i class="fas fa-tags me-2"></i> Υπολογισμός Λιανικής Τιμής</h3>
+<!--      <p class="text-muted">Συμπληρώστε τα πεδία για να δείτε ανάλυση κόστους και τελική τιμή ανά m².</p>-->
+      <form id="pricingForm" class="row g-3">
+        <!-- 1. Quantity (m²) with stepper -->
+        <div class="col-md-4">
+          <label for="qty_m2" class="form-label">Ποσότητα (m²)</label>
+          <div class="input-group" id="qty_group">
+            <button class="btn btn-outline-secondary" type="button" data-step-target="#qty_m2" data-step="-1" aria-label="Μείωση ποσότητας"><i class="fas fa-minus"></i></button>
+            <input type="number" min="0.01" step="0.01" class="form-control text-end" id="qty_m2" placeholder="π.χ. 120" required>
+            <button class="btn btn-outline-secondary" type="button" data-step-target="#qty_m2" data-step="1" aria-label="Αύξηση ποσότητας"><i class="fas fa-plus"></i></button>
+            <span class="input-group-text unit-grey">m²</span>
+          </div>
+        </div>
+
+        <!-- 2. Buy price (€/m²) with currency adornment and stepper -->
+        <div class="col-md-4">
+          <label for="buy_price_eur_m2" class="form-label">Τιμή Αγοράς (€/m²)</label>
+          <div class="input-group" id="buy_group">
+            <button class="btn btn-outline-secondary" type="button" data-step-target="#buy_price_eur_m2" data-step="-0.10" aria-label="Μείωση τιμής"><i class="fas fa-minus"></i></button>
+            <input type="number" min="0" step="0.01" class="form-control text-end" id="buy_price_eur_m2" placeholder="π.χ. 8.50" required>
+            <button class="btn btn-outline-secondary" type="button" data-step-target="#buy_price_eur_m2" data-step="0.10" aria-label="Αύξηση τιμής"><i class="fas fa-plus"></i></button>
+            <span class="input-group-text unit-grey">€ / m²</span>
+          </div>
+        </div>
+
+        <!-- 2b. Weight per m² (kg) with stepper -->
+        <div class="col-md-4">
+          <label for="kg_per_m2" class="form-label">Βάρος ανά m² (kg)</label>
+          <div class="input-group unified-secondary">
+            <button class="btn btn-outline-secondary" type="button" data-step-target="#kg_per_m2" data-step="-0.5" aria-label="Μείωση βάρους"><i class="fas fa-minus"></i></button>
+            <input type="number" min="0.1" step="0.1" class="form-control text-end default-secondary-input-dark" id="kg_per_m2" value="24" required>
+            <button class="btn btn-outline-secondary" type="button" data-step-target="#kg_per_m2" data-step="0.5" aria-label="Αύξηση βάρους"><i class="fas fa-plus"></i></button>
+            <span class="input-group-text">kg / m²</span>
+          </div>
+        </div>
+
+        <!-- 3. Margin with slider + live badge (keep hidden number input for submit) -->
+        <div class="col-md-4">
+          <label for="margin" class="form-label">Περιθώριο (Margin %)</label>
+          <input type="number" min="0" max="1" step="0.01" class="form-control d-none" id="margin" value="0.40" required>
+          <div class="d-flex align-items-center gap-2">
+            <input type="range" id="margin_range" class="form-range" min="0" max="1" step="0.01" value="0.40" aria-label="Περιθώριο (Margin %)">
+            <span id="margin_badge" class="badge rounded-pill text-bg-success">40.00%</span>
+          </div>
+<!--          <div class="form-text">Σύρετε το slider για να αλλάξετε το περιθώριο. Προεπιλογή: 0,40</div>-->
+        </div>
+
+        <!-- 4. Pallets count with stepper -->
+        <div class="col-md-4">
+          <label for="pallets_count" class="form-label">Αριθμός Παλετών</label>
+          <div class="input-group unified-secondary">
+            <button class="btn btn-outline-secondary" type="button" data-step-target="#pallets_count" data-step="-1" aria-label="Μείωση παλετών"><i class="fas fa-minus"></i></button>
+            <input type="number" min="1" step="1" class="form-control text-end default-secondary-input-dark" id="pallets_count" value="1" required>
+            <button class="btn btn-outline-secondary" type="button" data-step-target="#pallets_count" data-step="1" aria-label="Αύξηση παλετών"><i class="fas fa-plus"></i></button>
+            <span class="input-group-text">unit</span>
+          </div>
+        </div>
+
+        <!-- 5. Pallet type as toggle pills (hidden select kept for compatibility) -->
+        <div class="col-md-4">
+          <label class="form-label">Τύπος Παλέτας</label>
+          <div class="btn-group w-100" role="group" aria-label="Τύπος Παλέτας" id="pallet_type_group">
+            <input type="radio" class="btn-check" name="pallettype" id="pallet_eu" autocomplete="off" data-value="eu" checked>
+            <label class="btn btn-outline-secondary" for="pallet_eu">EU</label>
+            <input type="radio" class="btn-check" name="pallettype" id="pallet_industrial" autocomplete="off" data-value="industrial">
+            <label class="btn btn-outline-secondary" for="pallet_industrial">Industrial</label>
+          </div>
+          <select id="pallet_type" class="form-select d-none">
+            <option value="eu" selected>EU</option>
+            <option value="industrial">Industrial</option>
+          </select>
+        </div>
+
+        <!-- 6. Origin as toggle pills (hidden select kept) -->
+        <div class="col-md-4">
+          <label class="form-label">Προέλευση</label>
+          <div class="btn-group w-100" role="group" aria-label="Προέλευση" id="origin_group">
+            <input type="radio" class="btn-check" name="originopt" id="origin_es" autocomplete="off" data-value="ES" checked>
+            <label class="btn btn-outline-secondary" for="origin_es">Ισπανία (ES)</label>
+            <input type="radio" class="btn-check" name="originopt" id="origin_it" autocomplete="off" data-value="IT">
+            <label class="btn btn-outline-secondary" for="origin_it">Ιταλία (IT)</label>
+            <input type="radio" class="btn-check" name="originopt" id="origin_pt" autocomplete="off" data-value="PT">
+            <label class="btn btn-outline-secondary" for="origin_pt">Πορτογαλία (PT)</label>
+          </div>
+          <select id="origin" class="form-select d-none">
+            <option value="ES" selected>Ισπανία (ES)</option>
+            <option value="IT">Ιταλία (IT)</option>
+            <option value="PT">Πορτογαλία (PT)</option>
+          </select>
+        </div>
+
+        <!-- 7. Destination as toggle pills (hidden select kept) -->
+        <div class="col-md-4">
+          <label class="form-label">Προορισμός</label>
+          <div class="btn-group w-100" role="group" aria-label="Προορισμός" id="destination_group">
+            <input type="radio" class="btn-check" name="destopt" id="dest_gr_main" autocomplete="off" data-value="GR-mainland" checked>
+            <label class="btn btn-outline-secondary" for="dest_gr_main">Ελλάδα - Ηπειρωτική</label>
+            <input type="radio" class="btn-check" name="destopt" id="dest_gr_crete" autocomplete="off" data-value="GR-crete">
+            <label class="btn btn-outline-secondary" for="dest_gr_crete">Ελλάδα - Κρήτη</label>
+          </div>
+          <select id="destination" class="form-select d-none">
+            <option value="GR-mainland" selected>Ελλάδα - Ηπειρωτική</option>
+            <option value="GR-crete">Ελλάδα - Κρήτη</option>
+          </select>
+        </div>
+
+        <div class="col-12">
+          <button type="submit" id="calcButton" class="btn btn-calc py-3">
+            <span class="btn-icon"><i class="fas fa-calculator me-2"></i></span>
+            <span class="btn-text">Υπολογισμός</span>
+          </button>
+        </div>
+      </form>
+
+      <div id="pricingResult" class="mt-4" style="display:none;">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between flex-wrap">
+              <div>
+                <h5 class="card-title mb-1">Ανάλυση Κόστους</h5>
+                <p class="text-muted mb-3">Λεπτομερής κοστολόγηση ανά στοιχείο</p>
+              </div>
+              <div class="p-3 rounded retail-badge">
+                <div class="small text-white-50">Λιανική Τιμή / m²</div>
+                <div class="fw-bold" id="sell_price_per_m2" style="font-size: 1.8rem;">—</div>
+              </div>
+            </div>
+            <div class="row mt-3">
+              <div class="col-md-6">
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Κόστος Εμπορεύματος</span><strong id="cost_goods">—</strong></li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Μεταφορικά</span><strong id="freight">—</strong></li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>Extras</span>
+                    <div class="d-flex align-items-center gap-2">
+                      <button type="button" class="btn btn-sm btn-outline-secondary" id="toggle_extras_details" aria-expanded="false" aria-controls="extras_details_container">Ανάλυση</button>
+                      <strong id="extras">—</strong>
+                    </div>
+                  </li>
+                  <li class="list-group-item" id="extras_details_container" style="display:none;">
+                    <div class="small text-muted mb-2">Ανάλυση Extras</div>
+                    <ul class="list-unstyled mb-0" id="extras_breakdown_list"></ul>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Κόστος Παλετών</span><strong id="pallet_cost">—</strong></li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                      <span>Σύνολο Logistics</span>
+                      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#logisticsDetails" aria-expanded="false" aria-controls="logisticsDetails">Πώς προκύπτει;</button>
+                    </div>
+                    <strong id="logistics">—</strong>
+                  </li>
+                  <li class="list-group-item collapse" id="logisticsDetails">
+                    <div class="small text-muted mb-1">Σύνθεση Logistics = Μεταφορικά + Extras + Κόστος Παλετών</div>
+                    <div class="mb-2"><code id="logistics_formula">—</code></div>
+                    <div class="progress" style="height: 14px;">
+                      <div id="bar_freight" class="progress-bar bg-info" role="progressbar" style="width: 0%" aria-label="Μεταφορικά"></div>
+                      <div id="bar_extras" class="progress-bar bg-warning" role="progressbar" style="width: 0%" aria-label="Extras"></div>
+                      <div id="bar_pallet" class="progress-bar bg-secondary" role="progressbar" style="width: 0%" aria-label="Κόστος Παλετών"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2 small">
+                      <span class="text-info">Μεταφορικά</span>
+                      <span class="text-warning">Extras</span>
+                      <span class="text-secondary">Παλέτες</span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                      <span>Σύνολο Κόστους</span>
+                      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#totalDetails" aria-expanded="false" aria-controls="totalDetails">Πώς προκύπτει;</button>
+                    </div>
+                    <strong id="total_cost">—</strong>
+                  </li>
+                  <li class="list-group-item collapse" id="totalDetails">
+                    <div class="small text-muted mb-1">Σύνολο Κόστους = Κόστος Εμπορεύματος + Σύνολο Logistics</div>
+                    <div class="mb-2"><code id="total_formula">—</code></div>
+                    <div class="progress" style="height: 14px;">
+                      <div id="bar_goods" class="progress-bar bg-success" role="progressbar" style="width: 0%" aria-label="Κόστος Εμπορεύματος"></div>
+                      <div id="bar_logistics" class="progress-bar bg-danger" role="progressbar" style="width: 0%" aria-label="Σύνολο Logistics"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2 small">
+                      <span class="text-success">Εμπόρευμα</span>
+                      <span class="text-danger">Logistics</span>
+                    </div>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Κόστος ανά m²</span><strong id="cost_per_m2">—</strong></li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Περιθώριο</span><strong id="margin_value">—</strong></li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Ισοδύναμο Markup</span><strong id="markup_equiv">—</strong></li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Συνολικό Βάρος</span><strong id="kg_total">—</strong></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Toastr options
+    toastr.options = { positionClass: 'toast-top-right', timeOut: 7000, closeButton: true, progressBar: true };
+
+    document.addEventListener('DOMContentLoaded', function(){
+      const form = document.getElementById('pricingForm');
+
+
+      // UI helpers: stepper buttons
+      document.querySelectorAll('[data-step-target]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetSel = btn.getAttribute('data-step-target');
+          const step = parseFloat(btn.getAttribute('data-step') || '0');
+          const input = document.querySelector(targetSel);
+          if (!input) return;
+          const current = parseFloat(input.value || '0') || 0;
+          const next = current + step;
+          const min = input.min !== '' ? parseFloat(input.min) : undefined;
+          const max = input.max !== '' ? parseFloat(input.max) : undefined;
+          let val = isFinite(next) ? next : current;
+          if (min !== undefined && val < min) val = min;
+          if (max !== undefined && val > max) val = max;
+          // Snap to step if possible
+          const st = parseFloat(input.step || '1');
+          if (st && isFinite(st)) {
+            val = Math.round(val / st) * st;
+          }
+          input.value = (input.step && parseFloat(input.step) < 1) ? val.toFixed(2) : String(Math.round(val));
+          input.dispatchEvent(new Event('input'));
+          input.dispatchEvent(new Event('change'));
+        });
+      });
+
+      // Quantity visual validation (red when invalid/empty, green when valid)
+      const qtyInput = document.getElementById('qty_m2');
+      const qtyGroup = document.getElementById('qty_group');
+      function isQtyValid() {
+        const v = parseFloat(qtyInput.value);
+        const min = qtyInput.min !== '' ? parseFloat(qtyInput.min) : 0.01;
+        return Number.isFinite(v) && v >= min;
+      }
+      function refreshQtyState() {
+        const valid = isQtyValid();
+        qtyInput.setAttribute('aria-invalid', String(!valid));
+        if (qtyGroup) {
+          qtyGroup.classList.toggle('validation-invalid', !valid);
+          qtyGroup.classList.toggle('validation-valid', valid);
+        }
+      }
+      if (qtyInput && qtyGroup) {
+        qtyInput.addEventListener('input', refreshQtyState);
+        qtyInput.addEventListener('change', refreshQtyState);
+        // initialize as red (invalid) if empty/invalid
+        refreshQtyState();
+      }
+
+      // Buy price visual validation (red when empty/invalid, green when valid)
+      const buyInput = document.getElementById('buy_price_eur_m2');
+      const buyGroup = document.getElementById('buy_group');
+      function isBuyValid() {
+        const v = parseFloat(buyInput.value);
+        const min = buyInput.min !== '' ? parseFloat(buyInput.min) : 0;
+        return Number.isFinite(v) && v >= min;
+      }
+      function refreshBuyState() {
+        const valid = isBuyValid();
+        buyInput.setAttribute('aria-invalid', String(!valid));
+        if (buyGroup) {
+          buyGroup.classList.toggle('validation-invalid', !valid);
+          buyGroup.classList.toggle('validation-valid', valid);
+        }
+      }
+      if (buyInput && buyGroup) {
+        buyInput.addEventListener('input', refreshBuyState);
+        buyInput.addEventListener('change', refreshBuyState);
+        // initialize as red (invalid) if empty/invalid
+        refreshBuyState();
+      }
+
+      // Calc button state (red by default, green when both qty & buy are valid)
+      function refreshCalcButtonState() {
+        try {
+          const allValid = isQtyValid() && isBuyValid();
+          if (calcBtn) {
+            calcBtn.classList.toggle('is-valid', allValid);
+            calcBtn.classList.toggle('is-invalid', !allValid);
+            calcBtn.setAttribute('aria-pressed', String(allValid));
+          }
+        } catch (e) { /* noop */ }
+      }
+      // Wire to inputs
+      if (qtyInput) {
+        qtyInput.addEventListener('input', refreshCalcButtonState);
+        qtyInput.addEventListener('change', refreshCalcButtonState);
+      }
+      if (buyInput) {
+        buyInput.addEventListener('input', refreshCalcButtonState);
+        buyInput.addEventListener('change', refreshCalcButtonState);
+      }
+      // Initialize button state on load
+      refreshCalcButtonState();
+
+      // Margin slider sync with hidden number input and badge
+      const marginNumber = document.getElementById('margin');
+      const marginRange = document.getElementById('margin_range');
+      const marginBadge = document.getElementById('margin_badge');
+      function updateMarginFromRange() {
+        const v = parseFloat(marginRange.value);
+        marginNumber.value = v.toFixed(2);
+        const pct = (v * 100);
+        marginBadge.textContent = `${pct.toFixed(2)}%`;
+        // Color thresholds: <30 red, 30-40 orange, 40-50 grey, >50 green
+        const classes = ['text-bg-danger','text-bg-warning','text-bg-secondary','text-bg-success'];
+        classes.forEach(c => marginBadge.classList.remove(c));
+        if (pct < 30) {
+          marginBadge.classList.add('text-bg-danger');
+        } else if (pct < 40) {
+          marginBadge.classList.add('text-bg-warning');
+        } else if (pct <= 50) {
+          marginBadge.classList.add('text-bg-secondary');
+        } else {
+          marginBadge.classList.add('text-bg-success');
+        }
+      }
+      if (marginRange && marginNumber) {
+        marginRange.addEventListener('input', updateMarginFromRange);
+        marginRange.addEventListener('change', updateMarginFromRange);
+        // initialize
+        updateMarginFromRange();
+      }
+
+      // Toggle groups -> hidden selects sync
+      function wireToggleGroup(groupId, selectId) {
+        const group = document.getElementById(groupId);
+        const select = document.getElementById(selectId);
+        if (!group || !select) return;
+        group.querySelectorAll('input[type="radio"]').forEach(radio => {
+          radio.addEventListener('change', () => {
+            if (radio.checked) {
+              const val = radio.getAttribute('data-value');
+              if (val) {
+                select.value = val;
+                select.dispatchEvent(new Event('change'));
+              }
+            }
+          });
+        });
+        // init checked from select default
+        const current = select.value;
+        const match = group.querySelector(`input[data-value="${current}"]`);
+        if (match) {
+          match.checked = true;
+          match.dispatchEvent(new Event('change'));
+        }
+        // keep group wiring only; default styling will be applied selectively for origin/destination
+        // markDefaultToggleGroup(groupId);
+      }
+      wireToggleGroup('pallet_type_group', 'pallet_type');
+      wireToggleGroup('origin_group', 'origin');
+      wireToggleGroup('destination_group', 'destination');
+
+
+      // Toggle extras details visibility
+      const toggleBtn = document.getElementById('toggle_extras_details');
+      const detailsContainer = document.getElementById('extras_details_container');
+      if (toggleBtn && detailsContainer) {
+        toggleBtn.addEventListener('click', function(){
+          const visible = detailsContainer.style.display !== 'none';
+          detailsContainer.style.display = visible ? 'none' : 'block';
+          toggleBtn.setAttribute('aria-expanded', String(!visible));
+        });
+      }
+
+      const calcBtn = document.getElementById('calcButton');
+      let originalBtnHTML = calcBtn ? calcBtn.innerHTML : '';
+
+      form.addEventListener('submit', async function(e){
+        e.preventDefault();
+        const payload = {
+          qty_m2: parseFloat(document.getElementById('qty_m2').value),
+          buy_price_eur_m2: parseFloat(document.getElementById('buy_price_eur_m2').value),
+          kg_per_m2: parseFloat(document.getElementById('kg_per_m2').value || '24'),
+          pallets_count: parseInt(document.getElementById('pallets_count').value || '1'),
+          pallet_type: document.getElementById('pallet_type').value,
+          origin: document.getElementById('origin').value,
+          destination: document.getElementById('destination').value,
+          margin: parseFloat(document.getElementById('margin').value || '0.40')
+        };
+        if(!(payload.margin > 0 && payload.margin < 1)){
+          toastr.error('Το περιθώριο πρέπει να είναι μεταξύ 0 και 1 (π.χ. 0.40)');
+          return;
+        }
+        try{
+          // set loading state on button
+          if (calcBtn) {
+            calcBtn.disabled = true;
+            calcBtn.setAttribute('aria-busy', 'true');
+            calcBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span><span>Υπολογισμός...</span>';
+          }
+          const res = await fetch('/api/pricing/calc', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+          if(!res.ok){
+            const err = await res.json().catch(()=>({detail:'Unknown error'}));
+            throw new Error(err.detail || 'Request failed');
+          }
+          const data = await res.json();
+          const euro = (v)=> `${Number(v).toFixed(2)} €`;
+          document.getElementById('cost_goods').textContent = euro(data.cost.cost_goods);
+          document.getElementById('freight').textContent = euro(data.cost.freight);
+          document.getElementById('extras').textContent = euro(data.cost.extras);
+
+          // Handle extras breakdown rendering
+          const detailsContainer = document.getElementById('extras_details_container');
+          const breakdownList = document.getElementById('extras_breakdown_list');
+          breakdownList.innerHTML = '';
+          const breakdown = Array.isArray(data?.cost?.extras_breakdown) ? data.cost.extras_breakdown : [];
+          const toggleBtn2 = document.getElementById('toggle_extras_details');
+          if (breakdown.length > 0) {
+            breakdown.forEach(item => {
+              const li = document.createElement('li');
+              li.className = 'd-flex justify-content-between align-items-center py-1';
+              const label = document.createElement('span');
+              label.textContent = item.label || item.code;
+              const amount = document.createElement('strong');
+              amount.textContent = euro(item.amount || 0);
+              li.appendChild(label);
+              li.appendChild(amount);
+              breakdownList.appendChild(li);
+            });
+            detailsContainer.style.display = 'block';
+            if (toggleBtn2) { toggleBtn2.disabled = false; }
+          } else {
+            detailsContainer.style.display = 'none';
+            if (toggleBtn2) { toggleBtn2.disabled = true; }
+          }
+
+          document.getElementById('pallet_cost').textContent = euro(data.cost.pallet_cost);
+          document.getElementById('logistics').textContent = euro(data.cost.logistics);
+          document.getElementById('total_cost').textContent = euro(data.cost.total_cost);
+
+          // Compose formulas and contribution bars for Logistics and Total Cost
+          const F = Number(data.cost.freight || 0);
+          const E = Number(data.cost.extras || 0);
+          const P = Number(data.cost.pallet_cost || 0);
+          const L = Number(data.cost.logistics || 0);
+          const G = Number(data.cost.cost_goods || 0);
+          const T = Number(data.cost.total_cost || 0);
+
+          const logisticsFormulaEl = document.getElementById('logistics_formula');
+          if (logisticsFormulaEl) logisticsFormulaEl.textContent = `${euro(F)} + ${euro(E)} + ${euro(P)}`;
+
+          const totalFormulaEl = document.getElementById('total_formula');
+          if (totalFormulaEl) totalFormulaEl.textContent = `${euro(G)} + ${euro(L)}`;
+
+          function setBar(id, part, total){
+            const el = document.getElementById(id);
+            if (!el) return;
+            const pct = total > 0 ? Math.max(0, Math.min(100, (part / total) * 100)) : 0;
+            el.style.width = pct.toFixed(2) + '%';
+            el.setAttribute('aria-valuenow', pct.toFixed(2));
+            el.title = `${pct.toFixed(1)}%`;
+          }
+
+          // Logistics segments
+          setBar('bar_freight', F, L);
+          setBar('bar_extras', E, L);
+          setBar('bar_pallet', P, L);
+
+          // Total cost segments
+          setBar('bar_goods', G, T);
+          setBar('bar_logistics', L, T);
+          document.getElementById('cost_per_m2').textContent = euro(data.cost.cost_per_m2);
+          document.getElementById('kg_total').textContent = `${data.weights.kg_total} kg`;
+          document.getElementById('margin_value').textContent = `${(data.pricing.margin*100).toFixed(2)}%`;
+          document.getElementById('markup_equiv').textContent = `${(data.pricing.markup_equiv*100).toFixed(2)}%`;
+          const sp = data.pricing.sell_price_per_m2;
+          document.getElementById('sell_price_per_m2').textContent = `${Number(sp).toFixed(2)} €`;
+          document.getElementById('pricingResult').style.display = 'block';
+          toastr.success('Ο υπολογισμός ολοκληρώθηκε με επιτυχία');
+        }catch(err){
+          toastr.error(`Σφάλμα υπολογισμού: ${err.message}`);
+        } finally {
+          // restore button
+          if (calcBtn) {
+            calcBtn.disabled = false;
+            calcBtn.removeAttribute('aria-busy');
+            calcBtn.innerHTML = originalBtnHTML || '<span class="btn-icon"><i class="fas fa-calculator me-2"></i></span><span class="btn-text">Υπολογισμός</span>';
+          }
+        }
+      });
+    });
+  </script>
+
+  <script>
+    // Ensure current year in footer for this page
+    document.addEventListener('DOMContentLoaded', function(){
+      const el = document.getElementById('currentYear');
+      if (el) el.textContent = new Date().getFullYear();
+    });
+  </script>
+
+  <!-- Footer -->
+  <footer class="mt-5 pt-5 text-center">
+    <div class="container-fluid">
+      <div class="py-4 border-top">
+        <div class="row align-items-center">
+          <div class="col-md-4 text-md-start mb-3 mb-md-0">
+            <a href="/" class="d-inline-flex align-items-center text-decoration-none">
+              <img src="/images/mylogo.png" alt="Softone ERP Logo" height="30" class="me-2">
+              <span class="fw-bold" style="color: var(--dark-color);">Corgres Σταγάκης</span>
+            </a>
+          </div>
+          <div class="col-md-4 mb-3 mb-md-0">
+            <p class="text-muted mb-0">
+              <i class="fas fa-heart heart-pulse" style="color: var(--primary-color);"></i> Made with care
+            </p>
+          </div>
+          <div class="col-md-4 text-md-end">
+            <p class="text-muted mb-0">
+              &copy; <span id="currentYear"></span> Ioannis E. Kommas. All rights Reserved
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- App status WebSocket for accurate in-use tracking -->
+  <script>
+    (function(){
+      try {
+        var socket, heartbeatInterval;
+        function getVisitorId(){
+          try{
+            var id = localStorage.getItem('visitorId');
+            if(!id){ id = 'visitor_' + Math.random().toString(36).substr(2,9) + '_' + Date.now(); localStorage.setItem('visitorId', id);} 
+            return id;
+          }catch(e){ return 'visitor_fallback_' + Date.now(); }
+        }
+        function getBrowserInfo(){
+          var ua = navigator.userAgent;
+          var name = ua.indexOf('Firefox')>-1?'Firefox': ua.indexOf('SamsungBrowser')>-1?'Samsung Browser': ua.indexOf('OPR')>-1||ua.indexOf('Opera')>-1?'Opera': ua.indexOf('Trident')>-1?'Internet Explorer': ua.indexOf('Edge')>-1?'Edge': ua.indexOf('Chrome')>-1?'Chrome': ua.indexOf('Safari')>-1?'Safari':'Unknown';
+          return {browser:name, userAgent:ua, platform:navigator.platform};
+        }
+        function getTabId(){
+          try{
+            var id = sessionStorage.getItem('tabId');
+            if(!id){ id = 'tab_' + Math.random().toString(36).substr(2,9) + '_' + Date.now(); sessionStorage.setItem('tabId', id);} 
+            return id;
+          }catch(e){ return 'tab_fallback_' + Date.now(); }
+        }
+        var visitorId = getVisitorId();
+        var browserInfo = getBrowserInfo();
+        var tabId = getTabId();
+
+        function startHeartbeat(){
+          stopHeartbeat();
+          heartbeatInterval = setInterval(function(){
+            if(socket && socket.readyState === WebSocket.OPEN){
+              socket.send(JSON.stringify({action:'heartbeat', visitorId: visitorId, tabId: tabId}));
+            } else {
+              stopHeartbeat();
+            }
+          }, 15000);
+        }
+        function stopHeartbeat(){ if(heartbeatInterval){ clearInterval(heartbeatInterval); heartbeatInterval = null; } }
+
+        function connect(){
+          var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+          var host = window.location.host;
+          socket = new WebSocket(protocol + '//' + host + '/ws/app-status');
+          socket.addEventListener('open', function(){
+            try{
+              socket.send(JSON.stringify({action:'identify', visitorId: visitorId, browserInfo: browserInfo, tabId: tabId}));
+              socket.send(JSON.stringify({action:'join', app:'retail-pricing', visitorId: visitorId, browserInfo: browserInfo, tabId: tabId}));
+              startHeartbeat();
+            }catch(e){}
+          });
+          socket.addEventListener('close', function(){ stopHeartbeat(); setTimeout(connect, 5000); });
+          socket.addEventListener('error', function(){ stopHeartbeat(); });
+        }
+
+        window.addEventListener('beforeunload', function(){
+          try{
+            if(socket && socket.readyState === WebSocket.OPEN){
+              socket.send(JSON.stringify({action:'leave', app:'retail-pricing', visitorId: visitorId, browserInfo: browserInfo, tabId: tabId}));
+            }
+          }catch(e){}
+        });
+
+        connect();
+      } catch(err) {
+        console.warn('App-status WS init failed:', err);
+      }
+    })();
+  </script>
+</body>
+</html>
