@@ -10,6 +10,7 @@ KG_PER_M2: float = 24.0
 Origin = Literal["ES", "IT", "PT"]
 Destination = Literal["GR-mainland", "GR-crete"]
 PalletType = Literal["eu", "industrial"]
+TransportMode = Literal["road", "groupage"]
 
 @dataclass
 class PricingRequest:
@@ -21,6 +22,7 @@ class PricingRequest:
     origin: Origin
     destination: Destination
     margin: float  # gross margin target, e.g., 0.40
+    transport_mode: TransportMode = "road"
 
 class PricingEngine:
     def __init__(self, tariffs: Dict[str, Any]):
@@ -42,13 +44,26 @@ class PricingEngine:
         kg_total = kg_tiles + r.pallets_count * pconf["weight_kg"]
         pallet_cost = r.pallets_count * pconf["cost_eur"]
 
-        # 3) Μεταφορικά ανά προέλευση
+        # 3) Μεταφορικά ανά προέλευση/τρόπο
         freight = 0.0
         extras = 0.0
         extras_breakdown = []
 
+        # Validate/adjust transport mode: Groupage επιτρέπεται μόνο για Ισπανία
+        mode = r.transport_mode or "road"
+        if r.origin != "ES" and mode == "groupage":
+            mode = "road"
+
         if r.origin == "ES":
-            freight = self._freight_es(kg_total)
+            if mode == "groupage":
+                freight = self._freight_groupage(kg_total)
+                extras_breakdown.append({
+                    "code": "groupage_mode",
+                    "label": "Μεταφορικά Groupage (ES)",
+                    "amount": round(freight, 2)
+                })
+            else:
+                freight = self._freight_es(kg_total)
         elif r.origin == "IT":
             freight = self._freight_it(kg_total)
             # Extra για industrial παλέτα Ιταλίας
@@ -135,6 +150,22 @@ class PricingEngine:
                 return float(band.get("flat_eur", 0)) or kg * float(band.get("eur_per_kg", 0))
         return kg * float(it.get("default_eur_per_kg", 0))
 
+    def _freight_groupage(self, kg: float) -> float:
+        grp = self.tariffs["groupage"]
+        # Tariff file structure: { "groupage": [ {min_kg, max_kg, flat_eur? , eur_per_kg?}, ... ] }
+        bands = grp.get("groupage", []) if isinstance(grp, dict) else grp
+        for band in bands:
+            if band["min_kg"] <= kg <= band["max_kg"]:
+                flat = float(band.get("flat_eur", 0))
+                per = float(band.get("eur_per_kg", 0))
+                return flat if flat > 0 else kg * per
+        # If out of defined ranges, use last per-kg if available
+        if bands:
+            last = bands[-1]
+            per = float(last.get("eur_per_kg", 0))
+            return kg * per
+        return 0.0
+
 
 def load_tariffs(base_path: str) -> Dict[str, Any]:
     def read(name: str):
@@ -144,6 +175,7 @@ def load_tariffs(base_path: str) -> Dict[str, Any]:
         **read("extras.json"),
         "es_freight": read("helios_es.json"),
         "it_freight": read("hermes_it.json"),
+        "groupage": read("groupage.json"),
     }
 
 def save_tariffs(new_tariffs: Dict[str, Any], base_path: str) -> None:

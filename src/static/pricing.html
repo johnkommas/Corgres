@@ -341,6 +341,22 @@
           </select>
         </div>
 
+        <!-- 6b. Τρόπος Μεταφοράς (Transport Mode) -->
+        <div class="col-md-4">
+          <label class="form-label">Τρόπος Μεταφοράς</label>
+          <div class="btn-group w-100" role="group" aria-label="Τρόπος Μεταφοράς" id="transport_mode_group">
+            <input type="radio" class="btn-check" name="transportmode" id="mode_road" autocomplete="off" data-value="road" checked>
+            <label class="btn btn-outline-secondary" for="mode_road">Οδικώς</label>
+            <input type="radio" class="btn-check" name="transportmode" id="mode_groupage" autocomplete="off" data-value="groupage">
+            <label class="btn btn-outline-secondary" for="mode_groupage" id="mode_groupage_label" title="Διαθέσιμο μόνο για Ισπανία">Groupage</label>
+          </div>
+          <select id="transport_mode" class="form-select d-none">
+            <option value="road" selected>Οδικώς</option>
+            <option value="groupage">Groupage</option>
+          </select>
+          <div class="form-text text-muted" id="groupage_hint">Η επιλογή Groupage είναι διαθέσιμη μόνο όταν η προέλευση είναι Ισπανία (ES).</div>
+        </div>
+
         <!-- 7. Destination as toggle pills (hidden select kept) -->
         <div class="col-md-4">
           <label class="form-label">Προορισμός</label>
@@ -610,7 +626,33 @@
       }
       wireToggleGroup('pallet_type_group', 'pallet_type');
       wireToggleGroup('origin_group', 'origin');
+
+      // Enable Groupage only for ES origin
+      const originSelect = document.getElementById('origin');
+      const groupageRadio = document.getElementById('mode_groupage');
+      const groupageLabel = document.getElementById('mode_groupage_label');
+      const transportSelect = document.getElementById('transport_mode');
+      function refreshTransportModeAvailability(){
+        const isES = originSelect && originSelect.value === 'ES';
+        if (!isES) {
+          // disable groupage and switch to road if currently selected
+          if (groupageRadio) { groupageRadio.checked = false; groupageRadio.disabled = true; }
+          const roadRadio = document.getElementById('mode_road');
+          if (roadRadio && !roadRadio.checked) { roadRadio.checked = true; }
+          if (transportSelect) transportSelect.value = 'road';
+          if (groupageLabel) { groupageLabel.classList.add('disabled'); groupageLabel.setAttribute('aria-disabled','true'); }
+        } else {
+          if (groupageRadio) { groupageRadio.disabled = false; }
+          if (groupageLabel) { groupageLabel.classList.remove('disabled'); groupageLabel.removeAttribute('aria-disabled'); }
+        }
+      }
+      if (originSelect) {
+        originSelect.addEventListener('change', refreshTransportModeAvailability);
+        // initial state
+        refreshTransportModeAvailability();
+      }
       wireToggleGroup('destination_group', 'destination');
+      wireToggleGroup('transport_mode_group', 'transport_mode');
 
 
       // Toggle extras details visibility
@@ -637,6 +679,7 @@
           pallet_type: document.getElementById('pallet_type').value,
           origin: document.getElementById('origin').value,
           destination: document.getElementById('destination').value,
+          transport_mode: document.getElementById('transport_mode').value,
           margin: parseFloat(document.getElementById('margin').value || '0.40')
         };
         if(!(payload.margin > 0 && payload.margin < 1)){

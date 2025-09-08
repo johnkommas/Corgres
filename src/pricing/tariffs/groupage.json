@@ -1,0 +1,14 @@
+{
+  "groupage": [
+    { "min_kg": 1,    "max_kg": 200,   "flat_eur": 58 },
+    { "min_kg": 201,  "max_kg": 300,   "flat_eur": 75 },
+    { "min_kg": 301,  "max_kg": 500,   "flat_eur": 105 },
+    { "min_kg": 501,  "max_kg": 1000,   "flat_eur": 143 },
+    { "min_kg": 1001,  "max_kg": 2000,  "eur_per_kg": 0.138 },
+    { "min_kg": 2001, "max_kg": 2500, "eur_per_kg": 0.135 },
+    { "min_kg": 2501, "max_kg": 5000, "eur_per_kg": 0.110 },
+    { "min_kg": 5001, "max_kg": 8000, "eur_per_kg": 0.100 },
+    { "min_kg": 8001, "max_kg": 10000, "eur_per_kg": 0.098 },
+    { "min_kg": 10001, "max_kg": 23000, "eur_per_kg": 0.095 }
+  ]
+}

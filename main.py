@@ -1434,6 +1434,11 @@ async def pricing_calc(payload: Dict[str, Any]):
         origin = str(payload.get("origin", "ES"))
         destination = str(payload.get("destination", "GR-mainland"))
         margin = float(payload.get("margin", 0.40))
+        transport_mode = str(payload.get("transport_mode", "road"))
+
+        # Enforce Groupage availability only for Spain (ES)
+        if origin != "ES" and transport_mode == "groupage":
+            transport_mode = "road"
 
         req = PricingRequest(
             buy_price_eur_m2=buy_price,
@@ -1443,7 +1448,8 @@ async def pricing_calc(payload: Dict[str, Any]):
             pallet_type=pallet_type,  # type: ignore
             origin=origin,            # type: ignore
             destination=destination,  # type: ignore
-            margin=margin
+            margin=margin,
+            transport_mode=transport_mode  # type: ignore
         )
         result = PRICING_ENGINE.calculate(req)
         api_logger.info("Pricing calculation completed successfully")
