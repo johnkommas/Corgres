@@ -553,7 +553,7 @@ async def root():
     Root endpoint that serves the selection.html file
     """
     api_logger.info("Serving selection.html")
-    with open("src/static/selection.html") as f:
+    with open("src/static/selection.html", encoding="utf-8") as f:
         return f.read()
 
 @api.get("/excel-formatter", response_class=HTMLResponse)
@@ -562,7 +562,7 @@ async def excel_formatter():
     Endpoint that serves the Excel Formatter application (index.html)
     """
     api_logger.info("Serving Excel Formatter (index.html)")
-    with open("src/static/index.html") as f:
+    with open("src/static/index.html", encoding="utf-8") as f:
         return f.read()
 
 @api.get("/pricing", response_class=HTMLResponse)
@@ -571,7 +571,7 @@ async def retail_pricing():
     Endpoint that serves the Retail Pricing Calculator (pricing.html)
     """
     api_logger.info("Serving Retail Pricing Calculator (pricing.html)")
-    with open("src/static/pricing.html") as f:
+    with open("src/static/pricing.html", encoding="utf-8") as f:
         return f.read()
 
 @api.websocket("/ws/app-status")
@@ -762,7 +762,7 @@ async def logs_page():
     """
     api_logger.info("Serving logs.html")
     try:
-        with open("src/static/logs.html") as f:
+        with open("src/static/logs.html", encoding="utf-8") as f:
             return f.read()
     except FileNotFoundError:
         error_logger.error("logs.html not found")
