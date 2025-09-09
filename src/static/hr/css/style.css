@@ -1,0 +1,567 @@
+/* Custom styles for HR Personality Assessment Tool - Apple-inspired Design */
+
+/* Theme variables */
+:root {
+    /* Apple-inspired light theme */
+    --body-bg: #f5f5f7;
+    --text-color: #1d1d1f;
+    --card-bg: #ffffff;
+    --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    --border-color: #e6e6e6;
+    --table-header-bg: #f5f5f7;
+    --footer-bg: #f5f5f7;
+    --footer-border: #e6e6e6;
+    --footer-text: #86868b;
+    --hover-bg: #f9f9f9;
+    --navbar-bg: #000000; /* Apple-style black navbar */
+    --navbar-color: #ffffff;
+    --accent-color: #0071e3; /* Apple blue */
+    --muted-color: #86868b; /* Apple gray */
+    --success-color: #34c759; /* Apple green */
+    --warning-color: #ff9500; /* Apple orange */
+    --danger-color: #ff3b30; /* Apple red */
+    --secondary-accent: #5e5ce6; /* Apple purple */
+}
+
+[data-theme="dark"] {
+    /* Apple-inspired dark theme */
+    --body-bg: #000000;
+    --text-color: #f5f5f7;
+    --card-bg: #1c1c1e;
+    --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+    --border-color: #2c2c2e;
+    --table-header-bg: #1c1c1e;
+    --footer-bg: #1c1c1e;
+    --footer-border: #2c2c2e;
+    --footer-text: #86868b;
+    --hover-bg: #2c2c2e;
+    --navbar-bg: #1c1c1e; /* Dark navbar */
+    --navbar-color: #f5f5f7;
+    --accent-color: #0a84ff; /* Apple blue for dark mode */
+    --muted-color: #86868b; /* Apple gray */
+    --success-color: #30d158; /* Apple green for dark mode */
+    --warning-color: #ff9f0a; /* Apple orange for dark mode */
+    --danger-color: #ff453a; /* Apple red for dark mode */
+    --secondary-accent: #5e5ce6; /* Apple purple */
+}
+
+/* General styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--body-bg);
+    color: var(--text-color);
+    transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.container {
+    max-width: 1600px;
+    padding: 0 20px;
+}
+
+/* Header styles - Apple-inspired */
+.navbar {
+    box-shadow: none;
+    background-color: var(--navbar-bg) !important;
+    padding: 16px 0;
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+.navbar-brand {
+    font-weight: 600;
+    color: var(--navbar-color) !important;
+    letter-spacing: -0.5px;
+    font-size: 1.2rem;
+}
+
+.nav-link {
+    color: var(--navbar-color) !important;
+    font-weight: 400;
+    padding: 8px 16px !important;
+    transition: opacity 0.2s ease;
+    opacity: 0.8;
+}
+
+.nav-link:hover {
+    opacity: 1;
+}
+
+/* Theme toggle button - Apple-inspired */
+#theme-toggle {
+    cursor: pointer;
+    border: none;
+    color: var(--navbar-color);
+    background: transparent;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+#theme-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+
+/* Floating theme toggle button - Apple-inspired */
+.theme-toggle {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1000;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: var(--card-bg);
+    color: var(--accent-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.theme-toggle:hover {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+}
+
+.theme-toggle i {
+    font-size: 1.4rem;
+}
+
+[data-theme="dark"] .theme-toggle {
+    background-color: var(--card-bg);
+    color: var(--accent-color);
+}
+
+/* Badge styles */
+.badge-accent {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.badge-primary {
+    background-color: var(--navbar-bg);
+    color: white;
+}
+
+/* Card styles - Apple-inspired */
+.card {
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 24px;
+    overflow: hidden;
+    background-color: var(--card-bg);
+    border: none;
+    transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1), 
+                box-shadow 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    font-weight: 600;
+    background-color: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px 20px;
+    letter-spacing: -0.5px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Form styles - Apple-inspired */
+.form-control {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 1rem;
+    transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+    height: auto;
+}
+
+.form-control:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    outline: none;
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--text-color);
+}
+
+/* Button styles - Apple-inspired */
+.btn {
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 500;
+    transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+    border: none;
+}
+
+.btn-primary {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0062cc;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.btn-outline-primary {
+    border: 1px solid var(--accent-color);
+    color: var(--accent-color);
+    background-color: transparent;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--accent-color);
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Feature box styles - Apple-inspired */
+.feature-box {
+    border: none;
+    border-radius: 12px;
+    height: 100%;
+    transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+    background-color: var(--card-bg);
+    padding: 24px;
+    box-shadow: var(--card-shadow);
+}
+
+.feature-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.feature-box h4 {
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: -0.5px;
+    color: var(--text-color);
+}
+
+.feature-box p {
+    color: var(--muted-color);
+    line-height: 1.6;
+}
+
+.feature-box i {
+    color: var(--accent-color);
+    font-size: 1.5rem;
+    margin-right: 8px;
+}
+
+/* List group styles */
+.list-group-item {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+.list-group-item:hover {
+    background-color: var(--hover-bg);
+}
+
+/* Table styles - Apple-inspired */
+.table-responsive {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 24px;
+}
+
+.table {
+    color: var(--text-color);
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table th {
+    background-color: var(--table-header-bg);
+    font-weight: 600;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    letter-spacing: -0.3px;
+}
+
+.table td {
+    padding: 16px;
+    border-top: none;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table tbody tr:hover {
+    background-color: var(--hover-bg);
+}
+
+/* Badge styles - Apple-inspired */
+.badge {
+    font-weight: 500;
+    padding: 0.5em 0.8em;
+    display: inline-block;
+    text-align: center;
+    line-height: 1.2;
+    margin: 2px;
+    border-radius: 6px;
+    letter-spacing: -0.2px;
+    font-size: 0.85em;
+}
+
+.badge-primary {
+    background-color: var(--accent-color);
+}
+
+.badge-success {
+    background-color: var(--success-color);
+}
+
+.badge-warning {
+    background-color: var(--warning-color);
+}
+
+.badge-danger {
+    background-color: var(--danger-color);
+}
+
+.badge-secondary {
+    background-color: var(--secondary-accent);
+}
+
+/* Style for the translation text in badges */
+.badge br + small,
+.badge br + span {
+    font-size: 0.8em;
+    display: block;
+    margin-top: 2px;
+}
+
+/* Footer styles - Apple-inspired */
+.footer {
+    margin-top: 80px;
+    padding: 40px 0;
+    border-top: 1px solid var(--footer-border);
+    background-color: var(--footer-bg) !important;
+}
+
+.footer .text-muted {
+    color: var(--footer-text) !important;
+    font-size: 0.9rem;
+    letter-spacing: -0.2px;
+}
+
+/* Responsive adjustments - Apple-inspired */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 16px;
+    }
+
+    .btn {
+        width: 100%;
+        margin-bottom: 12px;
+        padding: 12px 16px;
+    }
+
+    .d-flex.justify-content-between {
+        flex-direction: column;
+    }
+
+    .navbar {
+        padding: 12px 0;
+    }
+
+    .container {
+        padding: 0 16px;
+    }
+
+    h1, .h1 {
+        font-size: 2rem;
+    }
+
+    h2, .h2 {
+        font-size: 1.75rem;
+    }
+
+    h3, .h3 {
+        font-size: 1.5rem;
+    }
+
+    .feature-box {
+        padding: 16px;
+    }
+}
+
+/* Animation for alerts - Apple-inspired */
+.alert {
+    animation: slideInAndFade 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+    border: none;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+@keyframes slideInAndFade {
+    from { 
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert-info {
+    background-color: rgba(0, 113, 227, 0.1);
+    color: var(--accent-color);
+}
+
+.alert-success {
+    background-color: rgba(52, 199, 89, 0.1);
+    color: var(--success-color);
+}
+
+.alert-warning {
+    background-color: rgba(255, 149, 0, 0.1);
+    color: var(--warning-color);
+}
+
+.alert-danger {
+    background-color: rgba(255, 59, 48, 0.1);
+    color: var(--danger-color);
+}
+
+/* Chart container - Apple-inspired */
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin: 24px 0;
+    padding: 16px;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.chart-container:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+/* Enhanced interpretation styling - Apple-inspired */
+.enhanced-interpretation {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    max-width: 100%;
+    border: none;
+    padding: 24px;
+    border-radius: 12px;
+    background-color: var(--card-bg);
+    margin-top: 24px;
+    box-shadow: var(--card-shadow);
+}
+
+[data-theme="dark"] .enhanced-interpretation {
+    background-color: #2d2d2d;
+    border-color: #444;
+    color: #e0e0e0;
+}
+
+.enhanced-interpretation h2 {
+    color: var(--text-color);
+    margin-bottom: 16px;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+}
+
+.enhanced-interpretation h3 {
+    color: var(--text-color);
+    margin-top: 24px;
+    margin-bottom: 12px;
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+}
+
+.enhanced-interpretation p {
+    margin-bottom: 15px;
+}
+
+.enhanced-interpretation ul {
+    margin-left: 20px;
+    margin-bottom: 15px;
+}
+
+.enhanced-interpretation li {
+    margin-bottom: 8px;
+}
+
+.enhanced-interpretation .section {
+    margin-bottom: 25px;
+}
+
+.enhanced-interpretation .note {
+    font-style: italic;
+    color: var(--muted-color);
+    border-top: 1px solid var(--border-color);
+    padding-top: 16px;
+    margin-top: 32px;
+    font-size: 0.95rem;
+}
+
+/* Tabs styling - Apple-inspired */
+.nav-tabs {
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+.nav-tabs .nav-link {
+    color: var(--text-color) !important;
+    border: none;
+    padding: 12px 20px;
+    margin-right: 4px;
+    border-radius: 8px 8px 0 0;
+    transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+    font-weight: 500;
+}
+
+.nav-tabs .nav-link:hover {
+    background-color: var(--hover-bg);
+    border-color: transparent;
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--accent-color) !important;
+    font-weight: 600;
+    background-color: transparent;
+    border-bottom: 2px solid var(--accent-color);
+}

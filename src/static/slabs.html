@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Corgres - SLABs Pricing</title>
+  <link rel="icon" type="image/png" href="/images/mylogo.png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+  <style>
+    body { background-color: #fffbfa; }
+    .section { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+    .btn-calc { background: linear-gradient(135deg, #ef476f, #e11d48); color: #fff; border: none; border-radius: 999px; padding: 0.8rem 1.25rem; font-weight: 700; }
+    .retail-badge { background: linear-gradient(135deg, #198754, #157347); color: #fff; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light mb-4 py-3">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center" href="/">
+        <img src="/images/mylogo.png" alt="Corgres" height="36">
+        <span class="fw-bold ms-2" style="color: #0f172a;">Corgres Σταγάκης</span>
+        <span class="text-muted d-none d-md-inline mx-2">|</span>
+        <span class="text-muted d-none d-md-inline">SLABs Pricing</span>
+      </a>
+      <div class="ms-auto">
+        <a class="btn btn-outline-secondary" href="/pricing"><i class="fas fa-tags me-2"></i>Regular</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="section">
+      <h3 class="mb-3"><i class="fas fa-tablet-alt me-2"></i> Υπολογισμός Λιανικής Τιμής (SLABs)</h3>
+      <form id="slabForm" class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Εταιρία</label>
+          <select id="brand" class="form-select" required>
+            <option value="infinity" selected>Infinity</option>
+            <option value="mirage">Mirage</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Πάχος (mm) / Διαστάσεις</label>
+          <select id="variant" class="form-select" required>
+            <!-- options populated dynamically as e.g., 6 (160x320) -->
+          </select>
+          <input type="hidden" id="thickness" value="">
+          <input type="hidden" id="dimensions" value="">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Τεμάχια</label>
+          <input type="number" min="1" step="1" id="units" class="form-control" placeholder="π.χ. 15" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Τιμή Αγοράς / Τεμάχιο (€)</label>
+          <input type="number" min="0" step="0.01" id="buy_per_unit" class="form-control" placeholder="π.χ. 100" required>
+        </div>
+        <div class="col-md-12">
+          <label class="form-label">Προορισμός</label>
+          <div class="btn-group w-100" role="group" aria-label="Προορισμός" id="destination_group">
+            <input type="radio" class="btn-check" name="destopt" id="dest_gr_main" autocomplete="off" data-value="GR-mainland" checked>
+            <label class="btn btn-outline-secondary" for="dest_gr_main">Ελλάδα - Ηπειρωτική</label>
+            <input type="radio" class="btn-check" name="destopt" id="dest_gr_crete" autocomplete="off" data-value="GR-crete">
+            <label class="btn btn-outline-secondary" for="dest_gr_crete">Ελλάδα - Κρήτη</label>
+          </div>
+          <select id="destination" class="form-select d-none">
+            <option value="GR-mainland" selected>Ελλάδα - Ηπειρωτική</option>
+            <option value="GR-crete">Ελλάδα - Κρήτη</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="margin" class="form-label">Περιθώριο (Margin %)</label>
+          <input type="number" min="0" max="1" step="0.01" class="form-control d-none" id="margin" value="0.40" required>
+          <div class="d-flex align-items-center gap-2">
+            <input type="range" id="margin_range" class="form-range" min="0" max="1" step="0.01" value="0.40" aria-label="Περιθώριο (Margin %)">
+            <span id="margin_badge" class="badge rounded-pill text-bg-success">40.00%</span>
+          </div>
+        </div>
+        <div class="col-md-8">
+          <label class="form-label">Συσκευασία</label>
+          <div class="d-flex gap-3 align-items-center flex-wrap">
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="pack" id="pack_auto" value="auto" checked>
+              <label class="form-check-label" for="pack_auto">Πρόταση (βάσει crate_max_units)</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="pack" id="pack_crate" value="crate">
+              <label class="form-check-label" for="pack_crate">Crate</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="pack" id="pack_aframe" value="a-frame">
+              <label class="form-check-label" for="pack_aframe">A-Frame</label>
+            </div>
+            <span class="text-muted" id="pack_hint"></span>
+          </div>
+        </div>
+        <div class="col-12">
+          <button class="btn btn-calc" type="submit"><i class="fas fa-calculator me-2"></i>Υπολογισμός</button>
+        </div>
+      </form>
+
+      <div id="result" class="mt-4" style="display:none;">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+              <div>
+                <h5 class="card-title mb-1">Ανάλυση Κόστους</h5>
+                <p class="text-muted mb-3">SLABs</p>
+              </div>
+              <div class="p-3 rounded retail-badge">
+                <div class="small text-white-50">Λιανική Τιμή / m²</div>
+                <div class="fw-bold" id="sell_per_m2" style="font-size: 1.6rem;">—</div>
+              </div>
+            </div>
+            <div class="row mt-3">
+              <div class="col-md-6">
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Κόστος Εμπορεύματος</span><strong id="cost_goods">—</strong></li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Χειρισμός Παλετών</span><strong id="pallet_handling">—</strong></li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Μεταφορικά Παλετών</span><strong id="pallet_shipping">—</strong></li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Μεταφορικά (Ιταλία)</span><strong id="freight">—</strong></li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Επιβάρυνση Κρήτης</span><strong id="gr_crete_extra">—</strong></li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Σύνολο Logistics</span><strong id="logistics">—</strong></li>
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Σύνολο Κόστους</span><strong id="total_cost">—</strong></li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Κόστος ανά m²</span><strong id="cost_per_m2">—</strong></li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Περιθώριο</span><strong id="margin_value">—</strong></li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Ισοδύναμο Markup</span><strong id="markup_equiv">—</strong></li>
+                  <li class="list-group-item small"><code id="markup_formula">Sell = Cost / (1 - Margin) • Markup = Sell/Cost - 1</code></li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Συνολ. Βάρος</span><strong id="kg_total">—</strong></li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center"><span>Παλέτες</span><strong id="pallets_info">—</strong></li>
+                </ul>
+                <div class="mt-3">
+                  <h6 class="mb-2">Φόρτωση Παλετών</h6>
+                  <div class="small text-muted mb-2">Οπτική απεικόνιση πληρότητας ανά παλέτα</div>
+                  <div id="pallet_fill_container" class="d-flex flex-column gap-2"></div>
+                  <div class="d-flex gap-3 mt-2 small">
+                    <span><span class="badge rounded-pill bg-success">&nbsp;&nbsp;</span> ≥ 90% (κατάλληλη)</span>
+                    <span><span class="badge rounded-pill bg-warning text-dark">&nbsp;&nbsp;</span> 40–90% (μέτρια)</span>
+                    <span><span class="badge rounded-pill bg-danger">&nbsp;&nbsp;</span> < 40% (χαμηλή)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+  <script>
+    toastr.options = { positionClass: 'toast-top-right', timeOut: 7000, closeButton: true, progressBar: true };
+
+    const detailsUrl = '/pricing/slabs/details'; // not used now, we compute server-side
+
+    const state = { data: null };
+
+    // Simple renderer for pallet fill visualization
+    function renderPalletFill(units, capacity, pallets, packType, breakdown){
+      const container = document.getElementById('pallet_fill_container');
+      if (!container) return;
+      container.innerHTML = '';
+      const cap = Math.max(1, Number(capacity||0));
+      const totalPallets = Math.max(1, Number(pallets||0));
+      const totalUnits = Math.max(0, Number(units||0));
+      for (let i=0;i<totalPallets;i++){
+        let cap_i = cap;
+        let filled = 0;
+        let type_i = packType || '';
+        if (Array.isArray(breakdown) && breakdown[i]){
+          const b = breakdown[i];
+          cap_i = Math.max(1, Number(b.capacity||cap));
+          filled = Math.max(0, Math.min(cap_i, Number(b.units||0)));
+          type_i = String(b.type || type_i).toUpperCase();
+        } else {
+          const isLast = (i === totalPallets-1);
+          filled = isLast ? (totalUnits - cap * (totalPallets-1)) : cap;
+          if (filled < 0) filled = 0;
+          if (filled > cap) filled = cap;
+        }
+        const pct = cap_i>0 ? (filled / cap_i) * 100 : 0;
+        let color = 'bg-danger';
+        if (pct >= 90) color = 'bg-success';
+        else if (pct >= 40) color = 'bg-warning';
+        const row = document.createElement('div');
+        row.className = 'd-flex align-items-center gap-3';
+        const label = document.createElement('div');
+        label.style.minWidth = '110px';
+        label.innerHTML = `<strong>Παλέτα ${i+1}</strong><div class="small text-muted">${type_i}</div>`;
+        const shell = document.createElement('div');
+        shell.className = 'progress flex-grow-1';
+        shell.style.height = '16px';
+        const bar = document.createElement('div');
+        bar.className = `progress-bar ${color}`;
+        bar.style.width = pct.toFixed(2)+'%';
+        bar.setAttribute('aria-valuenow', pct.toFixed(2));
+        bar.setAttribute('aria-valuemin','0');
+        bar.setAttribute('aria-valuemax','100');
+        bar.title = `${pct.toFixed(1)}%`;
+        shell.appendChild(bar);
+        const right = document.createElement('div');
+        right.className = 'text-muted small';
+        right.textContent = `${filled}/${cap_i} τεμ. (${pct.toFixed(0)}%)`;
+        row.appendChild(label);
+        row.appendChild(shell);
+        row.appendChild(right);
+        container.appendChild(row);
+      }
+    }
+
+    // Fetch details for dynamic hints (we'll ask calc endpoint for suggestions instead)
+
+    function updateThicknessOptions() {
+      const brand = document.getElementById('brand').value;
+      const select = document.getElementById('variant');
+      const thHidden = document.getElementById('thickness');
+      const dimHidden = document.getElementById('dimensions');
+      select.innerHTML = '';
+      // Define variants inline (kept in sync with slab_details.json)
+      const variants = brand === 'infinity'
+        ? [
+            {thickness:6, dimensions:'160x320'},
+            {thickness:12, dimensions:'162x324'},
+            {thickness:20, dimensions:'162x324'}
+          ]
+        : [
+            {thickness:6, dimensions:'120x278'},
+            {thickness:6, dimensions:'160x320'},
+            {thickness:12, dimensions:'162x324'}
+          ];
+      variants.forEach(v => {
+        const o = document.createElement('option');
+        o.value = `${v.thickness}|${v.dimensions}`;
+        o.textContent = `${v.thickness} (${v.dimensions})`;
+        o.setAttribute('data-thickness', String(v.thickness));
+        o.setAttribute('data-dimensions', v.dimensions);
+        select.appendChild(o);
+      });
+      // set hidden values to first option
+      const first = select.options[0];
+      if (first){
+        thHidden.value = first.getAttribute('data-thickness') || '';
+        dimHidden.value = first.getAttribute('data-dimensions') || '';
+      }
+      select.dispatchEvent(new Event('change'));
+    }
+
+    // Keep hidden thickness/dimensions in sync with selected variant
+    document.addEventListener('change', function(e){
+      var target = e.target;
+      if (target && target.id === 'variant'){
+        var sel = target;
+        var opt = sel.selectedOptions && sel.selectedOptions[0];
+        if (opt){
+          document.getElementById('thickness').value = opt.getAttribute('data-thickness') || '';
+          document.getElementById('dimensions').value = opt.getAttribute('data-dimensions') || '';
+        }
+      }
+    });
+
+    function setPackHint(text){ document.getElementById('pack_hint').textContent = text || ''; }
+
+    async function proposePackaging() {
+      const brand = document.getElementById('brand').value;
+      const thickness = parseInt(document.getElementById('thickness').value || '0');
+      const dimensions = document.getElementById('dimensions').value || '';
+      const units = parseInt(document.getElementById('units').value || '0');
+      if (!units || !thickness) { setPackHint(''); return; }
+      // Ask the backend for proposal given inputs without forcing pack
+      try {
+        const payload = { brand, thickness, dimensions, units, buy_per_unit: 0, pack: 'auto' };
+        const res = await fetch('/api/pricing/slabs/calc', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        if (!res.ok) return;
+        const data = await res.json();
+        setPackHint(`Πρόταση: ${data.selection.package_type.toUpperCase()} – ${data.selection.pallets} παλέτα/ες`);
+        // Tick auto if present
+        document.getElementById('pack_auto').checked = true;
+      } catch(e) { /* ignore */ }
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+      updateThicknessOptions();
+      document.getElementById('brand').addEventListener('change', updateThicknessOptions);
+      document.getElementById('thickness').addEventListener('change', proposePackaging);
+      document.getElementById('units').addEventListener('input', proposePackaging);
+
+      function wireToggleGroup(groupId, selectId) {
+        const group = document.getElementById(groupId);
+        const select = document.getElementById(selectId);
+        if (!group || !select) return;
+        group.querySelectorAll('input[type="radio"]').forEach(radio => {
+          radio.addEventListener('change', () => {
+            if (radio.checked) {
+              const val = radio.getAttribute('data-value');
+              if (val) {
+                select.value = val;
+                select.dispatchEvent(new Event('change'));
+              }
+            }
+          });
+        });
+        const current = select.value;
+        const match = group.querySelector(`input[data-value="${current}"]`);
+        if (match) {
+          match.checked = true;
+          match.dispatchEvent(new Event('change'));
+        }
+      }
+      wireToggleGroup('destination_group','destination');
+
+      // Margin slider sync
+      const marginNumber = document.getElementById('margin');
+      const marginRange = document.getElementById('margin_range');
+      const marginBadge = document.getElementById('margin_badge');
+      function updateMarginFromRange(){
+        const v = parseFloat(marginRange.value);
+        marginNumber.value = v.toFixed(2);
+        const pct = v*100;
+        marginBadge.textContent = pct.toFixed(2)+"%";
+        const classes = ['text-bg-danger','text-bg-warning','text-bg-secondary','text-bg-success'];
+        classes.forEach(c=>marginBadge.classList.remove(c));
+        if (pct < 30) marginBadge.classList.add('text-bg-danger');
+        else if (pct < 40) marginBadge.classList.add('text-bg-warning');
+        else if (pct <= 50) marginBadge.classList.add('text-bg-secondary');
+        else marginBadge.classList.add('text-bg-success');
+      }
+      if (marginRange && marginNumber){
+        marginRange.addEventListener('input', updateMarginFromRange);
+        marginRange.addEventListener('change', updateMarginFromRange);
+        updateMarginFromRange();
+      }
+
+      document.getElementById('slabForm').addEventListener('submit', async function(e){
+        e.preventDefault();
+        const brand = document.getElementById('brand').value;
+        const thickness = parseInt(document.getElementById('thickness').value || '0');
+        const dimensions = document.getElementById('dimensions').value || '';
+        const units = parseInt(document.getElementById('units').value || '0');
+        const buy_per_unit = parseFloat(document.getElementById('buy_per_unit').value || '0');
+        const pack = (document.querySelector('input[name="pack"]:checked') && document.querySelector('input[name="pack"]:checked').value) || 'auto';
+
+        if (!(units>0) || !(buy_per_unit>=0)) { toastr.error('Συμπληρώστε σωστά τα πεδία.'); return; }
+        try{
+          const destination = document.getElementById('destination').value;
+          const margin = parseFloat(document.getElementById('margin').value || '0.40');
+          if (!(margin>0 && margin<1)) { toastr.error('Το περιθώριο πρέπει να είναι μεταξύ 0 και 1 (π.χ. 0.40)'); return; }
+          const res = await fetch('/api/pricing/slabs/calc', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ brand, thickness, dimensions, units, buy_per_unit, pack, destination, margin }) });
+          if (!res.ok) {
+            const err = await res.json().catch(()=>({detail:'Σφάλμα'}));
+            throw new Error(err.detail || 'Αποτυχία αιτήματος');
+          }
+          const data = await res.json();
+          const euro = (v)=> `${Number(v).toFixed(2)} €`;
+          document.getElementById('cost_goods').textContent = euro(data.cost.cost_goods);
+          document.getElementById('pallet_handling').textContent = euro(data.cost.pallet_handling);
+          document.getElementById('pallet_shipping').textContent = euro(data.cost.pallet_shipping);
+          document.getElementById('freight').textContent = euro(data.cost.freight_it);
+          if (typeof data.cost.gr_crete_extra !== 'undefined' && data.cost.gr_crete_extra !== null) {
+            document.getElementById('gr_crete_extra').textContent = euro(data.cost.gr_crete_extra);
+          } else {
+            document.getElementById('gr_crete_extra').textContent = '—';
+          }
+          document.getElementById('logistics').textContent = euro(data.cost.logistics);
+          document.getElementById('total_cost').textContent = euro(data.cost.total_cost);
+          document.getElementById('cost_per_m2').textContent = euro(data.cost.cost_per_m2);
+          document.getElementById('kg_total').textContent = `${data.weights.kg_total} kg`;
+          const mix = data?.selection?.package_mix;
+          if (mix) {
+            const by = data.selection.pallets_by_type||{};
+            const c = Number(by['crate']||0);
+            const a = Number(by['a-frame']||0);
+            document.getElementById('pallets_info').textContent = `Σύνολο ${data.selection.pallets} (A-FRAME × ${a}, CRATE × ${c})`;
+          } else {
+            document.getElementById('pallets_info').textContent = `${data.selection.package_type.toUpperCase()} × ${data.selection.pallets}`;
+          }
+          document.getElementById('sell_per_m2').textContent = euro(data.pricing.sell_price_per_m2);
+          // margin and markup
+          if (typeof data.pricing.margin === 'number') {
+            document.getElementById('margin_value').textContent = `${(data.pricing.margin*100).toFixed(2)}%`;
+          } else { document.getElementById('margin_value').textContent = '—'; }
+          if (typeof data.pricing.markup_equiv === 'number') {
+            document.getElementById('markup_equiv').textContent = `${(data.pricing.markup_equiv*100).toFixed(2)}%`;
+          } else { document.getElementById('markup_equiv').textContent = '—'; }
+          const cp2 = Number(data?.cost?.cost_per_m2||0); const sp2 = Number(data?.pricing?.sell_price_per_m2||0);
+          if (cp2>0 && sp2>0) {
+            document.getElementById('markup_formula').textContent = `Sell = ${sp2.toFixed(2)} = Cost / (1 - Margin) = ${cp2.toFixed(2)} / (1 - ${(data.pricing.margin*100).toFixed(2)}%) • Markup = Sell/Cost - 1 = ${(sp2/cp2-1).toFixed(4)} (${((sp2/cp2-1)*100).toFixed(2)}%)`;
+          } else {
+            document.getElementById('markup_formula').textContent = 'Sell = Cost / (1 - Margin) • Markup = Sell/Cost - 1';
+          }
+
+          // Pallet fill visualization
+          try {
+            const units = Number(data?.inputs?.units || 0);
+            const cap = Number(data?.selection?.capacity_per_palette || 0);
+            const pallets = Number(data?.selection?.pallets || 0);
+            const type = String(data?.selection?.package_type || '').toUpperCase();
+            const breakdown = Array.isArray(data?.selection?.breakdown) ? data.selection.breakdown : null;
+            renderPalletFill(units, cap, pallets, type, breakdown);
+          } catch (e) { /* ignore */ }
+
+          document.getElementById('result').style.display = 'block';
+          if (Array.isArray(data.warnings) && data.warnings.length) {
+            data.warnings.forEach(w => toastr.warning(w));
+          } else { toastr.success('Υπολογισμός ολοκληρώθηκε'); }
+        } catch(err){ toastr.error(err.message || 'Σφάλμα υπολογισμού'); }
+      });
+
+      // initial proposal
+      proposePackaging();
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
