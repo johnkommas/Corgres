@@ -5,12 +5,10 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect, Depends
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
-import secrets
 import os
 import json
 import shutil
@@ -180,26 +178,6 @@ app_logger = get_app_logger()
 data_logger = get_data_processing_logger()
 error_logger = get_error_logger()
 
-# HR Basic Auth setup
-HR_USERNAME = os.getenv("HR_USERNAME", "corgres")
-HR_PASSWORD = os.getenv("HR_PASSWORD", "stagakis")
-security = HTTPBasic()
-
-def verify_hr_auth(credentials: HTTPBasicCredentials = Depends(security)):
-    try:
-        username_ok = secrets.compare_digest(credentials.username, HR_USERNAME)
-        password_ok = secrets.compare_digest(credentials.password, HR_PASSWORD)
-        if not (username_ok and password_ok):
-            api_logger.warning(f"HR auth failed for user '{credentials.username}' from BasicAuth")
-            raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Basic"})
-        api_logger.info(f"HR auth success for user '{credentials.username}'")
-        return credentials.username
-    except HTTPException:
-        raise
-    except Exception as e:
-        error_logger.error(f"HR auth exception: {e}")
-        raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Basic"})
-
 # Create directories if they don't exist
 os.makedirs("src/static", exist_ok=True)
 os.makedirs("src/data/uploads", exist_ok=True)
@@ -223,6 +201,7 @@ api = FastAPI(
     docs_url=None,  # Disable Swagger UI
     redoc_url=None  # Disable ReDoc
 )
+
 
 # Log application startup
 app_logger.info("Application starting up")
@@ -578,6 +557,30 @@ async def root():
     with open("src/static/selection.html", encoding="utf-8") as f:
         return f.read()
 
+@api.get("/access-closed", response_class=HTMLResponse)
+async def access_closed():
+    """
+    Informational page shown when access is closed for security reasons.
+    """
+    api_logger.info("Serving access-closed.html")
+    filepath = "src/static/access-closed.html"
+    if os.path.exists(filepath):
+        with open(filepath, encoding="utf-8") as f:
+            return f.read()
+    # Fallback minimal HTML if the file is missing
+    return HTMLResponse(content=(
+        "<html><head><title>Access Restricted</title>" 
+        "<meta name='viewport' content='width=device-width, initial-scale=1'>"
+        "<style>body{font-family:Arial,Helvetica,sans-serif;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}"
+        ".card{max-width:720px;background:#111827;border:1px solid #374151;border-radius:12px;padding:28px;box-shadow:0 10px 25px rgba(0,0,0,0.4)}"
+        ".title{font-size:1.6rem;margin:0 0 12px;color:#f87171} .muted{color:#9ca3af} a.btn{display:inline-block;margin-top:18px;padding:10px 14px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px}"
+        "code{background:#1f2937;padding:2px 6px;border-radius:6px}</style></head><body>"
+        "<div class='card'><h1 class='title'>Access temporarily restricted</h1>"
+        "<p class='muted'>For security reasons and to protect sensitive HR data, access to this application is currently closed from this port or network path.</p>"
+        "<p class='muted'>Please access the service via the approved internal link (e.g., port <code>8000</code>) if you have authorization, or contact your administrator.</p>"
+        "</div></body></html>"
+    ), status_code=200)
+
 @api.get("/excel-formatter", response_class=HTMLResponse)
 async def excel_formatter():
     """
@@ -594,15 +597,6 @@ async def retail_pricing():
     """
     api_logger.info("Serving Retail Pricing Calculator (pricing.html)")
     with open("src/static/pricing.html", encoding="utf-8") as f:
-        return f.read()
-
-@api.get("/hr-personality", response_class=HTMLResponse, dependencies=[Depends(verify_hr_auth)])
-async def hr_personality():
-    """
-    Endpoint that serves the HR Personality Assessment Tool (Unified Dashboard)
-    """
-    api_logger.info("Serving HR Personality Assessment Tool (hr_unified_dashboard.html)")
-    with open("src/static/hr_unified_dashboard.html", encoding="utf-8") as f:
         return f.read()
 
 @api.websocket("/ws/app-status")
@@ -1492,96 +1486,6 @@ async def pricing_calc(payload: Dict[str, Any]):
         error_logger.error(f"Pricing calculation failed: {e}")
         raise HTTPException(status_code=500, detail="Internal error during pricing calculation")
 
-@api.get("/api/hr/people", dependencies=[Depends(verify_hr_auth)])
-async def hr_people():
-    """
-    Return people data for the HR Personality Assessment Tool from src/hr/data/Results.xlsx.
-    Reads the compact results sheet copied from temp HR project.
-    """
-    try:
-        import pandas as pd  # lazy import to avoid global dependency if not used
-    except Exception as e:
-        error_logger.error(f"Pandas import failed for HR people: {e}")
-        return {"people": []}
-
-    excel_path = os.path.join("src", "hr", "data", "Results.xlsx")
-    if not os.path.exists(excel_path):
-        api_logger.info(f"HR People: results file not found at {excel_path}")
-        return {"people": []}
-
-    try:
-        # Read the results. We only need a few columns for the unified dashboard summary.
-        df = pd.read_excel(excel_path)
-        # Expected Greek columns based on temp HR project
-        col_name = None
-        for cand in [
-            "Υποψήφιος",  # primary
-            "Όνομα",      # fallback if different
-            "Name"        # English fallback
-        ]:
-            if cand in df.columns:
-                col_name = cand
-                break
-        if not col_name:
-            api_logger.info("HR People: no name column found in Results.xlsx")
-            return {"people": []}
-
-        # Helper to get string digits as list of ints
-        def digits_list(val):
-            try:
-                s = str(val)
-                return [int(ch) for ch in s if ch.isdigit()]
-            except Exception:
-                return []
-
-        people = []
-        for _, row in df.iterrows():
-            name = str(row.get(col_name, "")).strip()
-            if not name:
-                continue
-
-            disc_digits = digits_list(row.get("DISC (1-5)", ""))
-            mbti_digits = digits_list(row.get("MBTI (6-9)", ""))
-            p16_digits = digits_list(row.get("16Personalities (20-23)", ""))
-            big5_digits = digits_list(row.get("Big Five (10-19)", ""))
-            enneagram_digits = digits_list(row.get("Enneagram (24-32)", ""))
-
-            # Minimal derivations to match the unified table fields
-            # MBTI/16P: In temp, they pass digits to evaluators. Here, without porting full logic,
-            # we provide placeholders inferred from digits length, keeping structure intact.
-            mbti_type = ""  # could be computed if we port evaluator; keep blank if unknown
-            p16_type = ""   
-
-            # Enneagram dominant: pick the most frequent digit (1..9)
-            enneagram_counts = {}
-            for d in enneagram_digits:
-                if 1 <= d <= 9:
-                    enneagram_counts[d] = enneagram_counts.get(d, 0) + 1
-            enneagram_dominant = None
-            if enneagram_counts:
-                # stable max
-                enneagram_dominant = sorted(enneagram_counts.items(), key=lambda x: (-x[1], x[0]))[0][0]
-
-            person = {
-                "name": name,
-                "mbti": mbti_type,
-                "16p": p16_type,
-                "enneagram_dominant": enneagram_dominant,
-                # Keep keys for potential future use; dashboard table only uses above
-                "disc": {"answers": disc_digits},
-                "big_five": {"answers": big5_digits},
-                "enneagram": {"answers": enneagram_digits}
-            }
-            people.append(person)
-
-        api_logger.info(f"HR People loaded: {len(people)} from Results.xlsx")
-        return {"people": people}
-
-    except Exception as e:
-        error_logger.error(f"Failed to load HR People: {e}")
-        return {"people": []}
-
-
 def get_ip_address():
     """
     Gets the local IP address by connecting to Google's DNS server.
@@ -1624,153 +1528,3 @@ if __name__ == "__main__":
     app_logger.info(f"Starting server on {my_ip}:{port}")
     app_logger.info(f"Server will be accessible at http://{my_ip}:{port} from other devices on the network")
     uvicorn.run("main:api", host=my_ip, port=port, log_level="info", reload=False)
-
-
-@api.get("/api/hr/unified", dependencies=[Depends(verify_hr_auth)])
-async def hr_unified():
-    """
-    Aggregate chart-ready data for the HR Unified Dashboard from src/hr/data/Results.xlsx.
-    Provides overall and per-person metrics for DISC, Big Five (OCEAN), Enneagram,
-    and placeholders for MBTI/16P. Designed for front-end Chart.js rendering.
-    """
-    api_logger.info("HR Unified data requested")
-    try:
-        import pandas as pd
-    except Exception as e:
-        error_logger.error(f"Pandas import failed for HR unified: {e}")
-        return {
-            "people": [],
-            "overall": {
-                "disc": {},
-                "big_five": {},
-                "enneagram": {}
-            }
-        }
-
-    excel_path = os.path.join("src", "hr", "data", "Results.xlsx")
-    if not os.path.exists(excel_path):
-        api_logger.info(f"HR Unified: results file not found at {excel_path}")
-        return {
-            "people": [],
-            "overall": {
-                "disc": {},
-                "big_five": {},
-                "enneagram": {}
-            }
-        }
-
-    def digits_list(val):
-        try:
-            s = str(val)
-            return [int(ch) for ch in s if ch.isdigit()]
-        except Exception:
-            return []
-
-    # Big Five helper: map 10 answers to OCEAN (2 each in order), scale to 0-100
-    def big_five_from_digits(digs):
-        traits = ["O", "C", "E", "A", "N"]
-        scores = {t: 0.0 for t in traits}
-        if not digs:
-            return scores
-        # pad/truncate to 10
-        arr = (digs + [3]*10)[:10]
-        for i, t in enumerate(traits):
-            pair = arr[i*2:(i+1)*2]
-            # average of two answers (1-5) mapped to percentage
-            pct = (sum(pair) / (2*5)) * 100.0
-            scores[t] = round(pct, 1)
-        return scores
-
-    try:
-        df = pd.read_excel(excel_path)
-        # Determine name column
-        name_col = None
-        for cand in ["Υποψήφιος", "Όνομα", "Name"]:
-            if cand in df.columns:
-                name_col = cand
-                break
-        if not name_col:
-            api_logger.info("HR Unified: no name column in Results.xlsx")
-            return {
-                "people": [],
-                "overall": {
-                    "disc": {},
-                    "big_five": {},
-                    "enneagram": {}
-                }
-            }
-
-        people = []
-        overall_disc_counts = {str(k): 0 for k in range(1, 6)}
-        overall_enneagram_counts = {str(k): 0 for k in range(1, 10)}
-        overall_big5_sum = {t: 0.0 for t in ["O", "C", "E", "A", "N"]}
-        persons_with_big5 = 0
-
-        for _, row in df.iterrows():
-            name = str(row.get(name_col, "")).strip()
-            if not name:
-                continue
-            disc_digits = digits_list(row.get("DISC (1-5)", ""))
-            mbti_digits = digits_list(row.get("MBTI (6-9)", ""))
-            p16_digits = digits_list(row.get("16Personalities (20-23)", ""))
-            big5_digits = digits_list(row.get("Big Five (10-19)", ""))
-            enneagram_digits = digits_list(row.get("Enneagram (24-32)", ""))
-
-            # Per-person DISC distribution (counts of 1..5)
-            disc_counts = {str(k): 0 for k in range(1, 6)}
-            for d in disc_digits:
-                if 1 <= d <= 5:
-                    disc_counts[str(d)] += 1
-                    overall_disc_counts[str(d)] += 1
-
-            # Big Five OCEAN percentages
-            big5_scores = big_five_from_digits(big5_digits)
-            if any(v > 0 for v in big5_scores.values()):
-                for t in overall_big5_sum:
-                    overall_big5_sum[t] += big5_scores[t]
-                persons_with_big5 += 1
-
-            # Enneagram counts and dominant
-            enne_counts = {str(k): 0 for k in range(1, 10)}
-            for d in enneagram_digits:
-                if 1 <= d <= 9:
-                    key = str(d)
-                    enne_counts[key] += 1
-                    overall_enneagram_counts[key] += 1
-            dominant = None
-            if any(enne_counts.values()):
-                dominant = max(enne_counts.items(), key=lambda x: x[1])[0]
-
-            people.append({
-                "name": name,
-                "disc": {"digits": disc_digits, "counts": disc_counts},
-                "big_five": {"digits": big5_digits, "scores": big5_scores},
-                "enneagram": {"digits": enneagram_digits, "counts": enne_counts, "dominant": dominant},
-                # placeholders for compatibility
-                "mbti": "",
-                "p16": ""
-            })
-
-        # Overall Big Five average
-        overall_big5_avg = {t: (round(overall_big5_sum[t] / persons_with_big5, 1) if persons_with_big5 else 0.0)
-                            for t in overall_big5_sum}
-
-        api_logger.info(f"HR Unified built for {len(people)} people")
-        return {
-            "people": people,
-            "overall": {
-                "disc": {"counts": overall_disc_counts},
-                "big_five": {"scores": overall_big5_avg},
-                "enneagram": {"counts": overall_enneagram_counts}
-            }
-        }
-    except Exception as e:
-        error_logger.error(f"Failed to build HR unified data: {e}")
-        return {
-            "people": [],
-            "overall": {
-                "disc": {},
-                "big_five": {},
-                "enneagram": {}
-            }
-        }

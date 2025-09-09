@@ -574,25 +574,25 @@
 
             <!-- HR Personality Assessment Tool Card -->
             <div class="col">
-                <div class="app-card" id="hr-personality-card">
+                <div class="app-card" id="hr-assessment-card">
                     <div class="app-card-header">
-                        <i class="fas fa-user-group app-icon"></i>
-                        <h3>HR Personality Assessment Tool</h3>
+                        <i class="fas fa-user-check app-icon"></i>
+                        <h3>HR Personality Assessment</h3>
                         <div class="status">
-                            <span class="status-indicator status-available" id="hr-personality-status"></span>
-                            <span id="hr-personality-status-text">Available</span>
+                            <span class="status-indicator status-available" id="hr-assessment-status"></span>
+                            <span id="hr-assessment-status-text">Available</span>
                         </div>
-                        <div class="user-count" id="hr-personality-users">0 unique visitors</div>
+                        <div class="user-count" id="hr-assessment-users">0 unique visitors</div>
                     </div>
                     <div class="app-card-body">
-                        <p>Ενιαίο Dashboard Προσωπικότητας. Ενοποιημένη προβολή αξιολογήσεων προσωπικότητας.</p>
+                        <p>Launch the HR Personality Assessment Tool hosted on port 8000.</p>
                     </div>
                     <div class="app-card-footer">
-                        <a href="/hr-personality" class="btn btn-app" id="hr-personality-btn">Launch</a>
+                        <a href="#" class="btn btn-app" id="hr-assessment-btn">Launch</a>
                     </div>
                 </div>
             </div>
-
+            
             <!-- Data Analytics Card -->
             <div class="col">
                 <div class="app-card">
@@ -1113,24 +1113,6 @@
                 retailPricingUsersElement.textContent = '0 unique visitors';
             }
 
-            // Update HR Personality Assessment Tool status
-            const hrUsers = activeUsers['hr-personality'] || [];
-            const hrCount = hrUsers.length;
-            const hrStatus = document.getElementById('hr-personality-status');
-            const hrStatusText = document.getElementById('hr-personality-status-text');
-            const hrUsersElement = document.getElementById('hr-personality-users');
-            if (hrStatus && hrStatusText && hrUsersElement) {
-                if (hrCount > 0) {
-                    hrStatus.className = 'status-indicator status-in-use';
-                    hrStatusText.textContent = 'In Use';
-                    hrUsersElement.textContent = `${hrCount} unique visitor${hrCount !== 1 ? 's' : ''}`;
-                } else {
-                    hrStatus.className = 'status-indicator status-available';
-                    hrStatusText.textContent = 'Available';
-                    hrUsersElement.textContent = '0 unique visitors';
-                }
-            }
-
             // Update total active users and unique visitors
             const totalActiveUsersElement = document.getElementById('total-active-users');
             const uniqueVisitorsElement = document.getElementById('unique-visitors');
@@ -1193,19 +1175,34 @@
             });
         }
 
-        // Handle HR Personality tool button click
-        const hrBtn = document.getElementById('hr-personality-btn');
+        // Handle HR Personality Assessment button click
+        const hrBtn = document.getElementById('hr-assessment-btn');
         if (hrBtn) {
-            hrBtn.addEventListener('click', function() {
+            hrBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Optionally notify server that user is joining HR Assessment area
                 if (socket && socket.readyState === WebSocket.OPEN) {
                     socket.send(JSON.stringify({
                         action: 'join',
-                        app: 'hr-personality',
+                        app: 'hr-assessment',
                         visitorId: visitorId,
                         browserInfo: browserInfo,
                         tabId: tabId
                     }));
                 }
+                // Try redirect to the same IP on port 8000; if it fails, show access-closed page with guidance
+                const targetProtocol = window.location.protocol;
+                const targetHost = window.location.hostname; // excludes port
+                const url = `${targetProtocol}//${targetHost}:8000/`;
+                // Optimistic navigate with a ping fallback
+                fetch(`${url}health`, { method: 'GET', mode: 'no-cors' })
+                    .then(() => {
+                        window.location.href = url;
+                    })
+                    .catch(() => {
+                        // If the HR app is unreachable, go to the access-closed info page on current server
+                        window.location.href = '/access-closed';
+                    });
             });
         }
 
