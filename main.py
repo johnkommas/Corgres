@@ -1,4 +1,5 @@
 import socket
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -15,15 +16,14 @@ import uuid
 from typing import Dict, Optional, List, Set, Any
 from datetime import datetime, timedelta
 from collections import defaultdict
-import re
 import asyncio
 
-from src.data.etl import process_excel_file, get_column_mapping_template, validate_main_unit_measurement, validate_alternative_unit_measurement, read_excel, validate_column_values, load_row_mappings, add_row_mapping
+from src.data.etl import get_column_mapping_template, validate_main_unit_measurement, validate_alternative_unit_measurement, read_excel, validate_column_values, load_row_mappings, add_row_mapping
 from src.utils.logger import get_api_logger, get_app_logger, get_data_processing_logger, get_error_logger, get_all_logs
 from src.email.email_scanner import get_emails_with_attachments, save_attachment_from_email, list_mail_folders
 from src.data.column_mapper import add_mapping, get_suggestions
 from src.pricing.engine import PricingEngine, PricingRequest, load_tariffs, KG_PER_M2
-from fastapi import Request
+
 
 # Function to process logs and generate statistics
 def process_logs_for_stats(logs, log_type='all', days=7, start_date=None, end_date=None):
@@ -572,6 +572,15 @@ async def retail_pricing():
     """
     api_logger.info("Serving Retail Pricing Calculator (pricing.html)")
     with open("src/static/pricing.html", encoding="utf-8") as f:
+        return f.read()
+
+@api.get("/hr-personality", response_class=HTMLResponse)
+async def hr_personality():
+    """
+    Endpoint that serves the HR Personality Assessment Tool (Unified Dashboard)
+    """
+    api_logger.info("Serving HR Personality Assessment Tool (hr_unified_dashboard.html)")
+    with open("src/static/hr_unified_dashboard.html", encoding="utf-8") as f:
         return f.read()
 
 @api.websocket("/ws/app-status")
@@ -1460,6 +1469,16 @@ async def pricing_calc(payload: Dict[str, Any]):
     except Exception as e:
         error_logger.error(f"Pricing calculation failed: {e}")
         raise HTTPException(status_code=500, detail="Internal error during pricing calculation")
+
+@api.get("/api/hr/people")
+async def hr_people():
+    """
+    Returns people data for the HR Personality Assessment Tool.
+    For now, returns an empty list as a placeholder to keep the page functional.
+    """
+    api_logger.info("HR People requested (placeholder)")
+    return {"people": []}
+
 
 def get_ip_address():
     """
