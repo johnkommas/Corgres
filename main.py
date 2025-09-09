@@ -5,10 +5,12 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+import secrets
 import os
 import json
 import shutil
@@ -177,6 +179,26 @@ api_logger = get_api_logger()
 app_logger = get_app_logger()
 data_logger = get_data_processing_logger()
 error_logger = get_error_logger()
+
+# HR Basic Auth setup
+HR_USERNAME = os.getenv("HR_USERNAME", "corgres")
+HR_PASSWORD = os.getenv("HR_PASSWORD", "stagakis")
+security = HTTPBasic()
+
+def verify_hr_auth(credentials: HTTPBasicCredentials = Depends(security)):
+    try:
+        username_ok = secrets.compare_digest(credentials.username, HR_USERNAME)
+        password_ok = secrets.compare_digest(credentials.password, HR_PASSWORD)
+        if not (username_ok and password_ok):
+            api_logger.warning(f"HR auth failed for user '{credentials.username}' from BasicAuth")
+            raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Basic"})
+        api_logger.info(f"HR auth success for user '{credentials.username}'")
+        return credentials.username
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_logger.error(f"HR auth exception: {e}")
+        raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Basic"})
 
 # Create directories if they don't exist
 os.makedirs("src/static", exist_ok=True)
@@ -574,7 +596,7 @@ async def retail_pricing():
     with open("src/static/pricing.html", encoding="utf-8") as f:
         return f.read()
 
-@api.get("/hr-personality", response_class=HTMLResponse)
+@api.get("/hr-personality", response_class=HTMLResponse, dependencies=[Depends(verify_hr_auth)])
 async def hr_personality():
     """
     Endpoint that serves the HR Personality Assessment Tool (Unified Dashboard)
@@ -1470,14 +1492,94 @@ async def pricing_calc(payload: Dict[str, Any]):
         error_logger.error(f"Pricing calculation failed: {e}")
         raise HTTPException(status_code=500, detail="Internal error during pricing calculation")
 
-@api.get("/api/hr/people")
+@api.get("/api/hr/people", dependencies=[Depends(verify_hr_auth)])
 async def hr_people():
     """
-    Returns people data for the HR Personality Assessment Tool.
-    For now, returns an empty list as a placeholder to keep the page functional.
+    Return people data for the HR Personality Assessment Tool from src/hr/data/Results.xlsx.
+    Reads the compact results sheet copied from temp HR project.
     """
-    api_logger.info("HR People requested (placeholder)")
-    return {"people": []}
+    try:
+        import pandas as pd  # lazy import to avoid global dependency if not used
+    except Exception as e:
+        error_logger.error(f"Pandas import failed for HR people: {e}")
+        return {"people": []}
+
+    excel_path = os.path.join("src", "hr", "data", "Results.xlsx")
+    if not os.path.exists(excel_path):
+        api_logger.info(f"HR People: results file not found at {excel_path}")
+        return {"people": []}
+
+    try:
+        # Read the results. We only need a few columns for the unified dashboard summary.
+        df = pd.read_excel(excel_path)
+        # Expected Greek columns based on temp HR project
+        col_name = None
+        for cand in [
+            "Υποψήφιος",  # primary
+            "Όνομα",      # fallback if different
+            "Name"        # English fallback
+        ]:
+            if cand in df.columns:
+                col_name = cand
+                break
+        if not col_name:
+            api_logger.info("HR People: no name column found in Results.xlsx")
+            return {"people": []}
+
+        # Helper to get string digits as list of ints
+        def digits_list(val):
+            try:
+                s = str(val)
+                return [int(ch) for ch in s if ch.isdigit()]
+            except Exception:
+                return []
+
+        people = []
+        for _, row in df.iterrows():
+            name = str(row.get(col_name, "")).strip()
+            if not name:
+                continue
+
+            disc_digits = digits_list(row.get("DISC (1-5)", ""))
+            mbti_digits = digits_list(row.get("MBTI (6-9)", ""))
+            p16_digits = digits_list(row.get("16Personalities (20-23)", ""))
+            big5_digits = digits_list(row.get("Big Five (10-19)", ""))
+            enneagram_digits = digits_list(row.get("Enneagram (24-32)", ""))
+
+            # Minimal derivations to match the unified table fields
+            # MBTI/16P: In temp, they pass digits to evaluators. Here, without porting full logic,
+            # we provide placeholders inferred from digits length, keeping structure intact.
+            mbti_type = ""  # could be computed if we port evaluator; keep blank if unknown
+            p16_type = ""   
+
+            # Enneagram dominant: pick the most frequent digit (1..9)
+            enneagram_counts = {}
+            for d in enneagram_digits:
+                if 1 <= d <= 9:
+                    enneagram_counts[d] = enneagram_counts.get(d, 0) + 1
+            enneagram_dominant = None
+            if enneagram_counts:
+                # stable max
+                enneagram_dominant = sorted(enneagram_counts.items(), key=lambda x: (-x[1], x[0]))[0][0]
+
+            person = {
+                "name": name,
+                "mbti": mbti_type,
+                "16p": p16_type,
+                "enneagram_dominant": enneagram_dominant,
+                # Keep keys for potential future use; dashboard table only uses above
+                "disc": {"answers": disc_digits},
+                "big_five": {"answers": big5_digits},
+                "enneagram": {"answers": enneagram_digits}
+            }
+            people.append(person)
+
+        api_logger.info(f"HR People loaded: {len(people)} from Results.xlsx")
+        return {"people": people}
+
+    except Exception as e:
+        error_logger.error(f"Failed to load HR People: {e}")
+        return {"people": []}
 
 
 def get_ip_address():
