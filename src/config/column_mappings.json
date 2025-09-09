@@ -1,0 +1,37 @@
+{
+  "Supplier Code": [
+    "BARCODE",
+    "Code"
+  ],
+  "Product Barcode": [
+    "Barcode",
+    "BARCODE"
+  ],
+  "Description": [
+    "\u03a0\u0395\u03a1\u0399\u0393\u03a1\u0391\u03a6\u0397"
+  ],
+  "Main Unit Measurement": [
+    "MM"
+  ],
+  "Alternative Unit Measurement": [
+    "AMM"
+  ],
+  "Relation with MUM": [
+    "RELATION"
+  ],
+  "Box Barcode": [
+    "BOX BARCODE"
+  ],
+  "Box Height": [
+    "BOX H"
+  ],
+  "Box Width": [
+    "BOX W"
+  ],
+  "Box Length": [
+    "BOX L"
+  ],
+  "Palette Height": [
+    "Palette Height"
+  ]
+}
