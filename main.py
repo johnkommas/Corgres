@@ -1624,3 +1624,153 @@ if __name__ == "__main__":
     app_logger.info(f"Starting server on {my_ip}:{port}")
     app_logger.info(f"Server will be accessible at http://{my_ip}:{port} from other devices on the network")
     uvicorn.run("main:api", host=my_ip, port=port, log_level="info", reload=False)
+
+
+@api.get("/api/hr/unified", dependencies=[Depends(verify_hr_auth)])
+async def hr_unified():
+    """
+    Aggregate chart-ready data for the HR Unified Dashboard from src/hr/data/Results.xlsx.
+    Provides overall and per-person metrics for DISC, Big Five (OCEAN), Enneagram,
+    and placeholders for MBTI/16P. Designed for front-end Chart.js rendering.
+    """
+    api_logger.info("HR Unified data requested")
+    try:
+        import pandas as pd
+    except Exception as e:
+        error_logger.error(f"Pandas import failed for HR unified: {e}")
+        return {
+            "people": [],
+            "overall": {
+                "disc": {},
+                "big_five": {},
+                "enneagram": {}
+            }
+        }
+
+    excel_path = os.path.join("src", "hr", "data", "Results.xlsx")
+    if not os.path.exists(excel_path):
+        api_logger.info(f"HR Unified: results file not found at {excel_path}")
+        return {
+            "people": [],
+            "overall": {
+                "disc": {},
+                "big_five": {},
+                "enneagram": {}
+            }
+        }
+
+    def digits_list(val):
+        try:
+            s = str(val)
+            return [int(ch) for ch in s if ch.isdigit()]
+        except Exception:
+            return []
+
+    # Big Five helper: map 10 answers to OCEAN (2 each in order), scale to 0-100
+    def big_five_from_digits(digs):
+        traits = ["O", "C", "E", "A", "N"]
+        scores = {t: 0.0 for t in traits}
+        if not digs:
+            return scores
+        # pad/truncate to 10
+        arr = (digs + [3]*10)[:10]
+        for i, t in enumerate(traits):
+            pair = arr[i*2:(i+1)*2]
+            # average of two answers (1-5) mapped to percentage
+            pct = (sum(pair) / (2*5)) * 100.0
+            scores[t] = round(pct, 1)
+        return scores
+
+    try:
+        df = pd.read_excel(excel_path)
+        # Determine name column
+        name_col = None
+        for cand in ["Υποψήφιος", "Όνομα", "Name"]:
+            if cand in df.columns:
+                name_col = cand
+                break
+        if not name_col:
+            api_logger.info("HR Unified: no name column in Results.xlsx")
+            return {
+                "people": [],
+                "overall": {
+                    "disc": {},
+                    "big_five": {},
+                    "enneagram": {}
+                }
+            }
+
+        people = []
+        overall_disc_counts = {str(k): 0 for k in range(1, 6)}
+        overall_enneagram_counts = {str(k): 0 for k in range(1, 10)}
+        overall_big5_sum = {t: 0.0 for t in ["O", "C", "E", "A", "N"]}
+        persons_with_big5 = 0
+
+        for _, row in df.iterrows():
+            name = str(row.get(name_col, "")).strip()
+            if not name:
+                continue
+            disc_digits = digits_list(row.get("DISC (1-5)", ""))
+            mbti_digits = digits_list(row.get("MBTI (6-9)", ""))
+            p16_digits = digits_list(row.get("16Personalities (20-23)", ""))
+            big5_digits = digits_list(row.get("Big Five (10-19)", ""))
+            enneagram_digits = digits_list(row.get("Enneagram (24-32)", ""))
+
+            # Per-person DISC distribution (counts of 1..5)
+            disc_counts = {str(k): 0 for k in range(1, 6)}
+            for d in disc_digits:
+                if 1 <= d <= 5:
+                    disc_counts[str(d)] += 1
+                    overall_disc_counts[str(d)] += 1
+
+            # Big Five OCEAN percentages
+            big5_scores = big_five_from_digits(big5_digits)
+            if any(v > 0 for v in big5_scores.values()):
+                for t in overall_big5_sum:
+                    overall_big5_sum[t] += big5_scores[t]
+                persons_with_big5 += 1
+
+            # Enneagram counts and dominant
+            enne_counts = {str(k): 0 for k in range(1, 10)}
+            for d in enneagram_digits:
+                if 1 <= d <= 9:
+                    key = str(d)
+                    enne_counts[key] += 1
+                    overall_enneagram_counts[key] += 1
+            dominant = None
+            if any(enne_counts.values()):
+                dominant = max(enne_counts.items(), key=lambda x: x[1])[0]
+
+            people.append({
+                "name": name,
+                "disc": {"digits": disc_digits, "counts": disc_counts},
+                "big_five": {"digits": big5_digits, "scores": big5_scores},
+                "enneagram": {"digits": enneagram_digits, "counts": enne_counts, "dominant": dominant},
+                # placeholders for compatibility
+                "mbti": "",
+                "p16": ""
+            })
+
+        # Overall Big Five average
+        overall_big5_avg = {t: (round(overall_big5_sum[t] / persons_with_big5, 1) if persons_with_big5 else 0.0)
+                            for t in overall_big5_sum}
+
+        api_logger.info(f"HR Unified built for {len(people)} people")
+        return {
+            "people": people,
+            "overall": {
+                "disc": {"counts": overall_disc_counts},
+                "big_five": {"scores": overall_big5_avg},
+                "enneagram": {"counts": overall_enneagram_counts}
+            }
+        }
+    except Exception as e:
+        error_logger.error(f"Failed to build HR unified data: {e}")
+        return {
+            "people": [],
+            "overall": {
+                "disc": {},
+                "big_five": {},
+                "enneagram": {}
+            }
+        }

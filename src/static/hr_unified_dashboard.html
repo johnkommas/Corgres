@@ -110,6 +110,7 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
         // Ensure current year in footer for this page
@@ -118,22 +119,73 @@
           if (el) el.textContent = new Date().getFullYear();
         });
 
-        async function fetchPeople() {
+        async function fetchUnified() {
             try {
-                const res = await fetch('/api/hr/people');
-                if (!res.ok) return [];
-                const data = await res.json();
-                return Array.isArray(data?.people) ? data.people : [];
+                const res = await fetch('/api/hr/unified');
+                if (!res.ok) return null;
+                return await res.json();
             } catch (e) {
-                console.warn('Failed to fetch HR people:', e);
-                return [];
+                console.warn('Failed to fetch HR unified:', e);
+                return null;
             }
         }
 
-        function renderDashboard(people) {
+        function makeTabs() {
+            return `
+            <ul class="nav nav-tabs" id="hrTabs" role="tablist">
+              <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-disc" type="button" role="tab">DISC</button></li>
+              <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-mbti" type="button" role="tab">MBTI</button></li>
+              <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-16p" type="button" role="tab">16 Προσωπικότητες</button></li>
+              <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-big5" type="button" role="tab">Μεγάλη Πεντάδα</button></li>
+              <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-ennea" type="button" role="tab">Εννεάγραμμα</button></li>
+              <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-360" type="button" role="tab">360 Personality Insight</button></li>
+            </ul>
+            <div class="tab-content p-3 border border-top-0 rounded-bottom bg-white">
+              <div class="tab-pane fade show active" id="tab-disc" role="tabpanel">
+                <div class="row g-3">
+                  <div class="col-12 col-lg-6"><canvas id="discOverall"></canvas></div>
+                  <div class="col-12 col-lg-6"><div class="table-responsive"><table class="table table-sm" id="peopleTable"></table></div></div>
+                </div>
+              </div>
+              <div class="tab-pane fade" id="tab-mbti" role="tabpanel">
+                <div class="alert alert-info">Τα δεδομένα MBTI θα προστεθούν σε επόμενο βήμα.</div>
+              </div>
+              <div class="tab-pane fade" id="tab-16p" role="tabpanel">
+                <div class="alert alert-info">Τα δεδομένα 16 Προσωπικοτήτων θα προστεθούν σε επόμενο βήμα.</div>
+              </div>
+              <div class="tab-pane fade" id="tab-big5" role="tabpanel">
+                <div class="row g-3">
+                  <div class="col-12 col-lg-6"><canvas id="big5Radar"></canvas></div>
+                  <div class="col-12 col-lg-6"><canvas id="big5Bar"></canvas></div>
+                </div>
+              </div>
+              <div class="tab-pane fade" id="tab-ennea" role="tabpanel">
+                <canvas id="enneaBar"></canvas>
+              </div>
+              <div class="tab-pane fade" id="tab-360" role="tabpanel">
+                <ul class="nav nav-pills mb-3" id="pills-360" role="tablist">
+                  <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pills-radar" type="button" role="tab">Radar Chart</button></li>
+                  <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pills-career" type="button" role="tab">Career Development</button></li>
+                  <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pills-management" type="button" role="tab">Management Potential</button></li>
+                  <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pills-approach" type="button" role="tab">Individual Approach</button></li>
+                </ul>
+                <div class="tab-content" id="pills-360Content">
+                  <div class="tab-pane fade show active" id="pills-radar" role="tabpanel"><canvas id="radar360"></canvas></div>
+                  <div class="tab-pane fade" id="pills-career" role="tabpanel"><canvas id="careerChart"></canvas></div>
+                  <div class="tab-pane fade" id="pills-management" role="tabpanel"><canvas id="managementChart"></canvas></div>
+                  <div class="tab-pane fade" id="pills-approach" role="tabpanel"><canvas id="approachChart"></canvas></div>
+                </div>
+              </div>
+            </div>`;
+        }
+
+        let chartInstances = [];
+        function destroyCharts(){ chartInstances.forEach(c=>{try{c.destroy()}catch(e){}}); chartInstances=[]; }
+
+        function renderUnified(data) {
             const empty = document.querySelector('.empty-state');
             const content = document.getElementById('dashboardContent');
-            if (!people || people.length === 0) {
+            if (!data || !data.people || data.people.length === 0) {
                 empty.style.display = '';
                 content.style.display = 'none';
                 content.innerHTML = '';
@@ -141,34 +193,78 @@
             }
             empty.style.display = 'none';
             content.style.display = '';
-            // Minimal list rendering to confirm wiring
-            content.innerHTML = `
-                <div class="card-app p-4">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <h2 class="h5 mb-0"><i class="fas fa-users me-2"></i>Άτομα (${people.length})</h2>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead><tr><th>Όνομα</th><th>MBTI</th><th>16P</th><th>Dominant Enneagram</th></tr></thead>
-                            <tbody>
-                                ${people.map(p => `
-                                    <tr>
-                                        <td>${p.name || '-'}</td>
-                                        <td>${p.mbti || '-'}</td>
-                                        <td>${p['16p'] || '-'}</td>
-                                        <td>${(p.enneagram_dominant || '-')}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
+            content.innerHTML = `<div class="card-app p-3">${makeTabs()}</div>`;
+
+            // Fill people table
+            const table = document.getElementById('peopleTable');
+            if (table){
+                table.innerHTML = `<thead><tr><th>Όνομα</th><th>Dominant Enneagram</th></tr></thead><tbody>
+                  ${data.people.map(p=>`<tr><td>${p.name}</td><td>${p.enneagram?.dominant||'-'}</td></tr>`).join('')}
+                </tbody>`;
+            }
+
+            // DISC overall doughnut (use counts of 1..5)
+            const discCtx = document.getElementById('discOverall');
+            if (discCtx){
+                const counts = data.overall?.disc?.counts || {};
+                const labels = ['1','2','3','4','5'];
+                const values = labels.map(k=>counts[k]||0);
+                const c = new Chart(discCtx, { type: 'doughnut', data: { labels, datasets:[{ data: values, backgroundColor:['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6'] }] }, options:{ plugins:{ legend:{ position:'bottom' } } } });
+                chartInstances.push(c);
+            }
+
+            // Big Five radar and bar from overall scores
+            const big5 = data.overall?.big_five?.scores || {};
+            const bigLabels = ['O','C','E','A','N'];
+            const bigVals = bigLabels.map(k=>big5[k]||0);
+            const radarCtx = document.getElementById('big5Radar');
+            if (radarCtx){
+                const c = new Chart(radarCtx, { type: 'radar', data:{ labels: bigLabels, datasets:[{ label:'OCEAN %', data: bigVals, backgroundColor:'rgba(225,29,72,0.2)', borderColor:'#e11d48' }] }, options:{ scales:{ r:{ suggestedMin:0, suggestedMax:100 } } } });
+                chartInstances.push(c);
+            }
+            const barCtx = document.getElementById('big5Bar');
+            if (barCtx){
+                const c = new Chart(barCtx, { type: 'bar', data:{ labels: bigLabels, datasets:[{ label:'OCEAN %', data: bigVals, backgroundColor:'#3b82f6' }] }, options:{ plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, max:100 } } } });
+                chartInstances.push(c);
+            }
+
+            // Enneagram bar overall
+            const enneCtx = document.getElementById('enneaBar');
+            if (enneCtx){
+                const counts = data.overall?.enneagram?.counts || {};
+                const labels = ['1','2','3','4','5','6','7','8','9'];
+                const values = labels.map(k=>counts[k]||0);
+                const c = new Chart(enneCtx, { type:'bar', data:{ labels, datasets:[{ label:'Counts', data: values, backgroundColor:'#10b981' }] }, options:{ plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true } } } });
+                chartInstances.push(c);
+            }
+
+            // 360 charts - reuse big five as underlying dimensions
+            const radar360 = document.getElementById('radar360');
+            if (radar360){
+                const c = new Chart(radar360, { type:'radar', data:{ labels: bigLabels, datasets:[{ label:'360 Radar', data: bigVals, backgroundColor:'rgba(16,185,129,0.2)', borderColor:'#10b981' }] }, options:{ scales:{ r:{ suggestedMin:0, suggestedMax:100 } } } });
+                chartInstances.push(c);
+            }
+            const careerChart = document.getElementById('careerChart');
+            if (careerChart){
+                const c = new Chart(careerChart, { type:'bar', data:{ labels: bigLabels, datasets:[{ label:'Career Profile', data: bigVals, backgroundColor:'#f59e0b' }] }, options:{ plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, max:100 } } } });
+                chartInstances.push(c);
+            }
+            const managementChart = document.getElementById('managementChart');
+            if (managementChart){
+                const c = new Chart(managementChart, { type:'bar', data:{ labels: bigLabels, datasets:[{ label:'Management Potential', data: bigVals, backgroundColor:'#8b5cf6' }] }, options:{ plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, max:100 } } } });
+                chartInstances.push(c);
+            }
+            const approachChart = document.getElementById('approachChart');
+            if (approachChart){
+                const c = new Chart(approachChart, { type:'bar', data:{ labels: bigLabels, datasets:[{ label:'Individual Approach', data: bigVals, backgroundColor:'#ef4444' }] }, options:{ plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, max:100 } } } });
+                chartInstances.push(c);
+            }
         }
 
         async function refresh() {
-            const people = await fetchPeople();
-            renderDashboard(people);
+            destroyCharts();
+            const data = await fetchUnified();
+            renderUnified(data);
         }
 
         document.getElementById('refreshBtn').addEventListener('click', refresh);
