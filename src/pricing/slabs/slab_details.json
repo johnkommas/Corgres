@@ -1,0 +1,24 @@
+{
+  "palette": [
+    {"type": "crate", "weight_kg":  100, "price_per_unit": 220},
+    {"type": "a-frame", "weight_kg":  155, "price_per_unit": 315}
+  ],
+
+  "palette_shipping": {
+    "first_palette_eur": 160,
+    "additional_palette_eur": 45
+  },
+
+  "infinity": [
+    {"thickness":  6, "dimensions": "160x320", "weight_kg_per_unit":  78, "crate_max_units": 14, "a-frame_max_units": 41, "smpu": 5.12},
+    {"thickness": 12, "dimensions": "162x324", "weight_kg_per_unit": 148, "crate_max_units":  8, "a-frame_max_units": 22, "smpu": 5.25},
+    {"thickness": 20, "dimensions": "162x324", "weight_kg_per_unit": 247, "crate_max_units": 0, "a-frame_max_units": 12, "smpu": 5.25}
+  ],
+
+  "mirage": [
+    {"thickness":  6, "dimensions": "120x278", "weight_kg_per_unit":  50, "crate_max_units": 18, "a-frame_max_units": 42, "smpu":3.336},
+    {"thickness":  6, "dimensions": "160x320", "weight_kg_per_unit":  72, "crate_max_units": 14, "a-frame_max_units": 42, "smpu":5.12},
+    {"thickness": 12, "dimensions": "162x324", "weight_kg_per_unit": 148, "crate_max_units":  8, "a-frame_max_units": 22, "smpu":5.25}
+  ]
+}
+

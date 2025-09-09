@@ -599,6 +599,18 @@ async def retail_pricing():
     with open("src/static/pricing.html", encoding="utf-8") as f:
         return f.read()
 
+@api.get("/pricing/slabs", response_class=HTMLResponse)
+async def retail_pricing_slabs():
+    """
+    Endpoint that serves the SLABs Pricing Calculator (slabs.html)
+    """
+    api_logger.info("Serving SLABs Pricing Calculator (slabs.html)")
+    filepath = "src/static/slabs.html"
+    if not os.path.exists(filepath):
+        raise HTTPException(status_code=404, detail="SLABs page not found")
+    with open(filepath, encoding="utf-8") as f:
+        return f.read()
+
 @api.websocket("/ws/app-status")
 async def websocket_app_status(websocket: WebSocket):
     """
@@ -1441,6 +1453,311 @@ async def get_files_count():
 
 @api.post("/api/pricing/calc")
 async def pricing_calc(payload: Dict[str, Any]):
+    """
+    Calculate Retail Price and detailed costs using the PricingEngine.
+    Expects JSON with keys: qty_m2, buy_price_eur_m2, pallets_count, pallet_type, origin, destination, margin.
+    Defaults applied if missing.
+    """
+    api_logger.info(f"Pricing calculation requested: {payload}")
+    if PRICING_ENGINE is None:
+        raise HTTPException(status_code=500, detail="Pricing engine not initialized")
+
+    try:
+        # Apply defaults and validate types
+        qty_m2 = float(payload.get("qty_m2", 0))
+        buy_price = float(payload.get("buy_price_eur_m2", 0))
+        pallets_count = int(payload.get("pallets_count", 1))
+        pallet_type = str(payload.get("pallet_type", "eu"))
+        origin = str(payload.get("origin", "ES"))
+        destination = str(payload.get("destination", "GR-mainland"))
+        margin = float(payload.get("margin", 0.40))
+        transport_mode = str(payload.get("transport_mode", "road"))
+
+        # Enforce Groupage availability only for Spain (ES)
+        if origin != "ES" and transport_mode == "groupage":
+            transport_mode = "road"
+
+        req = PricingRequest(
+            buy_price_eur_m2=buy_price,
+            qty_m2=qty_m2,
+            kg_per_m2=float(payload.get("kg_per_m2", KG_PER_M2)),
+            pallets_count=pallets_count,
+            pallet_type=pallet_type,  # type: ignore
+            origin=origin,            # type: ignore
+            destination=destination,  # type: ignore
+            margin=margin,
+            transport_mode=transport_mode  # type: ignore
+        )
+        result = PRICING_ENGINE.calculate(req)
+        api_logger.info("Pricing calculation completed successfully")
+        return JSONResponse(content=result)
+    except ValueError as ve:
+        error_logger.error(f"Pricing validation error: {ve}")
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        error_logger.error(f"Pricing calculation failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal error during pricing calculation")
+
+@api.post("/api/pricing/slabs/calc")
+async def pricing_calc_slabs(payload: Dict[str, Any]):
+    """
+    SLABs calculator.
+    Input: brand (infinity|mirage), thickness (6|12|20), units, buy_per_unit, pack (auto|crate|a-frame)
+    Logic:
+     - load slab details
+     - select spec by brand+thickness
+     - propose package type by comparing units to crate_max_units (if units > crate_max_units -> a-frame else crate)
+     - allow override by pack
+     - compute number of palettes = ceil(units / max_units_for_selected_package)
+     - handling cost and shipping cost per palette
+     - total gross weight = unit_weight * units + palette_weight * palettes
+     - freight via IT tariffs (hermes_it.json bands)
+     - total cost and retail per m² with 40% margin (or payload.margin if provided)
+    """
+    try:
+        brand = str(payload.get("brand", "infinity")).lower()
+        thickness = int(payload.get("thickness", 6))
+        units = int(payload.get("units", 0))
+        buy_per_unit = float(payload.get("buy_per_unit", 0.0))
+        pack = str(payload.get("pack", "auto")).lower()
+        margin = float(payload.get("margin", 0.40))
+        destination = str(payload.get("destination", "GR-mainland"))
+        if units <= 0:
+            raise ValueError("units must be > 0")
+        if not (0 < margin < 1):
+            raise ValueError("margin must be between 0 and 1 (e.g., 0.40)")
+
+        # Load slab details JSON
+        with open("src/pricing/slabs/slab_details.json", encoding="utf-8") as f:
+            cfg = json.load(f)
+
+        # palette config lookup
+        palette_map = {p["type"]: p for p in cfg.get("palette", [])}
+        ship_cfg = cfg.get("palette_shipping", {})
+
+        if brand not in ("infinity", "mirage"):
+            raise ValueError("Unsupported brand (use 'infinity' or 'mirage')")
+        specs = cfg.get(brand, [])
+        # Prefer exact match on thickness + dimensions if provided
+        dim = str(payload.get("dimensions", "")).strip()
+        spec = None
+        if dim:
+            spec = next((s for s in specs if int(s.get("thickness")) == thickness and str(s.get("dimensions", "")).strip().lower() == dim.lower()), None)
+        if not spec:
+            spec = next((s for s in specs if int(s.get("thickness")) == thickness), None)
+        if not spec:
+            raise ValueError("No spec found for selected brand/thickness (and dimensions if provided)")
+
+        warnings = []
+        weight_per_unit = float(spec.get("weight_kg_per_unit", 0))
+        crate_max = spec.get("crate_max_units")
+        aframe_max = spec.get("a-frame_max_units")
+        smpu = float(spec.get("smpu") or 0)
+        if smpu <= 0:
+            # Try compute from dimensions if present (e.g., "160x320" cm)
+            dims = str(spec.get("dimensions", ""))
+            if "x" in dims:
+                try:
+                    a, b = dims.lower().split("x")
+                    smpu = round((float(a)/100.0) * (float(b)/100.0), 2)
+                except Exception:
+                    pass
+        if smpu <= 0:
+            warnings.append("Άγνωστο m² ανά τεμάχιο (smpu). Τα αποτελέσματα ανά m² ίσως δεν είναι ακριβή.")
+
+        # Proposal
+        proposed = "crate"
+        if isinstance(crate_max, int) and units > crate_max:
+            proposed = "a-frame"
+        # If no crate_max, default propose a-frame for safety on larger shipments
+        if crate_max in (None, 0):
+            if units > 0:
+                proposed = "a-frame"
+
+        selected_pack = proposed if pack == "auto" else ("a-frame" if pack == "a-frame" else "crate")
+        # Enforce: if crate not allowed (crate_max <= 0), do not allow selecting crate
+        if (crate_max in (None, 0)) and selected_pack == "crate":
+            selected_pack = "a-frame"
+            warnings.append("Crate packaging is not available for this selection; switched to A-Frame.")
+
+        # Determine capacity per palette for selected pack
+        def capacity_for(pack_type: str) -> int:
+            if pack_type == "crate":
+                # crate not allowed if capacity not a positive int
+                if isinstance(crate_max, int) and crate_max > 0:
+                    return crate_max
+                return 0
+            else:
+                if isinstance(aframe_max, int) and aframe_max > 0:
+                    return aframe_max
+            # Fallbacks
+            if pack_type == "a-frame" and isinstance(crate_max, int) and crate_max > 0:
+                # assume A-frame holds at least as many as crate
+                return max(crate_max, 1)
+            # final fallback
+            return max(int(units), 1)
+
+        cap = capacity_for(selected_pack)
+        from math import ceil
+
+        # Mixed packaging optimization (only when pack == auto)
+        breakdown = []  # list of pallets per type with units allocations
+        pallets_by_type = {"crate": 0, "a-frame": 0}
+        units_left = units
+        primary = selected_pack
+        alt = "a-frame" if primary == "crate" else "crate"
+        primary_cap = capacity_for(primary)
+        alt_cap = capacity_for(alt)
+
+        if pack == "auto":
+            # allocate full primary pallets
+            full_primary = units_left // max(1, primary_cap)
+            if full_primary > 0:
+                pallets_by_type[primary] += int(full_primary)
+                breakdown.extend([{"type": primary, "capacity": primary_cap, "units": primary_cap} for _ in range(int(full_primary))])
+                units_left -= int(full_primary) * primary_cap
+            # remainder logic
+            if units_left > 0:
+                if isinstance(alt_cap, int) and alt_cap > 0 and units_left <= alt_cap:
+                    # use one alt pallet for the small remainder
+                    pallets_by_type[alt] += 1
+                    breakdown.append({"type": alt, "capacity": alt_cap, "units": int(units_left)})
+                    units_left = 0
+                else:
+                    # need another primary pallet
+                    pallets_by_type[primary] += 1
+                    breakdown.append({"type": primary, "capacity": primary_cap, "units": int(units_left)})
+                    units_left = 0
+        else:
+            # Manual pack: uniform type
+            pallets_needed = max(1, ceil(units / max(1, primary_cap)))
+            pallets_by_type[primary] = pallets_needed
+            # fill breakdown rows (all primary)
+            for i in range(pallets_needed):
+                filled = primary_cap if i < pallets_needed - 1 else (units - primary_cap * (pallets_needed - 1))
+                breakdown.append({"type": primary, "capacity": primary_cap, "units": int(max(0, filled))})
+
+        pallets = pallets_by_type["crate"] + pallets_by_type["a-frame"]
+
+        # Costs: handling per palette (sum per type)
+        handling_cost = 0.0
+        for t, cnt in pallets_by_type.items():
+            if cnt > 0:
+                pc = palette_map.get(t)
+                if not pc:
+                    raise ValueError(f"Palette configuration missing for type {t}")
+                handling_cost += cnt * float(pc.get("price_per_unit", 0))
+
+        # Palette shipping (first + additional)
+        first = float(ship_cfg.get("first_palette_eur", 0))
+        add = float(ship_cfg.get("additional_palette_eur", 0))
+        pallet_shipping = first + max(0, pallets-1) * add
+
+        # Weights
+        kg_tiles = units * weight_per_unit
+        kg_palettes = 0.0
+        for t, cnt in pallets_by_type.items():
+            if cnt > 0:
+                pc = palette_map.get(t)
+                kg_palettes += cnt * float(pc.get("weight_kg", 0))
+        kg_total = kg_tiles + kg_palettes
+
+        # Freight via IT bands
+        it_tariff = PRICING_TARIFFS.get("it_freight") if PRICING_TARIFFS else None
+        def freight_it(kg: float) -> float:
+            if not it_tariff:
+                return 0.0
+            for band in it_tariff.get("bands", []):
+                if band["min_kg"] <= kg <= band["max_kg"]:
+                    flat = float(band.get("flat_eur", 0))
+                    per = float(band.get("eur_per_kg", 0))
+                    return flat if flat > 0 else kg * per
+            return kg * float(it_tariff.get("default_eur_per_kg", 0))
+        freight = freight_it(kg_total)
+
+        # Destination extras (e.g., Crete surcharge per kg)
+        crete_extra = 0.0
+        try:
+            if destination == "GR-crete" and PRICING_TARIFFS and "gr_extras" in PRICING_TARIFFS:
+                crete_rate = float(PRICING_TARIFFS["gr_extras"].get("crete_eur_per_kg", 0))
+                crete_extra = kg_total * crete_rate
+        except Exception:
+            crete_extra = 0.0
+
+        # Goods and totals
+        cost_goods = buy_per_unit * units
+        logistics = handling_cost + pallet_shipping + freight + crete_extra
+        total_cost = cost_goods + logistics
+
+        total_m2 = units * smpu if smpu > 0 else None
+        cost_per_m2 = (total_cost / total_m2) if total_m2 and total_m2 > 0 else None
+        sell_per_m2 = (cost_per_m2 / (1.0 - margin)) if (cost_per_m2 and (0 < margin < 1)) else None
+
+        result = {
+            "inputs": {
+                "brand": brand,
+                "thickness": thickness,
+                "units": units,
+                "buy_per_unit": round(buy_per_unit, 4),
+                "pack": pack,
+                "applied_pack": selected_pack,
+                "destination": destination,
+                "margin": margin
+            },
+            "selection": {
+                "package_type": selected_pack,
+                "pallets": pallets,
+                "capacity_per_palette": cap,
+                "package_mix": bool(pallets_by_type.get("crate",0) and pallets_by_type.get("a-frame",0)),
+                "pallets_by_type": {"crate": pallets_by_type.get("crate",0), "a-frame": pallets_by_type.get("a-frame",0)},
+                "breakdown": breakdown
+            },
+            "weights": {
+                "kg_tiles": round(kg_tiles, 2),
+                "kg_palettes": round(kg_palettes, 2),
+                "kg_total": round(kg_total, 2)
+            },
+            "cost": {
+                "cost_goods": round(cost_goods, 2),
+                "pallet_handling": round(handling_cost, 2),
+                "pallet_shipping": round(pallet_shipping, 2),
+                "freight_it": round(freight, 2),
+                "gr_crete_extra": round(crete_extra, 2),
+                "logistics": round(logistics, 2),
+                "total_cost": round(total_cost, 2),
+                "cost_per_m2": round(cost_per_m2, 2) if cost_per_m2 is not None else None
+            },
+            "pricing": {
+                "sell_price_per_m2": round(sell_per_m2, 2) if sell_per_m2 is not None else None,
+                "margin": margin,
+                "markup_equiv": (round((sell_per_m2 / cost_per_m2) - 1.0, 4) if (sell_per_m2 is not None and cost_per_m2 not in (None, 0)) else None)
+            },
+            "assumptions": {
+                "smpu": smpu,
+                "crate_max_units": crate_max,
+                "a_frame_max_units": aframe_max
+            },
+            "warnings": warnings
+        }
+        # Additional warning for missing a-frame capacity when user forces a-frame
+        if pack == "a-frame" and not isinstance(aframe_max, int):
+            result["warnings"].append("Άγνωστη χωρητικότητα A-Frame για αυτή την επιλογή. Υποτέθηκε ελάχιστη χωρητικότητα.")
+        # Mixed packaging info
+        if result.get("selection", {}).get("package_mix"):
+            c = result["selection"]["pallets_by_type"].get("crate",0)
+            a = result["selection"]["pallets_by_type"].get("a-frame",0)
+            result["warnings"].append(f"Μικτή συσκευασία: {a} A-FRAME + {c} CRATE.")
+
+        # Edge-case example check from description: Infinity, 6mm, 15 units => propose A-Frame 1 palette, Crate => 2 palettes
+        # Our logic now also optimizes remainder to Crate if it fits.
+
+        return JSONResponse(content=result)
+    except ValueError as ve:
+        error_logger.error(f"SLABs pricing validation error: {ve}")
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        error_logger.error(f"SLABs pricing calculation failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal error during SLABs pricing calculation")
     """
     Calculate Retail Price and detailed costs using the PricingEngine.
     Expects JSON with keys: qty_m2, buy_price_eur_m2, pallets_count, pallet_type, origin, destination, margin.
