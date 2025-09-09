@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ενιαίο Dashboard Προσωπικότητας — HR Personality Assessment Tool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="/images/mylogo.png">
+    <style>
+        :root {
+            --primary-color: #e11d48;
+            --secondary-color: #be123c;
+            --bg: #fffbfa;
+            --card: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #fee2e2;
+            --dark-color: #0f172a;
+        }
+        body { background: var(--bg); color: var(--text); }
+        .header { background: var(--primary-color); color: #fff; padding: 24px 0; }
+        .badge-app { background: #fff; color: var(--primary-color); border-radius: 999px; padding: 6px 12px; font-weight: 600; }
+        .card-app { background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+        .empty-state { border: 2px dashed var(--border); border-radius: 12px; padding: 32px; text-align: center; background: #fff; }
+        .btn-primary { background: var(--primary-color); border: none; }
+        .btn-primary:hover { background: var(--secondary-color); }
+        .footer { color: #777; font-size: 14px; }
+        /* Heart pulse animation for footer icon */
+        @keyframes heartbeat { 0% { transform: scale(1);} 25% { transform: scale(1.1);} 50% { transform: scale(1);} 75% { transform: scale(1.1);} 100% { transform: scale(1);} }
+        .heart-pulse { display: inline-block; animation: heartbeat 1.5s ease infinite; transform-origin: center; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light mb-4 py-3">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <img src="/images/mylogo.png" alt="Corgres" height="36">
+                <span class="fw-bold ms-2" style="color: var(--dark-color);">Corgres Σταγάκης</span>
+                <span class="text-muted d-none d-md-inline mx-2">|</span>
+                <span class="text-muted d-none d-md-inline">HR Personality</span>
+            </a>
+            <div class="ms-auto">
+                <a class="btn btn-outline-secondary" href="/"><i class="fas fa-home me-2"></i>Hub</a>
+                <a class="btn btn-outline-secondary ms-2" href="/logs"><i class="fas fa-list-alt me-2"></i>Logs</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container my-4">
+        <!-- Intro / guidance -->
+        <div class="row g-4">
+            <div class="col-12">
+                <div class="card-app p-4">
+                    <h2 class="h5 mb-2">Σχετικά</h2>
+                    <p class="mb-0 text-muted">
+                        Αυτή η σελίδα είναι η ενσωμάτωση του «Ενιαίου Dashboard Προσωπικότητας» από το HR project στο Corgres. 
+                        Η εμφάνιση έχει προσαρμοστεί ώστε να ταιριάζει με το ύφος της πλατφόρμας. 
+                        Σύντομα θα υποστηρίζεται αυτόματος εμπλουτισμός δεδομένων.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty state until data API is wired -->
+        <div class="row g-4 mt-1">
+            <div class="col-12">
+                <div class="empty-state">
+                    <div class="display-6 mb-2">🧩</div>
+                    <h3 class="h5">Δεν υπάρχουν ακόμη δεδομένα για προβολή</h3>
+                    <p class="text-muted mb-4">Η λειτουργικότητα θα συνδεθεί με δεδομένα αξιολόγησης προσωπικότητας σε επόμενο βήμα.</p>
+                    <div class="d-flex justify-content-center gap-2 flex-wrap">
+                        <a href="/" class="btn btn-outline-secondary"><i class="fas fa-th-large me-2"></i>Επιστροφή στο Hub</a>
+                        <button id="refreshBtn" class="btn btn-primary"><i class="fas fa-rotate me-2"></i>Έλεγχος για δεδομένα</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Placeholder containers for future charts/sections -->
+        <div id="dashboardContent" class="mt-4" style="display:none;">
+            <!-- Will be populated via JS when /api/hr/people returns data -->
+        </div>
+    </main>
+
+  <!-- Footer -->
+    <footer class="mt-5 pt-5 text-center">
+        <div class="container-fluid">
+            <div class="py-4 border-top">
+                <div class="row align-items-center">
+                    <div class="col-md-4 text-md-start mb-3 mb-md-0">
+                        <a href="/" class="d-inline-flex align-items-center text-decoration-none">
+                            <img src="/images/mylogo.png" alt="Softone ERP Logo" height="30" class="me-2">
+                            <span class="fw-bold" style="color: var(--dark-color);">Corgres Σταγάκης</span>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-heart heart-pulse" style="color: var(--primary-color);"></i> Made with care
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <p class="text-muted mb-0">
+                            &copy; <span id="currentYear"></span> Ioannis E. Kommas. All rights Reserved
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Ensure current year in footer for this page
+        document.addEventListener('DOMContentLoaded', function(){
+          const el = document.getElementById('currentYear');
+          if (el) el.textContent = new Date().getFullYear();
+        });
+
+        async function fetchPeople() {
+            try {
+                const res = await fetch('/api/hr/people');
+                if (!res.ok) return [];
+                const data = await res.json();
+                return Array.isArray(data?.people) ? data.people : [];
+            } catch (e) {
+                console.warn('Failed to fetch HR people:', e);
+                return [];
+            }
+        }
+
+        function renderDashboard(people) {
+            const empty = document.querySelector('.empty-state');
+            const content = document.getElementById('dashboardContent');
+            if (!people || people.length === 0) {
+                empty.style.display = '';
+                content.style.display = 'none';
+                content.innerHTML = '';
+                return;
+            }
+            empty.style.display = 'none';
+            content.style.display = '';
+            // Minimal list rendering to confirm wiring
+            content.innerHTML = `
+                <div class="card-app p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h2 class="h5 mb-0"><i class="fas fa-users me-2"></i>Άτομα (${people.length})</h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead><tr><th>Όνομα</th><th>MBTI</th><th>16P</th><th>Dominant Enneagram</th></tr></thead>
+                            <tbody>
+                                ${people.map(p => `
+                                    <tr>
+                                        <td>${p.name || '-'}</td>
+                                        <td>${p.mbti || '-'}</td>
+                                        <td>${p['16p'] || '-'}</td>
+                                        <td>${(p.enneagram_dominant || '-')}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function refresh() {
+            const people = await fetchPeople();
+            renderDashboard(people);
+        }
+
+        document.getElementById('refreshBtn').addEventListener('click', refresh);
+        // Auto try on load
+        refresh();
+    </script>
+    <script>
+        // Notify WebSocket manager that user joined this app when navigating from hub
+        // This page itself doesn't open WebSocket; the hub emits the join action on click.
+    </script>
+</body>
+</html>
