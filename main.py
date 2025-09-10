@@ -1610,24 +1610,51 @@ async def pricing_calc_slabs(payload: Dict[str, Any]):
         alt_cap = capacity_for(alt)
 
         if pack == "auto":
-            # allocate full primary pallets
-            full_primary = units_left // max(1, primary_cap)
-            if full_primary > 0:
-                pallets_by_type[primary] += int(full_primary)
-                breakdown.extend([{"type": primary, "capacity": primary_cap, "units": primary_cap} for _ in range(int(full_primary))])
-                units_left -= int(full_primary) * primary_cap
-            # remainder logic
-            if units_left > 0:
-                if isinstance(alt_cap, int) and alt_cap > 0 and units_left <= alt_cap:
-                    # use one alt pallet for the small remainder
-                    pallets_by_type[alt] += 1
-                    breakdown.append({"type": alt, "capacity": alt_cap, "units": int(units_left)})
-                    units_left = 0
-                else:
-                    # need another primary pallet
-                    pallets_by_type[primary] += 1
-                    breakdown.append({"type": primary, "capacity": primary_cap, "units": int(units_left)})
-                    units_left = 0
+            # Auto allocation with business rules:
+            # 1) If units fit in one crate (and crate is allowed), use one crate.
+            # 2) Else if units fit in one A-frame, use one A-frame.
+            # 3) Else allocate full A-frames first, then if remainder fits in a crate use one crate, otherwise one more A-frame.
+            def valid_cap(x):
+                return isinstance(x, int) and x > 0
+
+            if valid_cap(crate_max) and units <= crate_max:
+                pallets_by_type["crate"] += 1
+                breakdown.append({"type": "crate", "capacity": int(crate_max), "units": int(units)})
+                units_left = 0
+                selected_pack = "crate"
+                cap = int(crate_max)
+            elif valid_cap(aframe_max) and units <= aframe_max:
+                pallets_by_type["a-frame"] += 1
+                breakdown.append({"type": "a-frame", "capacity": int(aframe_max), "units": int(units)})
+                units_left = 0
+                selected_pack = "a-frame"
+                cap = int(aframe_max)
+            else:
+                # Use A-frames as primary for large shipments
+                if not valid_cap(aframe_max):
+                    # Fallback: if a-frame capacity unknown, fall back to crate-only logic
+                    primary_cap = primary_cap or (crate_max if valid_cap(crate_max) else int(units))
+                full_af = 0 if not valid_cap(aframe_max) else units // int(aframe_max)
+                if full_af > 0:
+                    pallets_by_type["a-frame"] += int(full_af)
+                    breakdown.extend([
+                        {"type": "a-frame", "capacity": int(aframe_max), "units": int(aframe_max)}
+                        for _ in range(int(full_af))
+                    ])
+                remainder = units - (int(full_af) * (int(aframe_max) if valid_cap(aframe_max) else 0))
+                if remainder > 0:
+                    if valid_cap(crate_max) and remainder <= int(crate_max):
+                        pallets_by_type["crate"] += 1
+                        breakdown.append({"type": "crate", "capacity": int(crate_max), "units": int(remainder)})
+                    else:
+                        # One more A-frame for the remainder
+                        pallets_by_type["a-frame"] += 1
+                        rem_cap = int(aframe_max) if valid_cap(aframe_max) else int(max(1, remainder))
+                        breakdown.append({"type": "a-frame", "capacity": rem_cap, "units": int(remainder)})
+                units_left = 0
+                # For mixed or large, set selected_pack to a-frame (dominant)
+                selected_pack = "a-frame"
+                cap = int(aframe_max) if valid_cap(aframe_max) else int(crate_max) if valid_cap(crate_max) else int(units)
         else:
             # Manual pack: uniform type
             pallets_needed = max(1, ceil(units / max(1, primary_cap)))
