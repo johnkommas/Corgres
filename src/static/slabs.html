@@ -11,11 +11,55 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
   <style>
-    :root { --dark-color: #0f172a; --primary-color: #e11d48; }
+    :root { --dark-color: #0f172a; --primary-color: #e11d48; --neutral-100:#f8f9fa; --neutral-300:#ced4da; }
     body { background-color: #fffbfa; }
     .section { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
     .btn-calc { background: linear-gradient(135deg, #ef476f, #e11d48); color: #fff; border: none; border-radius: 999px; padding: 0.8rem 1.25rem; font-weight: 700; }
+    /* Calc button state variants (red when invalid, green when valid) */
+    .btn-calc.is-valid { background: linear-gradient(135deg, #198754, #157347) !important; box-shadow: 0 10px 20px rgba(25, 135, 84, 0.25) !important; }
+    .btn-calc.is-invalid { background: linear-gradient(135deg, #ef476f, #e11d48) !important; }
     .retail-badge { background: linear-gradient(135deg, #198754, #157347); color: #fff; }
+    /* Match pricing page rounded pills for outline buttons */
+    .btn-outline-primary, .btn-outline-secondary, .btn.btn-sm.btn-outline-secondary { border-radius: 999px; }
+    /* Fix pill groups: only outer ends rounded, middle joints straight, collapse borders */
+    .btn-group.pill-group > .btn,
+    .btn-group.pill-group > label.btn {
+      border-radius: 0 !important;
+      position: relative;
+      margin-left: -1px; /* collapse adjacent borders */
+    }
+    .btn-group.pill-group > .btn:first-of-type,
+    .btn-group.pill-group > label.btn:first-of-type {
+      border-top-left-radius: 999px !important;
+      border-bottom-left-radius: 999px !important;
+      margin-left: 0;
+    }
+    .btn-group.pill-group > .btn:last-of-type,
+    .btn-group.pill-group > label.btn:last-of-type {
+      border-top-right-radius: 999px !important;
+      border-bottom-right-radius: 999px !important;
+    }
+    /* Checked/active state should sit above neighbors to hide seams */
+    .btn-group.pill-group > .btn:focus,
+    .btn-group.pill-group > .btn:active,
+    .btn-group.pill-group > .btn:hover,
+    .btn-group.pill-group > input.btn-check:checked + label.btn {
+      z-index: 2;
+    }
+    /* Rounded input group look (match pricing) */
+    .input-group .btn, .input-group .input-group-text { border-radius: 999px; }
+    .input-group > .btn:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+    .input-group > .form-control { border-radius: 0; }
+    .input-group > .btn:last-child { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+    .unit-grey { background-color: var(--neutral-100)!important; border-color: var(--neutral-300)!important; }
+    .form-select { border-radius: 999px; }
+    /* Validation colors like pricing */
+    .input-group.validation-invalid .btn,
+    .input-group.validation-invalid .input-group-text,
+    .input-group.validation-invalid .form-control { background-color:#dc3545!important; border-color:#dc3545!important; color:#fff!important; }
+    .input-group.validation-valid .btn,
+    .input-group.validation-valid .input-group-text,
+    .input-group.validation-valid .form-control { background-color:#198754!important; border-color:#198754!important; color:#fff!important; }
   </style>
 </head>
 <body>
@@ -54,24 +98,46 @@
         </div>
         <div class="col-md-3">
           <label class="form-label">Τεμάχια</label>
-          <input type="number" min="1" step="1" id="units" class="form-control" placeholder="π.χ. 15" required>
+          <div class="input-group" id="units_group">
+            <button class="btn btn-outline-secondary" type="button" data-step-target="#units" data-step="-1" aria-label="Μείωση τεμαχίων"><i class="fas fa-minus"></i></button>
+            <input type="number" min="1" step="1" id="units" class="form-control text-end" placeholder="π.χ. 15" required>
+            <button class="btn btn-outline-secondary" type="button" data-step-target="#units" data-step="1" aria-label="Αύξηση τεμαχίων"><i class="fas fa-plus"></i></button>
+            <span class="input-group-text unit-grey">unit</span>
+          </div>
         </div>
         <div class="col-md-3">
           <label class="form-label">Τιμή Αγοράς / Τεμάχιο (€)</label>
-          <input type="number" min="0" step="0.01" id="buy_per_unit" class="form-control" placeholder="π.χ. 100" required>
+          <div class="input-group" id="buy_unit_group">
+            <button class="btn btn-outline-secondary" type="button" data-step-target="#buy_per_unit" data-step="-0.10" aria-label="Μείωση τιμής"><i class="fas fa-minus"></i></button>
+            <input type="number" min="0" step="0.01" id="buy_per_unit" class="form-control text-end" placeholder="π.χ. 100" required>
+            <button class="btn btn-outline-secondary" type="button" data-step-target="#buy_per_unit" data-step="0.10" aria-label="Αύξηση τιμής"><i class="fas fa-plus"></i></button>
+            <span class="input-group-text unit-grey">€ / unit</span>
+          </div>
         </div>
-        <div class="col-md-12">
+        <div class="col-md-4">
           <label class="form-label">Προορισμός</label>
-          <div class="btn-group w-100" role="group" aria-label="Προορισμός" id="destination_group">
+          <div class="btn-group w-100 pill-group" role="group" aria-label="Προορισμός" id="destination_group">
             <input type="radio" class="btn-check" name="destopt" id="dest_gr_main" autocomplete="off" data-value="GR-mainland" checked>
-            <label class="btn btn-outline-secondary" for="dest_gr_main">Ελλάδα - Ηπειρωτική</label>
+            <label class="btn btn-sm btn-outline-secondary" for="dest_gr_main">Ελλάδα - Ηπειρωτική</label>
             <input type="radio" class="btn-check" name="destopt" id="dest_gr_crete" autocomplete="off" data-value="GR-crete">
-            <label class="btn btn-outline-secondary" for="dest_gr_crete">Ελλάδα - Κρήτη</label>
+            <label class="btn btn-sm btn-outline-secondary" for="dest_gr_crete">Ελλάδα - Κρήτη</label>
           </div>
           <select id="destination" class="form-select d-none">
             <option value="GR-mainland" selected>Ελλάδα - Ηπειρωτική</option>
             <option value="GR-crete">Ελλάδα - Κρήτη</option>
           </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Συσκευασία</label>
+          <div class="btn-group w-100 pill-group" role="group" aria-label="Συσκευασία" id="packaging_group">
+            <input type="radio" class="btn-check" name="pack" id="pack_auto" value="auto" checked>
+            <label class="btn btn-sm btn-outline-secondary" for="pack_auto">Βέλτιστη Πρόταση</label>
+            <input type="radio" class="btn-check" name="pack" id="pack_crate" value="crate">
+            <label class="btn btn-sm btn-outline-secondary" for="pack_crate">Crate</label>
+            <input type="radio" class="btn-check" name="pack" id="pack_aframe" value="a-frame">
+            <label class="btn btn-sm btn-outline-secondary" for="pack_aframe">A-Frame</label>
+          </div>
+          <div class="small text-muted mt-1" id="pack_hint"></div>
         </div>
         <div class="col-md-4">
           <label for="margin" class="form-label">Περιθώριο (Margin %)</label>
@@ -81,26 +147,8 @@
             <span id="margin_badge" class="badge rounded-pill text-bg-success">40.00%</span>
           </div>
         </div>
-        <div class="col-md-8">
-          <label class="form-label">Συσκευασία</label>
-          <div class="d-flex gap-3 align-items-center flex-wrap">
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="pack" id="pack_auto" value="auto" checked>
-              <label class="form-check-label" for="pack_auto">Πρόταση (βάσει crate_max_units)</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="pack" id="pack_crate" value="crate">
-              <label class="form-check-label" for="pack_crate">Crate</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="pack" id="pack_aframe" value="a-frame">
-              <label class="form-check-label" for="pack_aframe">A-Frame</label>
-            </div>
-            <span class="text-muted" id="pack_hint"></span>
-          </div>
-        </div>
         <div class="col-12">
-          <button class="btn btn-calc" type="submit"><i class="fas fa-calculator me-2"></i>Υπολογισμός</button>
+          <button id="calcBtn" class="btn btn-calc" type="submit"><i class="fas fa-calculator me-2"></i>Υπολογισμός</button>
         </div>
       </form>
 
@@ -281,7 +329,7 @@
         const res = await fetch('/api/pricing/slabs/calc', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
         if (!res.ok) return;
         const data = await res.json();
-        setPackHint(`Πρόταση: ${data.selection.package_type.toUpperCase()} – ${data.selection.pallets} παλέτα/ες`);
+        setPackHint(`Βέλτιστη πρόταση: ${data.selection.package_type.toUpperCase()} – ${data.selection.pallets} παλέτα/ες`);
         // Tick auto if present
         document.getElementById('pack_auto').checked = true;
       } catch(e) { /* ignore */ }
@@ -292,6 +340,74 @@
       document.getElementById('brand').addEventListener('change', updateThicknessOptions);
       document.getElementById('thickness').addEventListener('change', proposePackaging);
       document.getElementById('units').addEventListener('input', proposePackaging);
+
+      // Stepper buttons (match pricing page behavior)
+      document.querySelectorAll('[data-step-target]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetSel = btn.getAttribute('data-step-target');
+          const step = parseFloat(btn.getAttribute('data-step') || '0');
+          const input = document.querySelector(targetSel);
+          if (!input) return;
+          const current = parseFloat(input.value || '0') || 0;
+          const next = current + step;
+          const min = input.min !== '' ? parseFloat(input.min) : undefined;
+          const max = input.max !== '' ? parseFloat(input.max) : undefined;
+          let val = isFinite(next) ? next : current;
+          if (min !== undefined && val < min) val = min;
+          if (max !== undefined && val > max) val = max;
+          const st = parseFloat(input.step || '1');
+          if (st && isFinite(st)) { val = Math.round(val / st) * st; }
+          input.value = (input.step && parseFloat(input.step) < 1) ? val.toFixed(2) : String(Math.round(val));
+          input.dispatchEvent(new Event('input'));
+          input.dispatchEvent(new Event('change'));
+        });
+      });
+
+      // Visual validation like pricing: required fields red until valid
+      const calcBtn = document.getElementById('calcBtn');
+      const unitsInput = document.getElementById('units');
+      const unitsGroup = document.getElementById('units_group');
+      function isUnitsValid(){ const v = parseFloat(unitsInput.value); const min = unitsInput.min!==''?parseFloat(unitsInput.min):1; return Number.isFinite(v) && v >= min; }
+      function refreshUnitsState(){ const valid = isUnitsValid(); unitsInput.setAttribute('aria-invalid', String(!valid)); if (unitsGroup){ unitsGroup.classList.toggle('validation-invalid', !valid); unitsGroup.classList.toggle('validation-valid', valid); } }
+      unitsInput.addEventListener('input', refreshUnitsState); unitsInput.addEventListener('change', refreshUnitsState); refreshUnitsState();
+
+      const buyUnitInput = document.getElementById('buy_per_unit');
+      const buyUnitGroup = document.getElementById('buy_unit_group');
+      function isBuyUnitValid(){ const v = parseFloat(buyUnitInput.value); const min = buyUnitInput.min!==''?parseFloat(buyUnitInput.min):0; return Number.isFinite(v) && v >= min; }
+      function refreshBuyUnitState(){ const valid = isBuyUnitValid(); buyUnitInput.setAttribute('aria-invalid', String(!valid)); if (buyUnitGroup){ buyUnitGroup.classList.toggle('validation-invalid', !valid); buyUnitGroup.classList.toggle('validation-valid', valid); } }
+      buyUnitInput.addEventListener('input', refreshBuyUnitState); buyUnitInput.addEventListener('change', refreshBuyUnitState); refreshBuyUnitState();
+
+      // Margin slider sync (ensure declared before any references)
+      const marginNumber = document.getElementById('margin');
+      const marginRange = document.getElementById('margin_range');
+      const marginBadge = document.getElementById('margin_badge');
+      function updateMarginFromRange(){
+        const v = parseFloat(marginRange.value);
+        marginNumber.value = v.toFixed(2);
+        const pct = v*100;
+        marginBadge.textContent = pct.toFixed(2)+"%";
+        const classes = ['text-bg-danger','text-bg-warning','text-bg-secondary','text-bg-success'];
+        classes.forEach(c=>marginBadge.classList.remove(c));
+        if (pct < 30) marginBadge.classList.add('text-bg-danger');
+        else if (pct < 40) marginBadge.classList.add('text-bg-warning');
+        else if (pct <= 50) marginBadge.classList.add('text-bg-secondary');
+        else marginBadge.classList.add('text-bg-success');
+      }
+      if (marginRange && marginNumber){
+        marginRange.addEventListener('input', updateMarginFromRange);
+        marginRange.addEventListener('change', updateMarginFromRange);
+        updateMarginFromRange();
+      }
+
+      // Calc button state (red by default, green when both units & buy/unit valid and margin inside (0,1))
+      function isMarginValid(){ const m = parseFloat(document.getElementById('margin').value || '0'); return Number.isFinite(m) && m > 0 && m < 1; }
+      function refreshCalcButtonState(){ try { const allValid = isUnitsValid() && isBuyUnitValid() && isMarginValid(); if (calcBtn){ calcBtn.classList.toggle('is-valid', allValid); calcBtn.classList.toggle('is-invalid', !allValid); calcBtn.setAttribute('aria-pressed', String(allValid)); } } catch(e){} }
+      // wire to inputs
+      unitsInput.addEventListener('input', refreshCalcButtonState); unitsInput.addEventListener('change', refreshCalcButtonState);
+      buyUnitInput.addEventListener('input', refreshCalcButtonState); buyUnitInput.addEventListener('change', refreshCalcButtonState);
+      if (marginRange){ marginRange.addEventListener('input', refreshCalcButtonState); marginRange.addEventListener('change', refreshCalcButtonState); }
+      // initialize on load
+      refreshCalcButtonState();
 
       function wireToggleGroup(groupId, selectId) {
         const group = document.getElementById(groupId);
@@ -317,27 +433,6 @@
       }
       wireToggleGroup('destination_group','destination');
 
-      // Margin slider sync
-      const marginNumber = document.getElementById('margin');
-      const marginRange = document.getElementById('margin_range');
-      const marginBadge = document.getElementById('margin_badge');
-      function updateMarginFromRange(){
-        const v = parseFloat(marginRange.value);
-        marginNumber.value = v.toFixed(2);
-        const pct = v*100;
-        marginBadge.textContent = pct.toFixed(2)+"%";
-        const classes = ['text-bg-danger','text-bg-warning','text-bg-secondary','text-bg-success'];
-        classes.forEach(c=>marginBadge.classList.remove(c));
-        if (pct < 30) marginBadge.classList.add('text-bg-danger');
-        else if (pct < 40) marginBadge.classList.add('text-bg-warning');
-        else if (pct <= 50) marginBadge.classList.add('text-bg-secondary');
-        else marginBadge.classList.add('text-bg-success');
-      }
-      if (marginRange && marginNumber){
-        marginRange.addEventListener('input', updateMarginFromRange);
-        marginRange.addEventListener('change', updateMarginFromRange);
-        updateMarginFromRange();
-      }
 
       document.getElementById('slabForm').addEventListener('submit', async function(e){
         e.preventDefault();
@@ -411,6 +506,8 @@
           if (Array.isArray(data.warnings) && data.warnings.length) {
             data.warnings.forEach(w => toastr.warning(w));
           } else { toastr.success('Υπολογισμός ολοκληρώθηκε'); }
+          // After successful calculation, keep validation/Calc button state consistent
+          try { refreshUnitsState(); refreshBuyUnitState(); refreshCalcButtonState(); } catch(e) { /* noop */ }
         } catch(err){ toastr.error(err.message || 'Σφάλμα υπολογισμού'); }
       });
 
