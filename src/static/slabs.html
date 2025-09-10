@@ -124,7 +124,6 @@
           <label class="form-label">Πάχος (mm) / Διαστάσεις</label>
           <div class="thdim-row">
             <div class="inline-block mb-2">
-              <div class="small text-muted mb-1 th-label">Πάχος</div>
               <div class="btn-group w-100 pill-group scrollable" role="group" aria-label="Πάχος" id="thickness_group"></div>
             </div>
             <div class="inline-block">
@@ -353,6 +352,55 @@
         select.appendChild(o);
       });
 
+      // Compact selection for Mirage: render combined options and hide dimensions block
+      if (brand === 'mirage') {
+        const dimBlock = dimGroup ? dimGroup.parentElement : null;
+        if (dimBlock) dimBlock.style.display = 'none';
+        if (thGroup) {
+          thGroup.innerHTML = '';
+          variants.forEach((v, idx) => {
+            const id = `mir_${v.thickness}_${String(v.dimensions).replace(/[^a-zA-Z0-9]/g,'')}_${idx}`;
+            const input = document.createElement('input');
+            input.type = 'radio';
+            input.className = 'btn-check';
+            input.name = 'thopt';
+            input.id = id;
+            input.setAttribute('data-th', String(v.thickness));
+            input.setAttribute('data-dim', v.dimensions);
+            input.setAttribute('autocomplete','off');
+            if (idx === 0) input.checked = true;
+            const label = document.createElement('label');
+            label.className = 'btn btn-sm btn-outline-secondary';
+            label.setAttribute('for', id);
+            const showLabel = v.thickness === 12 ? '12 mm' : `${v.thickness} mm ${v.dimensions}`;
+            label.textContent = showLabel;
+            input.addEventListener('change', () => {
+              if (input.checked) {
+                const th = parseInt(input.getAttribute('data-th')||'0',10) || v.thickness;
+                const dim = input.getAttribute('data-dim') || v.dimensions;
+                thHidden.value = String(th);
+                dimHidden.value = dim;
+                select.value = `${th}|${dim}`;
+                select.dispatchEvent(new Event('change'));
+                thHidden.dispatchEvent(new Event('change'));
+              }
+            });
+            thGroup.appendChild(input);
+            thGroup.appendChild(label);
+          });
+          // Set initial defaults and dispatch events
+          const first = variants[0];
+          if (first) {
+            thHidden.value = String(first.thickness);
+            dimHidden.value = first.dimensions;
+            select.value = `${first.thickness}|${first.dimensions}`;
+            select.dispatchEvent(new Event('change'));
+            thHidden.dispatchEvent(new Event('change'));
+          }
+        }
+        return;
+      }
+
       // Build unique thickness list preserving order
       const thicknesses = [];
       variants.forEach(v => { if (!thicknesses.includes(v.thickness)) thicknesses.push(v.thickness); });
@@ -362,6 +410,17 @@
         if (!dimGroup) return;
         dimGroup.innerHTML = '';
         const dims = variants.filter(v => v.thickness === th).map(v => v.dimensions);
+
+        // Show Διαστάσεις only when there is an actual choice (e.g., Mirage + 6mm)
+        const dimBlock = dimGroup.parentElement; // wraps label + group
+        if (dimBlock) {
+          if (dims.length <= 1) {
+            dimBlock.style.display = 'none';
+          } else {
+            dimBlock.style.display = 'block';
+          }
+        }
+
         dims.forEach((dim, idx) => {
           const id = `dim_${th}_${idx}`;
           const input = document.createElement('input');
@@ -390,7 +449,7 @@
           dimGroup.appendChild(input);
           dimGroup.appendChild(label);
         });
-        // Set hidden to first by default
+        // Set hidden to first by default (works even when the UI is hidden)
         const firstDim = dims[0];
         if (firstDim) {
           thHidden.value = String(th);
