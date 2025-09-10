@@ -166,7 +166,7 @@
               </div>
             </div>
             <div class="row mt-3">
-              <div class="col-md-6">
+              <div class="col-12 col-lg-6">
                 <ul class="list-group list-group-flush">
                   <li class="list-group-item d-flex justify-content-between align-items-center"><span>Κόστος Εμπορεύματος</span><strong id="cost_goods">—</strong></li>
                   <li class="list-group-item d-flex justify-content-between align-items-center"><span>Χειρισμός Παλετών</span><strong id="pallet_handling">—</strong></li>
@@ -176,7 +176,7 @@
                   <li class="list-group-item d-flex justify-content-between align-items-center"><span>Σύνολο Logistics</span><strong id="logistics">—</strong></li>
                 </ul>
               </div>
-              <div class="col-md-6">
+              <div class="col-12 col-lg-6">
                 <ul class="list-group list-group-flush">
                   <li class="list-group-item d-flex justify-content-between align-items-center"><span>Σύνολο Κόστους</span><strong id="total_cost">—</strong></li>
                   <li class="list-group-item d-flex justify-content-between align-items-center"><span>Κόστος ανά m²</span><strong id="cost_per_m2">—</strong></li>
@@ -189,7 +189,7 @@
                 <div class="mt-3">
                   <h6 class="mb-2">Φόρτωση Παλετών</h6>
                   <div class="small text-muted mb-2">Οπτική απεικόνιση πληρότητας ανά παλέτα</div>
-                  <div id="pallet_fill_container" class="d-flex flex-column gap-2"></div>
+                  <div id="pallet_fill_container" class="d-flex flex-column gap-3 w-100"></div>
                   <div class="d-flex gap-3 mt-2 small">
                     <span><span class="badge rounded-pill bg-success">&nbsp;&nbsp;</span> ≥ 90% (κατάλληλη)</span>
                     <span><span class="badge rounded-pill bg-warning text-dark">&nbsp;&nbsp;</span> 40–90% (μέτρια)</span>
@@ -242,11 +242,20 @@
         const row = document.createElement('div');
         row.className = 'd-flex align-items-center gap-3';
         const label = document.createElement('div');
-        label.style.minWidth = '110px';
-        label.innerHTML = `<strong>Παλέτα ${i+1}</strong><div class="small text-muted">${type_i}</div>`;
+        label.style.minWidth = '140px';
+        // Choose image by type
+        const typeKey = (type_i || '').toLowerCase();
+        let imgSrc = '';
+        if (typeKey.includes('a-frame') || typeKey.includes('a frame') || typeKey.includes('aframe')) {
+          imgSrc = '/images/A-FRAME.png';
+        } else if (typeKey.includes('crate') || typeKey.includes('grate') || typeKey.includes('crate')) {
+          imgSrc = '/images/CRATE.png';
+        }
+        const imgHtml = imgSrc ? `<img src="${imgSrc}" alt="${type_i}" style="height:36px;width:auto;object-fit:contain;vertical-align:middle;margin-right:8px;">` : '';
+        label.innerHTML = `${imgHtml}<strong>Παλέτα ${i+1}</strong><div class="small text-muted">${type_i}</div>`;
         const shell = document.createElement('div');
         shell.className = 'progress flex-grow-1';
-        shell.style.height = '16px';
+        shell.style.height = '20px';
         const bar = document.createElement('div');
         bar.className = `progress-bar ${color}`;
         bar.style.width = pct.toFixed(2)+'%';
