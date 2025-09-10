@@ -60,6 +60,32 @@
     .input-group.validation-valid .btn,
     .input-group.validation-valid .input-group-text,
     .input-group.validation-valid .form-control { background-color:#198754!important; border-color:#198754!important; color:#fff!important; }
+    /* Compact, space-efficient chip groups */
+    .pill-group.scrollable {
+      display: inline-flex;
+      gap: 4px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      max-width: 100%;
+    }
+    .pill-group.scrollable > .btn,
+    .pill-group.scrollable > label.btn {
+      flex: 0 0 auto; /* prevent stretching so we can scroll horizontally */
+    }
+    /* Thickness/Dimensions inline layout on md+ screens */
+    .thdim-row { display: block; }
+    .thdim-row .inline-block { display: block; }
+    @media (min-width: 768px) {
+      .thdim-row { display: block; }
+      .thdim-row .inline-block { display: block; margin-bottom: 0.5rem !important; }
+      .thdim-row .th-label, .thdim-row .dim-label { margin-bottom: 0.25rem !important; white-space: nowrap; }
+      /* Stack groups vertically on all screen sizes */
+      #thickness_group.scrollable, #dimensions_group.scrollable { max-width: 100%; }
+    }
+  #result { clear: both; position: relative; z-index: 1; }
   </style>
 </head>
 <body>
@@ -83,14 +109,30 @@
       <form id="slabForm" class="row g-3">
         <div class="col-md-3">
           <label class="form-label">Εταιρία</label>
-          <select id="brand" class="form-select" required>
+          <div class="btn-group w-100 pill-group" role="group" aria-label="Εταιρία" id="brand_group">
+            <input type="radio" class="btn-check" name="brandopt" id="brand_inf" autocomplete="off" data-value="infinity" checked>
+            <label class="btn btn-sm btn-outline-secondary" for="brand_inf">Infinity</label>
+            <input type="radio" class="btn-check" name="brandopt" id="brand_mir" autocomplete="off" data-value="mirage">
+            <label class="btn btn-sm btn-outline-secondary" for="brand_mir">Mirage</label>
+          </div>
+          <select id="brand" class="form-select d-none" required>
             <option value="infinity" selected>Infinity</option>
             <option value="mirage">Mirage</option>
           </select>
         </div>
         <div class="col-md-3">
           <label class="form-label">Πάχος (mm) / Διαστάσεις</label>
-          <select id="variant" class="form-select" required>
+          <div class="thdim-row">
+            <div class="inline-block mb-2">
+              <div class="small text-muted mb-1 th-label">Πάχος</div>
+              <div class="btn-group w-100 pill-group scrollable" role="group" aria-label="Πάχος" id="thickness_group"></div>
+            </div>
+            <div class="inline-block">
+              <div class="small text-muted mb-1 dim-label">Διαστάσεις</div>
+              <div class="btn-group w-100 pill-group scrollable" role="group" aria-label="Διαστάσεις" id="dimensions_group"></div>
+            </div>
+          </div>
+          <select id="variant" class="form-select d-none" required>
             <!-- options populated dynamically as e.g., 6 (160x320) -->
           </select>
           <input type="hidden" id="thickness" value="">
@@ -281,7 +323,13 @@
       const select = document.getElementById('variant');
       const thHidden = document.getElementById('thickness');
       const dimHidden = document.getElementById('dimensions');
+      const thGroup = document.getElementById('thickness_group');
+      const dimGroup = document.getElementById('dimensions_group');
+      // reset containers
+      if (thGroup) thGroup.innerHTML = '';
+      if (dimGroup) dimGroup.innerHTML = '';
       select.innerHTML = '';
+
       // Define variants inline (kept in sync with slab_details.json)
       const variants = brand === 'infinity'
         ? [
@@ -294,6 +342,8 @@
             {thickness:6, dimensions:'160x320'},
             {thickness:12, dimensions:'162x324'}
           ];
+
+      // Populate hidden select for compatibility (not visible)
       variants.forEach(v => {
         const o = document.createElement('option');
         o.value = `${v.thickness}|${v.dimensions}`;
@@ -302,13 +352,85 @@
         o.setAttribute('data-dimensions', v.dimensions);
         select.appendChild(o);
       });
-      // set hidden values to first option
-      const first = select.options[0];
-      if (first){
-        thHidden.value = first.getAttribute('data-thickness') || '';
-        dimHidden.value = first.getAttribute('data-dimensions') || '';
+
+      // Build unique thickness list preserving order
+      const thicknesses = [];
+      variants.forEach(v => { if (!thicknesses.includes(v.thickness)) thicknesses.push(v.thickness); });
+
+      // Helper to render dimensions for a selected thickness
+      function renderDimensionsFor(th) {
+        if (!dimGroup) return;
+        dimGroup.innerHTML = '';
+        const dims = variants.filter(v => v.thickness === th).map(v => v.dimensions);
+        dims.forEach((dim, idx) => {
+          const id = `dim_${th}_${idx}`;
+          const input = document.createElement('input');
+          input.type = 'radio';
+          input.className = 'btn-check';
+          input.name = 'dimsopt';
+          input.id = id;
+          input.setAttribute('data-dim', dim);
+          input.setAttribute('autocomplete', 'off');
+          if (idx === 0) input.checked = true;
+          const label = document.createElement('label');
+          label.className = 'btn btn-sm btn-outline-secondary';
+          label.setAttribute('for', id);
+          label.textContent = dim;
+          input.addEventListener('change', () => {
+            if (input.checked) {
+              thHidden.value = String(th);
+              dimHidden.value = dim;
+              // sync hidden select value too
+              select.value = `${th}|${dim}`;
+              select.dispatchEvent(new Event('change'));
+              // notify for packaging proposal
+              thHidden.dispatchEvent(new Event('change'));
+            }
+          });
+          dimGroup.appendChild(input);
+          dimGroup.appendChild(label);
+        });
+        // Set hidden to first by default
+        const firstDim = dims[0];
+        if (firstDim) {
+          thHidden.value = String(th);
+          dimHidden.value = firstDim;
+          select.value = `${th}|${firstDim}`;
+          select.dispatchEvent(new Event('change'));
+          thHidden.dispatchEvent(new Event('change'));
+        }
       }
-      select.dispatchEvent(new Event('change'));
+
+      // Render thickness group
+      if (thGroup) {
+        thicknesses.forEach((th, idx) => {
+          const id = `th_${th}`;
+          const input = document.createElement('input');
+          input.type = 'radio';
+          input.className = 'btn-check';
+          input.name = 'thopt';
+          input.id = id;
+          input.setAttribute('data-th', String(th));
+          input.setAttribute('autocomplete', 'off');
+          if (idx === 0) input.checked = true;
+          const label = document.createElement('label');
+          label.className = 'btn btn-sm btn-outline-secondary';
+          label.setAttribute('for', id);
+          label.textContent = `${th} mm`;
+          input.addEventListener('change', () => {
+            if (input.checked) {
+              const selTh = parseInt(input.getAttribute('data-th') || '0', 10) || th;
+              renderDimensionsFor(selTh);
+            }
+          });
+          thGroup.appendChild(input);
+          thGroup.appendChild(label);
+        });
+        // initial render
+        if (thicknesses.length) {
+          renderDimensionsFor(thicknesses[0]);
+        }
+      }
     }
 
     // Keep hidden thickness/dimensions in sync with selected variant
@@ -320,6 +442,8 @@
         if (opt){
           document.getElementById('thickness').value = opt.getAttribute('data-thickness') || '';
           document.getElementById('dimensions').value = opt.getAttribute('data-dimensions') || '';
+          // trigger packaging proposal listeners
+          try { document.getElementById('thickness').dispatchEvent(new Event('change')); } catch(e) {}
         }
       }
     });
@@ -441,6 +565,7 @@
         }
       }
       wireToggleGroup('destination_group','destination');
+      wireToggleGroup('brand_group','brand');
 
 
       document.getElementById('slabForm').addEventListener('submit', async function(e){
@@ -511,7 +636,9 @@
             renderPalletFill(units, cap, pallets, type, breakdown);
           } catch (e) { /* ignore */ }
 
-          document.getElementById('result').style.display = 'block';
+          const resultEl = document.getElementById('result');
+          resultEl.style.display = 'block';
+          try { resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(e) { /* no-op */ }
           if (Array.isArray(data.warnings) && data.warnings.length) {
             data.warnings.forEach(w => toastr.warning(w));
           } else { toastr.success('Υπολογισμός ολοκληρώθηκε'); }
