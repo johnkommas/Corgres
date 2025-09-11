@@ -232,3 +232,122 @@ html[data-theme="dark"] #pricingSection .list-group-item{
 html[data-theme="dark"] #pricingSection .progress{
   background-color: #111827 !important;
 }
+
+
+/* Excel Formatter Dark Mode enhancements */
+html[data-theme="dark"], :root[data-theme="dark"]{
+  /* Modal & dropdown variables */
+  --bs-modal-bg: var(--surface);
+  --bs-modal-color: var(--text);
+  --bs-modal-header-border-color: var(--neutral-300);
+  --bs-modal-footer-border-color: var(--neutral-300);
+  --bs-dropdown-bg: var(--surface);
+  --bs-dropdown-color: var(--text);
+  --bs-dropdown-border-color: var(--neutral-300);
+  --bs-dropdown-link-hover-bg: rgba(255,255,255,0.06);
+  --bs-nav-tabs-link-active-color: var(--text);
+  --bs-nav-tabs-link-active-bg: var(--surface);
+  --bs-nav-tabs-link-hover-border-color: var(--neutral-300);
+  --bs-nav-tabs-border-color: var(--neutral-300);
+}
+
+/* Tabs */
+html[data-theme="dark"] .nav-tabs .nav-link,
+:root[data-theme="dark"] .nav-tabs .nav-link{
+  color: var(--text);
+  border-color: transparent;
+}
+html[data-theme="dark"] .nav-tabs .nav-link.active,
+:root[data-theme="dark"] .nav-tabs .nav-link.active{
+  color: var(--text);
+  background-color: rgba(255,255,255,0.06);
+  border-color: var(--neutral-300) var(--neutral-300) transparent;
+}
+
+/* Cards & modals */
+html[data-theme="dark"] .card,
+:root[data-theme="dark"] .card{
+  background-color: var(--surface) !important;
+  color: var(--text) !important;
+  border-color: var(--neutral-300) !important;
+}
+html[data-theme="dark"] .modal-content,
+:root[data-theme="dark"] .modal-content{
+  background-color: var(--surface);
+  color: var(--text);
+  border-color: var(--neutral-300);
+}
+
+/* Glass UI components on Excel Formatter */
+html[data-theme="dark"] .glass-input-group,
+:root[data-theme="dark"] .glass-input-group{
+  background-color: rgba(255,255,255,0.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  border: 1px solid var(--neutral-300);
+}
+html[data-theme="dark"] .glass-input,
+:root[data-theme="dark"] .glass-input{
+  color: var(--text) !important;
+}
+html[data-theme="dark"] .glass-input::placeholder,
+:root[data-theme="dark"] .glass-input::placeholder{
+  color: rgba(229,231,235,0.65) !important;
+}
+html[data-theme="dark"] .glass-input:focus,
+:root[data-theme="dark"] .glass-input:focus{
+  background-color: rgba(255,255,255,0.08) !important;
+}
+html[data-theme="dark"] .glass-card,
+:root[data-theme="dark"] .glass-card{
+  background-color: rgba(255,255,255,0.06);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.45);
+  border: 1px solid var(--neutral-300);
+}
+html[data-theme="dark"] .glass-alert,
+:root[data-theme="dark"] .glass-alert{
+  background-color: rgba(255,255,255,0.06) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--neutral-300) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
+}
+html[data-theme="dark"] .glass-spinner,
+:root[data-theme="dark"] .glass-spinner{
+  background-color: rgba(255,255,255,0.06);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.45);
+}
+html[data-theme="dark"] .glass-progress,
+:root[data-theme="dark"] .glass-progress{
+  background-color: rgba(255,255,255,0.08);
+  box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+}
+html[data-theme="dark"] .btn-glass,
+:root[data-theme="dark"] .btn-glass{
+  background-color: rgba(255,255,255,0.08);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.45);
+  border: 1px solid var(--neutral-300);
+}
+html[data-theme="dark"] .btn-glass:hover,
+:root[data-theme="dark"] .btn-glass:hover{
+  background-color: rgba(255,255,255,0.12);
+  color: var(--text);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+
+/* Dark mode robustness patch: ensure page chrome respects dark theme */
+html[data-theme="dark"], :root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#0b1020;           /* page background */
+  --surface:#0f172a;      /* cards/surfaces */
+  --text:#e5e7eb;         /* primary text */
+  --muted:#94a3b8;        /* secondary text */
+  --neutral-100:#111827;
+  --neutral-300:#374151;
+  --dark-color:#e5e7eb;   /* for inline brand text */
+}
+/* Body and wrappers: override inline light backgrounds */
+html[data-theme="dark"] body{ background: var(--bg) !important; color: var(--text) !important; }
+html[data-theme="dark"] .container-fluid{ background-color: var(--bg) !important; }
+html[data-theme="dark"] footer{ background-color: var(--bg) !important; }
+html[data-theme="dark"] .navbar{ background: transparent !important; }

@@ -844,38 +844,34 @@ async def websocket_app_status(websocket: WebSocket):
         # Clean up when the connection is closed
         manager.disconnect(websocket, connection_id)
 
+        # Determine visitor id for this connection early (before we delete the mapping)
+        vid_to_remove = manager.connection_to_visitor.get(connection_id) if connection_id in manager.connection_to_visitor else None
+
         # If we have a visitor ID for this connection, update their data
-        if connection_id in manager.connection_to_visitor:
-            visitor_id = manager.connection_to_visitor[connection_id]
+        if vid_to_remove is not None:
+            visitor_id = vid_to_remove
             if visitor_id in manager.unique_visitors and "connections" in manager.unique_visitors[visitor_id]:
                 if connection_id in manager.unique_visitors[visitor_id]["connections"]:
                     manager.unique_visitors[visitor_id]["connections"].remove(connection_id)
 
-                    # If this was the last connection for this visitor, clean up their data
-                    if len(manager.unique_visitors[visitor_id]["connections"]) == 0:
-                        # Remove tabs for this visitor
-                        if visitor_id in manager.visitor_tabs:
-                            del manager.visitor_tabs[visitor_id]
+                # If this was the last connection for this visitor, clean up their data
+                if len(manager.unique_visitors[visitor_id]["connections"]) == 0:
+                    # Remove tabs for this visitor
+                    if visitor_id in manager.visitor_tabs:
+                        del manager.visitor_tabs[visitor_id]
 
-                        # Remove browsers for this visitor
-                        if visitor_id in manager.visitor_browsers:
-                            del manager.visitor_browsers[visitor_id]
+                    # Remove browsers for this visitor
+                    if visitor_id in manager.visitor_browsers:
+                        del manager.visitor_browsers[visitor_id]
 
-                        # Remove platform info for this visitor
-                        if visitor_id in manager.visitor_platforms:
-                            del manager.visitor_platforms[visitor_id]
+                    # Remove platform info for this visitor
+                    if visitor_id in manager.visitor_platforms:
+                        del manager.visitor_platforms[visitor_id]
 
-                        # Remove visitor from unique_visitors
-                        del manager.unique_visitors[visitor_id]
+                    # Remove visitor from unique_visitors
+                    del manager.unique_visitors[visitor_id]
 
-            # Remove the connection mapping
-            if connection_id in manager.connection_to_visitor:
-                del manager.connection_to_visitor[connection_id]
-
-        # Remove the user from all apps. If this visitor has no more connections, remove their visitor_id from apps.
-        # Determine visitor id for this connection (from earlier mapping if available)
-        vid_to_remove = manager.connection_to_visitor.get(connection_id) if connection_id in manager.connection_to_visitor else None
-        # Determine if this was the last connection for this visitor
+        # Remove the user from all apps. If this was the last connection for this visitor, remove their visitor_id from apps.
         last_conn = False
         if vid_to_remove is None:
             # Fallback: we can only remove by connection id (in case join used connection id)
@@ -892,6 +888,10 @@ async def websocket_app_status(websocket: WebSocket):
             if last_conn:
                 for app in list(manager.app_visitors.keys()):
                     await manager.remove_user_from_app(app, vid_to_remove)
+
+        # Now it's safe to remove the connection mapping
+        if connection_id in manager.connection_to_visitor:
+            del manager.connection_to_visitor[connection_id]
 
         await broadcast_presence()
         api_logger.info(f"WebSocket connection closed: {connection_id}")

@@ -3309,16 +3309,33 @@
     </script>
     <!-- Presence and Theme scripts for Excel Formatter page -->
     <script>
-      // Theme toggle (persist across sessions)
+      // Theme toggle with system preference and persistence
       (function(){
         try{
-          var key='theme';
-          var root=document.documentElement; var saved=localStorage.getItem(key);
-          if(saved){ root.setAttribute('data-theme', saved); }
+          var key = 'theme';
+          var root = document.documentElement;
+          var saved = localStorage.getItem(key);
+          var mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+          function applyTheme(val){
+            if(val !== 'dark' && val !== 'light'){ val = 'light'; }
+            root.setAttribute('data-theme', val);
+          }
+          if (saved) {
+            applyTheme(saved);
+          } else {
+            applyTheme(mq && mq.matches ? 'dark' : 'light');
+            if (mq && typeof mq.addEventListener === 'function') {
+              mq.addEventListener('change', function(e){ applyTheme(e.matches ? 'dark' : 'light'); });
+            } else if (mq && typeof mq.addListener === 'function') {
+              // Safari/older browsers
+              mq.addListener(function(e){ applyTheme(e.matches ? 'dark' : 'light'); });
+            }
+          }
           var btn = document.getElementById('themeToggle');
           if(btn){ btn.addEventListener('click', function(){
-            var curr=root.getAttribute('data-theme')==='dark'?'light':'dark';
-            root.setAttribute('data-theme', curr); localStorage.setItem(key, curr);
+            var curr = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            applyTheme(curr);
+            localStorage.setItem(key, curr);
           }); }
         }catch(e){}
       })();
