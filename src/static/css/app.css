@@ -120,3 +120,115 @@ body{ background: var(--bg); color: var(--text); }
 
 /* Fallback: force footer brand text to light in dark mode via html[data-theme] */
 html[data-theme="dark"] footer .fw-bold { color: #e5e7eb !important; }
+
+
+/* Dark mode fixes for Pricing results area */
+:root[data-theme="dark"] #pricingResult .card,
+:root[data-theme="dark"] #pricingResult .card .card-body{
+  background-color: var(--surface) !important;
+  color: var(--text) !important;
+}
+:root[data-theme="dark"] #pricingResult .list-group-item{
+  background-color: var(--surface) !important;
+  border-color: var(--neutral-300) !important;
+  color: var(--text) !important;
+}
+:root[data-theme="dark"] #pricingResult .list-group-flush > .list-group-item{
+  background-color: var(--surface) !important;
+}
+:root[data-theme="dark"] #pricingResult .progress{
+  background-color: #111827 !important; /* darker track for dark mode */
+}
+
+
+/* Dark mode fixes (robust html[data-theme]) for Pricing and SLABs result cards */
+html[data-theme="dark"] #pricingResult .card,
+html[data-theme="dark"] #pricingResult .card .card-body{
+  background-color: var(--surface) !important;
+  color: var(--text) !important;
+}
+html[data-theme="dark"] #pricingResult .list-group-item{
+  background-color: var(--surface) !important;
+  border-color: var(--neutral-300) !important;
+  color: var(--text) !important;
+}
+html[data-theme="dark"] #pricingResult .list-group-flush > .list-group-item{
+  background-color: var(--surface) !important;
+}
+html[data-theme="dark"] #pricingResult .progress{
+  background-color: #111827 !important;
+}
+
+/* SLABs page (#result) */
+html[data-theme="dark"] #result .card,
+html[data-theme="dark"] #result .card .card-body{
+  background-color: var(--surface) !important;
+  color: var(--text) !important;
+}
+html[data-theme="dark"] #result .list-group-item{
+  background-color: var(--surface) !important;
+  border-color: var(--neutral-300) !important;
+  color: var(--text) !important;
+}
+html[data-theme="dark"] #result .list-group-flush > .list-group-item{
+  background-color: var(--surface) !important;
+}
+
+/* Buttons inside results: make outline-secondary readable in dark */
+html[data-theme="dark"] #pricingResult .btn-outline-secondary,
+html[data-theme="dark"] #result .btn-outline-secondary,
+:root[data-theme="dark"] #pricingResult .btn-outline-secondary,
+:root[data-theme="dark"] #result .btn-outline-secondary{
+  color: var(--text) !important;
+  border-color: var(--neutral-300) !important;
+}
+html[data-theme="dark"] #pricingResult .btn-outline-secondary:hover,
+html[data-theme="dark"] #result .btn-outline-secondary:hover,
+:root[data-theme="dark"] #pricingResult .btn-outline-secondary:hover,
+:root[data-theme="dark"] #result .btn-outline-secondary:hover{
+  background-color: rgba(255,255,255,0.06) !important;
+}
+
+/* Code blocks inside results */
+html[data-theme="dark"] #pricingResult code,
+html[data-theme="dark"] #result code,
+:root[data-theme="dark"] #pricingResult code,
+:root[data-theme="dark"] #result code{
+  background-color: rgba(255,255,255,0.05) !important;
+  color: var(--text) !important;
+  padding: 0.1rem 0.25rem;
+  border-radius: 4px;
+}
+
+/* Ensure muted text color in dark mode */
+html[data-theme="dark"] .text-muted{ color: var(--muted) !important; }
+
+
+/* Dark mode: override Bootstrap component variables so cards/list groups respect dark palette */
+html[data-theme="dark"], :root[data-theme="dark"]{
+  --bs-card-bg: var(--surface);
+  --bs-card-color: var(--text);
+  --bs-list-group-bg: var(--surface);
+  --bs-list-group-color: var(--text);
+  --bs-list-group-border-color: var(--neutral-300);
+  --bs-progress-bg: #111827; /* darker track for progress */
+  --bs-table-bg: var(--surface);
+  --bs-table-color: var(--text);
+  --bs-table-border-color: var(--neutral-300);
+}
+
+
+/* Dark mode: extra robustness scoped to pricing page section */
+html[data-theme="dark"] #pricingSection .card,
+html[data-theme="dark"] #pricingSection .card .card-body{
+  background-color: var(--surface) !important;
+  color: var(--text) !important;
+}
+html[data-theme="dark"] #pricingSection .list-group-item{
+  background-color: var(--surface) !important;
+  border-color: var(--neutral-300) !important;
+  color: var(--text) !important;
+}
+html[data-theme="dark"] #pricingSection .progress{
+  background-color: #111827 !important;
+}
