@@ -5,6 +5,7 @@
   --bg: #fffbfa;              /* warm background */
   --surface: #ffffff;
   --text: #0f172a;
+  --dark-color: #0f172a;
   --muted: #64748b;
   --neutral-50: #f8fafc;
   --neutral-100: #f8f9fa;
@@ -106,3 +107,16 @@ body{ background: var(--bg); color: var(--text); }
 
 /* Presence chip */
 .presence-chip{ display:flex; align-items:center; gap:.5rem; }
+
+
+/* Dark mode brand color fix: ensure footer brand text is readable */
+:root { --dark-color: #0f172a; }
+:root[data-theme="dark"] { --dark-color: #e5e7eb; }
+
+
+/* Ensure footer brand is readable in dark mode (override inline color) */
+:root[data-theme="dark"] footer .fw-bold { color: #e5e7eb !important; }
+
+
+/* Fallback: force footer brand text to light in dark mode via html[data-theme] */
+html[data-theme="dark"] footer .fw-bold { color: #e5e7eb !important; }
