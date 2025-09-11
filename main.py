@@ -240,6 +240,12 @@ class ConnectionManager:
         self.visitor_tabs: Dict[str, Set[str]] = {}
         # Dictionary to track platform information per visitor
         self.visitor_platforms: Dict[str, Dict[str, str]] = {}
+        # Dictionary to track masked IP per visitor
+        self.visitor_ips: Dict[str, str] = {}
+        # Dictionary to track device info (type and OS) per visitor
+        self.visitor_device: Dict[str, Dict[str, str]] = {}
+        # Dictionary to track network/host name per visitor (best-effort)
+        self.visitor_nets: Dict[str, str] = {}
         # Dictionary to track last heartbeat time for each connection
         self.last_heartbeat: Dict[str, datetime] = {}
         # Heartbeat timeout in seconds (30 seconds)
@@ -323,7 +329,7 @@ class ConnectionManager:
 
         # If we cleaned up any connections, broadcast the updated state
         if stale_connections:
-            await self.broadcast({"active_users": self.active_users})
+            await broadcast_presence()
 
     async def broadcast(self, message: dict):
         # Add total active users and unique visitors to the message
@@ -547,6 +553,7 @@ manager = ConnectionManager()
 # Serve static files
 api.mount("/static", StaticFiles(directory="src/static"), name="static")
 api.mount("/images", StaticFiles(directory="src/static/images"), name="images")
+api.mount("/css", StaticFiles(directory="src/static/css"), name="css")
 
 @api.get("/", response_class=HTMLResponse)
 async def root():
@@ -611,6 +618,82 @@ async def retail_pricing_slabs():
     with open(filepath, encoding="utf-8") as f:
         return f.read()
 
+# Helper to mask client IPs for privacy-safe display
+
+def mask_ip(ip: str) -> str:
+    if not ip:
+        return ""
+    if ":" in ip:  # IPv6 simple mask
+        parts = ip.split(":")
+        return ":".join(parts[:3] + ["…"]) if len(parts) > 3 else ip
+    parts = ip.split(".")
+    return ".".join(parts[:3] + ["xxx"]) if len(parts) == 4 else ip
+
+# Best-effort resolve network/host name for IP without blocking event loop
+async def resolve_net_name(visitor_id: str, ip: str):
+    try:
+        if not ip:
+            return
+        # Avoid resolving repeatedly
+        if manager.visitor_nets.get(visitor_id):
+            return
+        hostname = await asyncio.to_thread(socket.gethostbyaddr, ip)
+        if isinstance(hostname, tuple):
+            host = hostname[0]
+        else:
+            host = str(hostname)
+        # Basic sanity check
+        if host and host != ip and not host.endswith(".in-addr.arpa"):
+            manager.visitor_nets[visitor_id] = host
+            await broadcast_presence()
+    except Exception:
+        # Ignore resolution errors/timeouts
+        pass
+
+# Broadcast richer presence payload to all WS clients
+async def broadcast_presence():
+    try:
+        payload = {
+            "type": "presence",
+            "apps": {app: list(vset) for app, vset in manager.app_visitors.items()},
+            "visitors": [
+                {
+                    "visitorId": vid,
+                    "ip": manager.visitor_ips.get(vid, ""),
+                    "browsers": list(manager.visitor_browsers.get(vid, [])),
+                    "tabs": len(manager.visitor_tabs.get(vid, [])),
+                    "deviceType": manager.visitor_device.get(vid, {}).get("deviceType", ""),
+                    "deviceModel": manager.visitor_device.get(vid, {}).get("model", ""),
+                    "os": manager.visitor_device.get(vid, {}).get("os", ""),
+                    "net": manager.visitor_nets.get(vid, ""),
+                }
+                for vid in manager.unique_visitors.keys()
+            ],
+        }
+        await manager.broadcast(payload)
+    except Exception as e:
+        api_logger.error(f"presence broadcast error: {e}")
+
+# Presence snapshot endpoint (optional)
+@api.get("/presence")
+async def presence():
+    return JSONResponse({
+        "apps": {app: list(vset) for app, vset in manager.app_visitors.items()},
+        "visitors": [
+            {
+                "visitorId": vid,
+                "ip": manager.visitor_ips.get(vid, ""),
+                "browsers": list(manager.visitor_browsers.get(vid, [])),
+                "tabs": len(manager.visitor_tabs.get(vid, [])),
+                "deviceType": manager.visitor_device.get(vid, {}).get("deviceType", ""),
+                "deviceModel": manager.visitor_device.get(vid, {}).get("model", ""),
+                "os": manager.visitor_device.get(vid, {}).get("os", ""),
+                "net": manager.visitor_nets.get(vid, ""),
+            }
+            for vid in manager.unique_visitors.keys()
+        ],
+    })
+
 @api.websocket("/ws/app-status")
 async def websocket_app_status(websocket: WebSocket):
     """
@@ -623,6 +706,13 @@ async def websocket_app_status(websocket: WebSocket):
     try:
         await manager.connect(websocket, connection_id)
         api_logger.info(f"WebSocket connection established: {connection_id}")
+
+        # Capture client IP from headers (respect proxies)
+        try:
+            xff = websocket.headers.get("x-forwarded-for") or websocket.headers.get("x-real-ip")
+            client_ip = (xff.split(",")[0].strip() if xff else getattr(websocket.client, "host", None))
+        except Exception:
+            client_ip = None
 
         # Start background task to clean up stale connections
         background_tasks = BackgroundTasks()
@@ -684,14 +774,37 @@ async def websocket_app_status(websocket: WebSocket):
                                     manager.visitor_platforms[visitor_id]["user_agents"] = {}
                                 manager.visitor_platforms[visitor_id]["user_agents"][browser_name] = user_agent
 
+                            # Store device info (type and OS) if provided by client
+                            dev_type = browser_info.get("deviceType") or browser_info.get("device_type")
+                            os_name = browser_info.get("os") or browser_info.get("osName") or browser_info.get("os_name")
+                            dev_model = browser_info.get("deviceModel") or browser_info.get("device_model")
+                            if dev_type or os_name or dev_model:
+                                manager.visitor_device[visitor_id] = {
+                                    "deviceType": dev_type or "",
+                                    "os": os_name or "",
+                                    "model": dev_model or "",
+                                }
+
                         # Update tab information
                         if tab_id:
                             manager.visitor_tabs[visitor_id].add(tab_id)
 
+                        # Store masked IP for this visitor and resolve net name asynchronously
+                        try:
+                            if client_ip:
+                                manager.visitor_ips[visitor_id] = mask_ip(client_ip)
+                                # Kick off best-effort reverse lookup for network/host name
+                                try:
+                                    asyncio.create_task(resolve_net_name(visitor_id, client_ip))
+                                except Exception:
+                                    pass
+                        except Exception:
+                            pass
+
                         api_logger.info(f"Identified visitor: {visitor_id} using {browser_info.get('browser', 'unknown')} browser, tab: {tab_id}")
 
-                        # Broadcast updated stats
-                        await manager.broadcast({"active_users": manager.active_users})
+                        # Broadcast updated presence stats
+                        await broadcast_presence()
 
                     # Handle app actions if app is specified
                     elif "app" in data:
@@ -702,10 +815,12 @@ async def websocket_app_status(websocket: WebSocket):
                         if data["action"] == "join":
                             await manager.add_user_to_app(app, vid)
                             api_logger.info(f"User {vid} joined {app}")
+                            await broadcast_presence()
 
                         elif data["action"] == "leave":
                             await manager.remove_user_from_app(app, vid)
                             api_logger.info(f"User {vid} left {app}")
+                            await broadcast_presence()
 
             except asyncio.TimeoutError:
                 # Connection timed out, check if it's still active
@@ -778,6 +893,7 @@ async def websocket_app_status(websocket: WebSocket):
                 for app in list(manager.app_visitors.keys()):
                     await manager.remove_user_from_app(app, vid_to_remove)
 
+        await broadcast_presence()
         api_logger.info(f"WebSocket connection closed: {connection_id}")
 
 # Background task to clean up stale connections

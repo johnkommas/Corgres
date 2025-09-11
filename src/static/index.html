@@ -16,6 +16,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="/css/app.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <style>
@@ -821,14 +822,27 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav ms-auto">
+                        <li class="nav-item d-flex align-items-center mx-1">
+                            <button id="themeToggle" class="btn btn-sm btn-outline-secondary" type="button" title="Toggle theme">
+                                <i class="fa-solid fa-moon"></i>
+                            </button>
+                        </li>
+                        <li class="nav-item d-flex align-items-center mx-1">
+                            <div id="presenceChip" class="presence-chip">
+                                <span class="badge bg-success" id="presenceCount">0 online</span>
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#presencePanel" aria-expanded="false" title="Show online">
+                                    <i class="fa-solid fa-users"></i>
+                                </button>
+                            </div>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link active px-3 py-2 mx-1 rounded" href="/" style="color: var(--primary-color); font-weight: 600;">
-                                <i class="fas fa-home me-1"></i> Home
+                                <i class="fas fa-home fa-fw me-1"></i> Home
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link px-3 py-2 mx-1 rounded" href="/logs" style="transition: all 0.2s ease;">
-                                <i class="fas fa-list-alt me-1"></i> Logs
+                                <i class="fas fa-list-alt fa-fw me-1"></i> Logs
                             </a>
                         </li>
                         <li class="nav-item">
@@ -841,10 +855,11 @@
             </div>
 
         </nav>
-
-
-
-
+        <div class="collapse position-absolute end-0 mt-2" id="presencePanel" style="min-width: 320px; z-index: 1050;">
+          <div class="card shadow-sm">
+            <div class="card-body p-2"><div id="presenceList" class="small"></div></div>
+          </div>
+        </div>
 
         <div class="row">
             <div class="col-12">
@@ -3213,9 +3228,31 @@
             }catch(e){ return 'visitor_fallback_' + Date.now(); }
           }
           function getBrowserInfo(){
-            var ua = navigator.userAgent;
-            var name = ua.indexOf('Firefox')>-1?'Firefox': ua.indexOf('SamsungBrowser')>-1?'Samsung Browser': ua.indexOf('OPR')>-1||ua.indexOf('Opera')>-1?'Opera': ua.indexOf('Trident')>-1?'Internet Explorer': ua.indexOf('Edge')>-1?'Edge': ua.indexOf('Chrome')>-1?'Chrome': ua.indexOf('Safari')>-1?'Safari':'Unknown';
-            return {browser:name, userAgent:ua, platform:navigator.platform};
+            var ua = navigator.userAgent || navigator.vendor || window.opera;
+            var platform = navigator.platform || '';
+            var maxTP = (typeof navigator.maxTouchPoints === 'number') ? navigator.maxTouchPoints : 0;
+            var name = ua.indexOf('Firefox')>-1?'Firefox': ua.indexOf('SamsungBrowser')>-1?'Samsung Browser': ua.indexOf('OPR')>-1||ua.indexOf('Opera')>-1?'Opera': ua.indexOf('Trident')>-1?'Internet Explorer': ua.indexOf('Edg')>-1||ua.indexOf('Edge')>-1?'Edge': ua.indexOf('Chrome')>-1?'Chrome': ua.indexOf('Safari')>-1?'Safari':'Unknown';
+            var isIpad = /iPad/i.test(ua) || (platform === 'MacIntel' && maxTP > 1);
+            var isIphone = /iPhone/i.test(ua);
+            var isIpod = /iPod/i.test(ua);
+            var isAndroid = /Android/i.test(ua);
+            var isIOS = isIphone || isIpad || isIpod;
+            var os = (function(u){
+              if(isIOS) return 'iOS';
+              if(/Windows NT/i.test(u)) return 'Windows';
+              if(isAndroid) return 'Android';
+              if(/Macintosh|Mac OS X/i.test(u)) return 'macOS';
+              if(/Linux/i.test(u)) return 'Linux';
+              return 'Other';
+            })(ua);
+            var deviceType = (function(u){
+              if(isIphone || isIpod) return 'Phone';
+              if(isIpad) return 'Tablet';
+              if(isAndroid) return (/Mobi|Mobile/i.test(u) ? 'Phone' : 'Tablet');
+              return 'PC';
+            })(ua);
+            var deviceModel = isIphone ? 'iPhone' : (isIpad ? 'iPad' : (isIpod ? 'iPod' : ''));
+            return {browser:name, userAgent:ua, platform:navigator.platform, os: os, deviceType: deviceType, deviceModel: deviceModel};
           }
           function getTabId(){
             try{
@@ -3270,5 +3307,65 @@
         }
       })();
     </script>
+    <!-- Presence and Theme scripts for Excel Formatter page -->
+    <script>
+      // Theme toggle (persist across sessions)
+      (function(){
+        try{
+          var key='theme';
+          var root=document.documentElement; var saved=localStorage.getItem(key);
+          if(saved){ root.setAttribute('data-theme', saved); }
+          var btn = document.getElementById('themeToggle');
+          if(btn){ btn.addEventListener('click', function(){
+            var curr=root.getAttribute('data-theme')==='dark'?'light':'dark';
+            root.setAttribute('data-theme', curr); localStorage.setItem(key, curr);
+          }); }
+        }catch(e){}
+      })();
+    </script>
+    <script>
+      // Online users presence panel (privacy-safe, masked IPs)
+      (function(){
+        try{
+          var elCount=document.getElementById('presenceCount');
+          var elList=document.getElementById('presenceList');
+          if(!elCount||!elList){ return; }
+          function getVisitorId(){ try{ var id=localStorage.getItem('visitorId'); if(!id){ id='visitor_'+Math.random().toString(36).substr(2,9)+'_'+Date.now(); localStorage.setItem('visitorId', id);} return id;}catch(e){ return 'visitor_fallback_'+Date.now(); } }
+          function getBrowserInfo(){ var ua=navigator.userAgent||navigator.vendor||window.opera; var platform=navigator.platform||''; var maxTP=(typeof navigator.maxTouchPoints==='number')?navigator.maxTouchPoints:0; var name=ua.indexOf('Firefox')>-1?'Firefox': ua.indexOf('SamsungBrowser')>-1?'Samsung Browser': ua.indexOf('OPR')>-1||ua.indexOf('Opera')>-1?'Opera': ua.indexOf('Trident')>-1?'Internet Explorer': ua.indexOf('Edg')>-1||ua.indexOf('Edge')>-1?'Edge': ua.indexOf('Chrome')>-1?'Chrome': ua.indexOf('Safari')>-1?'Safari':'Unknown'; var isIpad=/iPad/i.test(ua)||(platform==='MacIntel'&&maxTP>1); var isIphone=/iPhone/i.test(ua); var isIpod=/iPod/i.test(ua); var isAndroid=/Android/i.test(ua); var isIOS=isIphone||isIpad||isIpod; var os=(function(u){ if(isIOS) return 'iOS'; if(/Windows NT/i.test(u)) return 'Windows'; if(isAndroid) return 'Android'; if(/Macintosh|Mac OS X/i.test(u)) return 'macOS'; if(/Linux/i.test(u)) return 'Linux'; return 'Other'; })(ua); var deviceType=(function(u){ if(isIphone||isIpod) return 'Phone'; if(isIpad) return 'Tablet'; if(isAndroid) return (/Mobi|Mobile/i.test(u)?'Phone':'Tablet'); return 'PC'; })(ua); var deviceModel=isIphone?'iPhone':(isIpad?'iPad':(isIpod?'iPod':'')); return {browser:name, userAgent:ua, platform:navigator.platform, os:os, deviceType:deviceType, deviceModel:deviceModel}; }
+          function getTabId(){ try{ var id=sessionStorage.getItem('tabId'); if(!id){ id='tab_'+Math.random().toString(36).substr(2,9)+'_'+Date.now(); sessionStorage.setItem('tabId', id);} return id;}catch(e){ return 'tab_fallback_'+Date.now(); } }
+          var state={ apps:{}, visitors:[] };
+          function render(){
+            try{
+              var total=new Set(Object.values(state.apps||{}).flat()).size;
+              elCount.textContent=(total||0)+" online";
+              elList.innerHTML=(state.visitors||[]).map(function(v){
+                var ip=v.ip||''; var br=(v.browsers||[]).join(', ');
+                var vid=(v.visitorId||'').slice(0,8);
+                var dtype=(v.deviceModel||v.deviceType||'');
+                var dev=(dtype + (v.os? ' '+v.os:'')).trim();
+                var net=v.net||'';
+                var right=[br, dev].filter(Boolean).join(' · ');
+                return '<div class="d-flex justify-content-between align-items-center py-1 border-bottom">\
+                  <div><span class="fw-semibold">'+vid+'</span> <span class="text-muted ms-1">'+ip+'</span>'+(net? ' <span class="text-muted">· '+net+'</span>':'')+'</div>\
+                  <div class="text-muted">'+right+'</div>\
+                </div>';
+              }).join('');
+            }catch(e){}
+          }
+          var socket, visitorId=getVisitorId(), browserInfo=getBrowserInfo(), tabId=getTabId();
+          var heartbeatInterval;
+          function startHeartbeat(){ stopHeartbeat(); heartbeatInterval=setInterval(function(){ if(socket && socket.readyState===WebSocket.OPEN){ socket.send(JSON.stringify({action:'heartbeat', visitorId:visitorId, tabId:tabId})); } else { stopHeartbeat(); } }, 15000); }
+          function stopHeartbeat(){ if(heartbeatInterval){ clearInterval(heartbeatInterval); heartbeatInterval=null; } }
+          function connect(){ var protocol=location.protocol==='https:'?'wss:':'ws:'; socket=new WebSocket(protocol+'//'+location.host+'/ws/app-status');
+            socket.addEventListener('open', function(){ try{ socket.send(JSON.stringify({action:'identify', visitorId:visitorId, browserInfo:browserInfo, tabId:tabId})); socket.send(JSON.stringify({action:'join', app:'excel-formatter', visitorId:visitorId, tabId:tabId})); startHeartbeat(); }catch(e){} });
+            socket.addEventListener('message', function(evt){ try{ var data=JSON.parse(evt.data); if(data.type==='presence'){ state.apps=data.apps||{}; state.visitors=data.visitors||[]; render(); } else if(data.active_users){ state.apps=data.active_users; render(); } }catch(e){} });
+            socket.addEventListener('close', function(){ stopHeartbeat(); setTimeout(connect, 5000); });
+            socket.addEventListener('error', function(){ stopHeartbeat(); });
+          }
+          connect();
+        }catch(err){ console.warn('Presence init failed:', err); }
+      })();
+    </script>
 </body>
 </html>
+
