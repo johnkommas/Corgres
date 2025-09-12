@@ -1,7 +1,8 @@
-import os
 import logging
+import os
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
+from typing import List, Tuple
 
 # Create logs directory if it doesn't exist
 os.makedirs("src/logs/api", exist_ok=True)
@@ -10,9 +11,70 @@ os.makedirs("src/logs/data_processing", exist_ok=True)
 os.makedirs("src/logs/database", exist_ok=True)
 os.makedirs("src/logs/errors", exist_ok=True)
 
+# Root logs directory and cap
+LOGS_DIR = "src/logs"
+# Allow override via env var; default 100 MB
+MAX_LOGS_TOTAL_MB = int(os.getenv("LOGS_MAX_TOTAL_MB", "100"))
+MAX_LOGS_TOTAL_BYTES = MAX_LOGS_TOTAL_MB * 1024 * 1024
+# When pruning, reduce to 90% of cap to avoid frequent churn
+PRUNE_TARGET_BYTES = int(MAX_LOGS_TOTAL_BYTES * 0.9)
+
 # Define log format
 LOG_FORMAT = "%(asctime)s\t[%(name)s]\t[%(levelname)s]\t[%(message)s]"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+def _list_log_files() -> List[str]:
+    files: List[str] = []
+    for root, _, filenames in os.walk(LOGS_DIR):
+        for fname in filenames:
+            if fname.endswith('.log'):
+                files.append(os.path.join(root, fname))
+    return files
+
+def _directory_size_bytes(path: str) -> int:
+    total = 0
+    for root, _, files in os.walk(path):
+        for f in files:
+            try:
+                total += os.path.getsize(os.path.join(root, f))
+            except OSError:
+                continue
+    return total
+
+def enforce_logs_quota():
+    """Ensure total size of all logs stays under MAX_LOGS_TOTAL_BYTES.
+
+    Strategy: delete oldest log files first until total <= PRUNE_TARGET_BYTES.
+    This is safer than flushing everything at once and preserves recent diagnostics.
+    """
+    try:
+        total = _directory_size_bytes(LOGS_DIR)
+        if total <= MAX_LOGS_TOTAL_BYTES:
+            return
+
+        # Build list of (path, mtime, size)
+        entries: List[Tuple[str, float, int]] = []
+        for path in _list_log_files():
+            try:
+                stat = os.stat(path)
+                entries.append((path, stat.st_mtime, stat.st_size))
+            except OSError:
+                continue
+        # Sort by mtime ascending (oldest first)
+        entries.sort(key=lambda x: x[1])
+
+        # Delete until under target
+        for path, _, size in entries:
+            try:
+                os.remove(path)
+            except OSError:
+                continue
+            total -= size
+            if total <= PRUNE_TARGET_BYTES:
+                break
+    except Exception:
+        # Never let quota enforcement crash the application
+        pass
 
 def get_logger(name, log_file, level=logging.INFO):
     """
@@ -27,6 +89,9 @@ def get_logger(name, log_file, level=logging.INFO):
     Returns:
         Logger instance
     """
+    # Enforce quota before opening/creating handlers
+    enforce_logs_quota()
+
     logger = logging.getLogger(name)
     logger.setLevel(level)
     # Prevent propagation to root to avoid double logging via root handlers
@@ -56,6 +121,9 @@ def get_logger(name, log_file, level=logging.INFO):
     logger.addHandler(console_handler)
 
     return logger
+
+# Run quota enforcement immediately on import as well
+enforce_logs_quota()
 
 # Create loggers for different components
 def get_api_logger():
