@@ -13,7 +13,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 - Retail Pricing: Alternative retail price is now calculated based on Κόστος ανά m² (cost_per_m2) rather than purchase price, matching expected business logic (e.g., 36.80 × 1.35 × 1.10 = 54.65 €).
-- Retail Pricing: On /pricing, allowing 0 in “Αριθμός Παλετών” now results in zero pallet cost and zero pallet weight (no pallet charge scenario).
+- Retail Pricing: On /pricing, default pallets to 1 and disallow 0 in “Αριθμός Παλετών”. Use the checkbox to include/exclude pallet cost without altering pallet count.
 - Retail Pricing frontend and backend updated to support Poland-specific freight override and Groupage availability for ES and PL.
 - SLABs: Switched purchase price input from per piece to per square meter in UI and API. New field buy_price_eur_m2 is preferred; legacy buy_per_unit still accepted for backward compatibility (converted using m² per unit).
 

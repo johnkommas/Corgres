@@ -328,7 +328,7 @@
           <label for="pallets_count" class="form-label">Αριθμός Παλετών</label>
           <div class="input-group unified-secondary">
             <button class="btn btn-outline-secondary" type="button" data-step-target="#pallets_count" data-step="-1" aria-label="Μείωση παλετών"><i class="fas fa-minus"></i></button>
-            <input type="number" min="0" step="1" class="form-control text-end default-secondary-input-dark" id="pallets_count" value="0" required>
+            <input type="number" min="1" step="1" class="form-control text-end default-secondary-input-dark" id="pallets_count" value="1" required>
             <button class="btn btn-outline-secondary" type="button" data-step-target="#pallets_count" data-step="1" aria-label="Αύξηση παλετών"><i class="fas fa-plus"></i></button>
             <span class="input-group-text">unit</span>
           </div>
@@ -737,7 +737,7 @@
           qty_m2: parseFloat(document.getElementById('qty_m2').value),
           buy_price_eur_m2: parseFloat(document.getElementById('buy_price_eur_m2').value),
           kg_per_m2: parseFloat(document.getElementById('kg_per_m2').value || '24'),
-          pallets_count: parseInt(document.getElementById('pallets_count').value || '0'),
+          pallets_count: parseInt(document.getElementById('pallets_count').value || '1'),
           pallet_type: document.getElementById('pallet_type').value,
           origin: document.getElementById('origin').value,
           destination: document.getElementById('destination').value,
@@ -758,6 +758,10 @@
         }
         if(!(payload.margin > 0 && payload.margin < 1)){
           toastr.error('Το περιθώριο πρέπει να είναι μεταξύ 0 και 1 (π.χ. 0.40)');
+          return;
+        }
+        if (!(Number.isInteger(payload.pallets_count) && payload.pallets_count >= 1)) {
+          toastr.error('Ο αριθμός παλετών πρέπει να είναι τουλάχιστον 1.');
           return;
         }
         try{

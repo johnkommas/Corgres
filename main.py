@@ -1589,6 +1589,10 @@ async def pricing_calc(payload: Dict[str, Any]):
         margin = float(payload.get("margin", 0.40))
         transport_mode = str(payload.get("transport_mode", "road"))
 
+        # Enforce minimum 1 pallet (do not allow 0)
+        if pallets_count < 1:
+            raise HTTPException(status_code=400, detail="pallets_count must be >= 1")
+
         # Optional manual freight override (used for Poland)
         freight_override = payload.get("freight_override_eur", None)
         try:
