@@ -1626,7 +1626,7 @@ async def pricing_calc(payload: Dict[str, Any]):
 async def pricing_calc_slabs(payload: Dict[str, Any]):
     """
     SLABs calculator.
-    Input: brand (infinity|mirage), thickness (6|12|20), units, buy_per_unit, pack (auto|crate|a-frame)
+    Input: brand (infinity|mirage), thickness (6|12|20), units, buy_price_eur_m2 (preferred) or buy_per_unit (legacy), pack (auto|crate|a-frame)
     Logic:
      - load slab details
      - select spec by brand+thickness
@@ -1642,7 +1642,15 @@ async def pricing_calc_slabs(payload: Dict[str, Any]):
         brand = str(payload.get("brand", "infinity")).lower()
         thickness = int(payload.get("thickness", 6))
         units = int(payload.get("units", 0))
-        buy_per_unit = float(payload.get("buy_per_unit", 0.0))
+        # Preferred: price per square meter; Legacy: price per unit
+        try:
+            buy_price_eur_m2 = float(payload.get("buy_price_eur_m2")) if payload.get("buy_price_eur_m2") is not None else None
+        except Exception:
+            buy_price_eur_m2 = None
+        try:
+            legacy_buy_per_unit = float(payload.get("buy_per_unit")) if payload.get("buy_per_unit") is not None else None
+        except Exception:
+            legacy_buy_per_unit = None
         pack = str(payload.get("pack", "auto")).lower()
         margin = float(payload.get("margin", 0.40))
         destination = str(payload.get("destination", "GR-mainland"))
@@ -1688,6 +1696,32 @@ async def pricing_calc_slabs(payload: Dict[str, Any]):
                     pass
         if smpu <= 0:
             warnings.append("Άγνωστο m² ανά τεμάχιο (smpu). Τα αποτελέσματα ανά m² ίσως δεν είναι ακριβή.")
+
+        # Resolve purchase price inputs (prefer per m²)
+        computed_buy_per_unit = 0.0
+        resolved_buy_price_eur_m2 = None
+        if buy_price_eur_m2 is not None:
+            resolved_buy_price_eur_m2 = float(buy_price_eur_m2)
+            if smpu and smpu > 0:
+                computed_buy_per_unit = resolved_buy_price_eur_m2 * smpu
+        if legacy_buy_per_unit is not None:
+            # If both provided, prefer per m² but keep legacy for reference
+            if (buy_price_eur_m2 is not None) and (smpu and smpu > 0):
+                warnings.append("Δόθηκαν και τιμή αγοράς ανά m² και τιμή ανά τεμάχιο. Χρησιμοποιείται η τιμή ανά m².")
+            else:
+                computed_buy_per_unit = float(legacy_buy_per_unit)
+                if smpu and smpu > 0:
+                    try:
+                        resolved_buy_price_eur_m2 = computed_buy_per_unit / smpu
+                    except Exception:
+                        resolved_buy_price_eur_m2 = None
+        # Final fallbacks
+        if resolved_buy_price_eur_m2 is None:
+            try:
+                resolved_buy_price_eur_m2 = float(buy_price_eur_m2) if buy_price_eur_m2 is not None else (float(legacy_buy_per_unit)/smpu if (legacy_buy_per_unit is not None and smpu and smpu>0) else 0.0)
+            except Exception:
+                resolved_buy_price_eur_m2 = 0.0
+        buy_per_unit = float(computed_buy_per_unit)
 
         # Proposal
         proposed = "crate"
@@ -1849,6 +1883,7 @@ async def pricing_calc_slabs(payload: Dict[str, Any]):
                 "brand": brand,
                 "thickness": thickness,
                 "units": units,
+                "buy_price_eur_m2": round(resolved_buy_price_eur_m2 if resolved_buy_price_eur_m2 is not None else 0.0, 4),
                 "buy_per_unit": round(buy_per_unit, 4),
                 "pack": pack,
                 "applied_pack": selected_pack,

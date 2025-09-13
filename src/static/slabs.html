@@ -167,12 +167,12 @@
           </div>
         </div>
         <div class="col-md-3">
-          <label class="form-label">Τιμή Αγοράς / Τεμάχιο (€)</label>
+          <label class="form-label">Τιμή Αγοράς / m² (€)</label>
           <div class="input-group" id="buy_unit_group">
-            <button class="btn btn-outline-secondary" type="button" data-step-target="#buy_per_unit" data-step="-0.10" aria-label="Μείωση τιμής"><i class="fas fa-minus"></i></button>
-            <input type="number" min="0" step="0.01" id="buy_per_unit" class="form-control text-end" placeholder="π.χ. 100" required>
-            <button class="btn btn-outline-secondary" type="button" data-step-target="#buy_per_unit" data-step="0.10" aria-label="Αύξηση τιμής"><i class="fas fa-plus"></i></button>
-            <span class="input-group-text unit-grey">€ / unit</span>
+            <button class="btn btn-outline-secondary" type="button" data-step-target="#buy_price_eur_m2" data-step="-0.10" aria-label="Μείωση τιμής"><i class="fas fa-minus"></i></button>
+            <input type="number" min="0" step="0.01" id="buy_price_eur_m2" class="form-control text-end" placeholder="π.χ. 100" required>
+            <button class="btn btn-outline-secondary" type="button" data-step-target="#buy_price_eur_m2" data-step="0.10" aria-label="Αύξηση τιμής"><i class="fas fa-plus"></i></button>
+            <span class="input-group-text unit-grey">€ / m²</span>
           </div>
         </div>
         <div class="col-md-4">
@@ -537,7 +537,7 @@
       if (!units || !thickness) { setPackHint(''); return; }
       // Ask the backend for proposal given inputs without forcing pack
       try {
-        const payload = { brand, thickness, dimensions, units, buy_per_unit: 0, pack: 'auto' };
+        const payload = { brand, thickness, dimensions, units, buy_price_eur_m2: 0, pack: 'auto' };
         const res = await fetch('/api/pricing/slabs/calc', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
         if (!res.ok) return;
         const data = await res.json();
@@ -583,7 +583,7 @@
       function refreshUnitsState(){ const valid = isUnitsValid(); unitsInput.setAttribute('aria-invalid', String(!valid)); if (unitsGroup){ unitsGroup.classList.toggle('validation-invalid', !valid); unitsGroup.classList.toggle('validation-valid', valid); } }
       unitsInput.addEventListener('input', refreshUnitsState); unitsInput.addEventListener('change', refreshUnitsState); refreshUnitsState();
 
-      const buyUnitInput = document.getElementById('buy_per_unit');
+      const buyUnitInput = document.getElementById('buy_price_eur_m2');
       const buyUnitGroup = document.getElementById('buy_unit_group');
       function isBuyUnitValid(){ const v = parseFloat(buyUnitInput.value); const min = buyUnitInput.min!==''?parseFloat(buyUnitInput.min):0; return Number.isFinite(v) && v >= min; }
       function refreshBuyUnitState(){ const valid = isBuyUnitValid(); buyUnitInput.setAttribute('aria-invalid', String(!valid)); if (buyUnitGroup){ buyUnitGroup.classList.toggle('validation-invalid', !valid); buyUnitGroup.classList.toggle('validation-valid', valid); } }
@@ -653,15 +653,15 @@
         const thickness = parseInt(document.getElementById('thickness').value || '0');
         const dimensions = document.getElementById('dimensions').value || '';
         const units = parseInt(document.getElementById('units').value || '0');
-        const buy_per_unit = parseFloat(document.getElementById('buy_per_unit').value || '0');
+        const buy_price_eur_m2 = parseFloat(document.getElementById('buy_price_eur_m2').value || '0');
         const pack = (document.querySelector('input[name="pack"]:checked') && document.querySelector('input[name="pack"]:checked').value) || 'auto';
 
-        if (!(units>0) || !(buy_per_unit>=0)) { toastr.error('Συμπληρώστε σωστά τα πεδία.'); return; }
+        if (!(units>0) || !(buy_price_eur_m2>=0)) { toastr.error('Συμπληρώστε σωστά τα πεδία.'); return; }
         try{
           const destination = document.getElementById('destination').value;
           const margin = parseFloat(document.getElementById('margin').value || '0.40');
           if (!(margin>0 && margin<1)) { toastr.error('Το περιθώριο πρέπει να είναι μεταξύ 0 και 1 (π.χ. 0.40)'); return; }
-          const res = await fetch('/api/pricing/slabs/calc', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ brand, thickness, dimensions, units, buy_per_unit, pack, destination, margin }) });
+          const res = await fetch('/api/pricing/slabs/calc', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ brand, thickness, dimensions, units, buy_price_eur_m2, pack, destination, margin }) });
           if (!res.ok) {
             const err = await res.json().catch(()=>({detail:'Σφάλμα'}));
             throw new Error(err.detail || 'Αποτυχία αιτήματος');

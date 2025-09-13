@@ -11,6 +11,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 - Retail Pricing frontend and backend updated to support Poland-specific freight override and Groupage availability for ES and PL.
+- SLABs: Switched purchase price input from per piece to per square meter in UI and API. New field buy_price_eur_m2 is preferred; legacy buy_per_unit still accepted for backward compatibility (converted using m² per unit).
 
 ## [0.1.0] - 2025-09-11
 
