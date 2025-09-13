@@ -191,6 +191,13 @@
       background: linear-gradient(135deg, var(--rp-success), var(--rp-success-darker));
       color: #fff;
     }
+    .retail-badge-center {
+      text-align: center;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
 
     /* Override calc button states to the same rp colors */
     .btn-calc.is-valid {
@@ -421,9 +428,15 @@
                 <h5 class="card-title mb-1">Ανάλυση Κόστους</h5>
                 <p class="text-muted mb-3">Λεπτομερής κοστολόγηση ανά στοιχείο</p>
               </div>
-              <div class="p-3 rounded retail-badge">
-                <div class="small text-white-50">Λιανική Τιμή / m²</div>
-                <div class="fw-bold" id="sell_price_per_m2" style="font-size: 1.8rem;">—</div>
+              <div class="d-flex align-items-center gap-2">
+                <div class="p-3 rounded retail-badge">
+                  <div class="small text-white-50">Λιανική Τιμή / m²</div>
+                  <div class="fw-bold" id="sell_price_per_m2" style="font-size: 1.8rem;">—</div>
+                </div>
+                <div class="p-3 rounded retail-badge retail-badge-center" id="alt_retail_box" title="Λιανική Τιμή / m² — A35 B10">
+                  <div class="small text-white-50">Λιανική Τιμή / m²<br>A35 B10</div>
+                  <div class="fw-bold" id="alt_sell_per_m2" style="font-size: 1.2rem;">—</div>
+                </div>
               </div>
             </div>
             <div class="row mt-3">
@@ -824,6 +837,19 @@
           document.getElementById('markup_equiv').textContent = `${(data.pricing.markup_equiv*100).toFixed(2)}%`;
           const sp = data.pricing.sell_price_per_m2;
           document.getElementById('sell_price_per_m2').textContent = `${Number(sp).toFixed(2)} €`;
+          // Compute alternative retail per m² with A:35% then B:10% based on Κόστος ανά m² (cost_per_m2)
+          try {
+            const base = Number(data?.cost?.cost_per_m2 || 0);
+            if (base > 0) {
+              const x = base * 1.35;
+              const y = x * 1.10;
+              document.getElementById('alt_sell_per_m2').textContent = `${y.toFixed(2)} €`;
+            } else {
+              document.getElementById('alt_sell_per_m2').textContent = '—';
+            }
+          } catch(e) {
+            document.getElementById('alt_sell_per_m2').textContent = '—';
+          }
           document.getElementById('pricingResult').style.display = 'block';
           toastr.success('Ο υπολογισμός ολοκληρώθηκε με επιτυχία');
         }catch(err){
