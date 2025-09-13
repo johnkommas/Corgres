@@ -28,7 +28,7 @@
     .input-group > .form-control { border-radius: 0; }
     .input-group > .btn:last-child { border-top-left-radius: 0; border-bottom-left-radius: 0; }
 
-    #margin_badge { font-weight: 600; min-width: 90px; text-align: center; }
+    #margin_badge { font-weight: 600; min-width: 72px; font-size: 0.9rem; text-align: center; }
 
     /* Simple flag placeholders (optional, kept neutral) */
     .flag { display: inline-block; width: 0.9em; height: 0.9em; background: #e5e7eb; border-radius: 2px; }
@@ -242,6 +242,8 @@
     .badge.text-bg-danger, .progress-bar.bg-danger, .bg-danger { background-color: var(--rp-danger) !important; border-color: var(--rp-danger) !important; }
     .text-success { color: var(--rp-success) !important; }
     .text-danger { color: var(--rp-danger) !important; }
+      /* Compact label helper for tighter controls */
+      .compact-label { font-size: 0.9rem; }
   </style>
 </head>
 <body>
@@ -313,30 +315,39 @@
         </div>
 
         <!-- 3. Margin with slider + live badge (keep hidden number input for submit) -->
-        <div class="col-md-4">
+        <div class="col-md-3">
           <label for="margin" class="form-label">Περιθώριο (Margin %)</label>
           <input type="number" min="0" max="1" step="0.01" class="form-control d-none" id="margin" value="0.40" required>
-          <div class="d-flex align-items-center gap-2">
+          <div class="d-flex align-items-center gap-1">
             <input type="range" id="margin_range" class="form-range" min="0" max="1" step="0.01" value="0.40" aria-label="Περιθώριο (Margin %)">
             <span id="margin_badge" class="badge rounded-pill text-bg-success">40.00%</span>
           </div>
 <!--          <div class="form-text">Σύρετε το slider για να αλλάξετε το περιθώριο. Προεπιλογή: 0,40</div>-->
         </div>
 
+        <!-- 3b. Include Pallet Cost toggle -->
+        <div class="col-md-2">
+          <label class="form-label compact-label mb-1">Χρέωση κόστους παλέτας</label>
+          <div class="btn-group w-100" role="group" aria-label="Χρέωση κόστους παλέτας" id="include_pallet_cost_group">
+            <input type="radio" class="btn-check" name="palletcost" id="palletcost_yes" autocomplete="off" data-value="yes" checked>
+            <label class="btn btn-outline-secondary btn-sm" for="palletcost_yes">ΝΑΙ</label>
+            <input type="radio" class="btn-check" name="palletcost" id="palletcost_no" autocomplete="off" data-value="no">
+            <label class="btn btn-outline-secondary btn-sm" for="palletcost_no">ΟΧΙ</label>
+          </div>
+          <select id="include_pallet_cost" class="form-select d-none">
+            <option value="yes" selected>ΝΑΙ</option>
+            <option value="no">ΟΧΙ</option>
+          </select>
+        </div>
+
         <!-- 4. Pallets count with stepper -->
-        <div class="col-md-4">
-          <label for="pallets_count" class="form-label">Αριθμός Παλετών</label>
+        <div class="col-md-3">
+          <label for="pallets_count" class="form-label compact-label">Αριθμός Παλετών</label>
           <div class="input-group unified-secondary">
             <button class="btn btn-outline-secondary" type="button" data-step-target="#pallets_count" data-step="-1" aria-label="Μείωση παλετών"><i class="fas fa-minus"></i></button>
             <input type="number" min="1" step="1" class="form-control text-end default-secondary-input-dark" id="pallets_count" value="1" required>
             <button class="btn btn-outline-secondary" type="button" data-step-target="#pallets_count" data-step="1" aria-label="Αύξηση παλετών"><i class="fas fa-plus"></i></button>
             <span class="input-group-text">unit</span>
-          </div>
-          <div class="form-check mt-2">
-            <input class="form-check-input" type="checkbox" value="1" id="include_pallet_cost" checked>
-            <label class="form-check-label" for="include_pallet_cost">
-              Χρέωση κόστους παλέτας <span class="text-muted">(10€/EU, 30€/Industrial)</span>
-            </label>
           </div>
         </div>
 
@@ -715,6 +726,7 @@
       }
       wireToggleGroup('destination_group', 'destination');
       wireToggleGroup('transport_mode_group', 'transport_mode');
+      wireToggleGroup('include_pallet_cost_group', 'include_pallet_cost');
 
 
       // Toggle extras details visibility
@@ -743,7 +755,7 @@
           destination: document.getElementById('destination').value,
           transport_mode: document.getElementById('transport_mode').value,
           margin: parseFloat(document.getElementById('margin').value || '0.40'),
-          include_pallet_cost: document.getElementById('include_pallet_cost').checked
+          include_pallet_cost: (document.getElementById('include_pallet_cost').value === 'yes')
         };
         // If origin is Poland, include freight override when provided
         if (payload.origin === 'PL') {

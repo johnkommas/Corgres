@@ -16,6 +16,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Retail Pricing: On /pricing, default pallets to 1 and disallow 0 in “Αριθμός Παλετών”. Use the checkbox to include/exclude pallet cost without altering pallet count.
 - Retail Pricing frontend and backend updated to support Poland-specific freight override and Groupage availability for ES and PL.
 - SLABs: Switched purchase price input from per piece to per square meter in UI and API. New field buy_price_eur_m2 is preferred; legacy buy_per_unit still accepted for backward compatibility (converted using m² per unit).
+- Retail Pricing: Replaced the pallet cost checkbox with a ΝΑΙ/ΟΧΙ toggle styled like the “Τύπος Παλέτας” UI, defaulting to ΝΑΙ (Yes).
+- Retail Pricing: Compacted header inputs — moved “Χρέωση κόστους παλέτας” toggle between Margin and Pallets as a smaller column, shortened its label, used smaller buttons, tightened Margin slider spacing, reduced badge width, and slightly reduced “Αριθμός Παλετών” label size to fit.
 
 ## [0.1.0] - 2025-09-11
 
