@@ -328,9 +328,15 @@
           <label for="pallets_count" class="form-label">Αριθμός Παλετών</label>
           <div class="input-group unified-secondary">
             <button class="btn btn-outline-secondary" type="button" data-step-target="#pallets_count" data-step="-1" aria-label="Μείωση παλετών"><i class="fas fa-minus"></i></button>
-            <input type="number" min="1" step="1" class="form-control text-end default-secondary-input-dark" id="pallets_count" value="1" required>
+            <input type="number" min="0" step="1" class="form-control text-end default-secondary-input-dark" id="pallets_count" value="0" required>
             <button class="btn btn-outline-secondary" type="button" data-step-target="#pallets_count" data-step="1" aria-label="Αύξηση παλετών"><i class="fas fa-plus"></i></button>
             <span class="input-group-text">unit</span>
+          </div>
+          <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" value="1" id="include_pallet_cost" checked>
+            <label class="form-check-label" for="include_pallet_cost">
+              Χρέωση κόστους παλέτας <span class="text-muted">(10€/EU, 30€/Industrial)</span>
+            </label>
           </div>
         </div>
 
@@ -402,12 +408,12 @@
           <label class="form-label">Προορισμός</label>
           <div class="btn-group w-100" role="group" aria-label="Προορισμός" id="destination_group">
             <input type="radio" class="btn-check" name="destopt" id="dest_gr_main" autocomplete="off" data-value="GR-mainland" checked>
-            <label class="btn btn-outline-secondary" for="dest_gr_main">Ελλάδα - Ηπειρωτική</label>
+            <label class="btn btn-outline-secondary" for="dest_gr_main">Ελλάδα - Αθήνα</label>
             <input type="radio" class="btn-check" name="destopt" id="dest_gr_crete" autocomplete="off" data-value="GR-crete">
             <label class="btn btn-outline-secondary" for="dest_gr_crete">Ελλάδα - Κρήτη</label>
           </div>
           <select id="destination" class="form-select d-none">
-            <option value="GR-mainland" selected>Ελλάδα - Ηπειρωτική</option>
+            <option value="GR-mainland" selected>Ελλάδα - Αθήνα</option>
             <option value="GR-crete">Ελλάδα - Κρήτη</option>
           </select>
         </div>
@@ -433,8 +439,8 @@
                   <div class="small text-white-50">Λιανική Τιμή / m²</div>
                   <div class="fw-bold" id="sell_price_per_m2" style="font-size: 1.8rem;">—</div>
                 </div>
-                <div class="p-3 rounded retail-badge retail-badge-center" id="alt_retail_box" title="Λιανική Τιμή / m² — A35 B10">
-                  <div class="small text-white-50">Λιανική Τιμή / m²<br>A35 B10</div>
+                <div class="p-3 rounded retail-badge retail-badge-center" id="alt_retail_box" title="Λιανική Τιμή / m² — A35% B10%">
+                  <div class="small text-white-50">Λιανική Τιμή / m²<br>A35% B10%</div>
                   <div class="fw-bold" id="alt_sell_per_m2" style="font-size: 1.2rem;">—</div>
                 </div>
               </div>
@@ -731,12 +737,13 @@
           qty_m2: parseFloat(document.getElementById('qty_m2').value),
           buy_price_eur_m2: parseFloat(document.getElementById('buy_price_eur_m2').value),
           kg_per_m2: parseFloat(document.getElementById('kg_per_m2').value || '24'),
-          pallets_count: parseInt(document.getElementById('pallets_count').value || '1'),
+          pallets_count: parseInt(document.getElementById('pallets_count').value || '0'),
           pallet_type: document.getElementById('pallet_type').value,
           origin: document.getElementById('origin').value,
           destination: document.getElementById('destination').value,
           transport_mode: document.getElementById('transport_mode').value,
-          margin: parseFloat(document.getElementById('margin').value || '0.40')
+          margin: parseFloat(document.getElementById('margin').value || '0.40'),
+          include_pallet_cost: document.getElementById('include_pallet_cost').checked
         };
         // If origin is Poland, include freight override when provided
         if (payload.origin === 'PL') {

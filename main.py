@@ -1610,7 +1610,8 @@ async def pricing_calc(payload: Dict[str, Any]):
             destination=destination,  # type: ignore
             margin=margin,
             transport_mode=transport_mode,  # type: ignore
-            freight_override_eur=freight_override
+            freight_override_eur=freight_override,
+            include_pallet_cost=bool(payload.get("include_pallet_cost", True))
         )
         result = PRICING_ENGINE.calculate(req)
         api_logger.info("Pricing calculation completed successfully")

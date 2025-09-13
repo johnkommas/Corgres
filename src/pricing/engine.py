@@ -25,6 +25,7 @@ class PricingRequest:
     margin: float  # gross margin target, e.g., 0.40
     transport_mode: TransportMode = "road"
     freight_override_eur: float | None = None
+    include_pallet_cost: bool = True
 
 class PricingEngine:
     def __init__(self, tariffs: Dict[str, Any]):
@@ -44,7 +45,7 @@ class PricingEngine:
         # 2) Βάρος + κόστος παλέτας
         pconf = self.tariffs["pallets"][r.pallet_type]
         kg_total = kg_tiles + r.pallets_count * pconf["weight_kg"]
-        pallet_cost = r.pallets_count * pconf["cost_eur"]
+        pallet_cost = (r.pallets_count * pconf["cost_eur"]) if r.include_pallet_cost else 0.0
 
         # 3) Μεταφορικά ανά προέλευση/τρόπο
         freight = 0.0
