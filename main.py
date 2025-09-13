@@ -1860,14 +1860,27 @@ async def pricing_calc_slabs(payload: Dict[str, Any]):
             return kg * float(it_tariff.get("default_eur_per_kg", 0))
         freight = freight_it(kg_total)
 
-        # Destination extras (e.g., Crete surcharge per kg)
+        # Destination extras: Crete surcharge per pallet type (CRATE vs A-FRAME)
         crete_extra = 0.0
+        crete_breakdown = []
         try:
-            if destination == "GR-crete" and PRICING_TARIFFS and "gr_extras" in PRICING_TARIFFS:
-                crete_rate = float(PRICING_TARIFFS["gr_extras"].get("crete_eur_per_kg", 0))
-                crete_extra = kg_total * crete_rate
+            if destination == "GR-crete":
+                # New rule (2025-09-13):
+                # - 150€ per CRATE pallet
+                # - 170€ per A-FRAME pallet
+                crate_cnt = int(pallets_by_type.get("crate", 0) or 0)
+                aframe_cnt = int(pallets_by_type.get("a-frame", 0) or 0)
+                if crate_cnt > 0:
+                    amt = crate_cnt * 150.0
+                    crete_extra += amt
+                    crete_breakdown.append({"type": "crate", "pallets": crate_cnt, "rate": 150.0, "amount": round(amt, 2)})
+                if aframe_cnt > 0:
+                    amt = aframe_cnt * 170.0
+                    crete_extra += amt
+                    crete_breakdown.append({"type": "a-frame", "pallets": aframe_cnt, "rate": 170.0, "amount": round(amt, 2)})
         except Exception:
             crete_extra = 0.0
+            crete_breakdown = []
 
         # Goods and totals
         cost_goods = buy_per_unit * units
@@ -1909,6 +1922,7 @@ async def pricing_calc_slabs(payload: Dict[str, Any]):
                 "pallet_shipping": round(pallet_shipping, 2),
                 "freight_it": round(freight, 2),
                 "gr_crete_extra": round(crete_extra, 2),
+                "gr_crete_extra_breakdown": crete_breakdown,
                 "logistics": round(logistics, 2),
                 "total_cost": round(total_cost, 2),
                 "cost_per_m2": round(cost_per_m2, 2) if cost_per_m2 is not None else None

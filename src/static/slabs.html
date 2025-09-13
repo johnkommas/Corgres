@@ -234,6 +234,10 @@
                   <li class="list-group-item d-flex justify-content-between align-items-center"><span>Μεταφορικά Παλετών</span><strong id="pallet_shipping">—</strong></li>
                   <li class="list-group-item d-flex justify-content-between align-items-center"><span>Μεταφορικά (Ιταλία)</span><strong id="freight">—</strong></li>
                   <li class="list-group-item d-flex justify-content-between align-items-center"><span>Επιβάρυνση Κρήτης</span><strong id="gr_crete_extra">—</strong></li>
+                  <li class="list-group-item py-2" id="gr_crete_extra_details" style="display:none;">
+                    <div class="small text-muted">Ανάλυση Επιβάρυνσης Κρήτης</div>
+                    <ul class="mb-0 small" id="gr_crete_extra_breakdown_list"></ul>
+                  </li>
                   <li class="list-group-item d-flex justify-content-between align-items-center"><span>Σύνολο Logistics</span><strong id="logistics">—</strong></li>
                 </ul>
               </div>
@@ -672,10 +676,33 @@
           document.getElementById('pallet_handling').textContent = euro(data.cost.pallet_handling);
           document.getElementById('pallet_shipping').textContent = euro(data.cost.pallet_shipping);
           document.getElementById('freight').textContent = euro(data.cost.freight_it);
+          const detailsBox = document.getElementById('gr_crete_extra_details');
+          const listBox = document.getElementById('gr_crete_extra_breakdown_list');
           if (typeof data.cost.gr_crete_extra !== 'undefined' && data.cost.gr_crete_extra !== null) {
             document.getElementById('gr_crete_extra').textContent = euro(data.cost.gr_crete_extra);
+            // render breakdown if available
+            if (Array.isArray(data.cost.gr_crete_extra_breakdown) && data.cost.gr_crete_extra_breakdown.length) {
+              if (listBox) {
+                listBox.innerHTML = '';
+                data.cost.gr_crete_extra_breakdown.forEach(item => {
+                  const li = document.createElement('li');
+                  const type = String(item.type || '').toUpperCase();
+                  const pallets = Number(item.pallets || 0);
+                  const rate = Number(item.rate || 0);
+                  const amount = Number(item.amount || 0);
+                  li.textContent = `${type} × ${pallets} @ ${euro(rate)} = ${euro(amount)}`;
+                  listBox.appendChild(li);
+                });
+              }
+              if (detailsBox) detailsBox.style.display = 'block';
+            } else {
+              if (detailsBox) detailsBox.style.display = 'none';
+              if (listBox) listBox.innerHTML = '';
+            }
           } else {
             document.getElementById('gr_crete_extra').textContent = '—';
+            if (detailsBox) detailsBox.style.display = 'none';
+            if (listBox) listBox.innerHTML = '';
           }
           document.getElementById('logistics').textContent = euro(data.cost.logistics);
           document.getElementById('total_cost').textContent = euro(data.cost.total_cost);

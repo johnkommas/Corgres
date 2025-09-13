@@ -101,13 +101,15 @@ class PricingEngine:
         else:
             raise ValueError("Unsupported origin")
 
-        # 4) Extra Κρήτη ανά κιλό
+        # 4) Extra Κρήτη ανά παλέτα
         if r.destination == "GR-crete":
-            crete_extra = kg_total * self.tariffs["gr_extras"]["crete_eur_per_kg"]
+            # New rule: flat charge per pallet for Crete depending on pallet type
+            rate_per_pallet = 38.0 if r.pallet_type == "eu" else 40.0
+            crete_extra = r.pallets_count * rate_per_pallet
             extras += crete_extra
             extras_breakdown.append({
                 "code": "gr_crete_island_surcharge",
-                "label": f"Νησιωτική Επιβάρυνση Κρήτης ανά kg x{round(kg_total, 2)} kg",
+                "label": f"Επιβάρυνση Κρήτης ανά παλέτα ({r.pallet_type}) x{r.pallets_count}",
                 "amount": round(crete_extra, 2)
             })
 
