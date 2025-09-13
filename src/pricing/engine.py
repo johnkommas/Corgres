@@ -1,13 +1,14 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import Literal, Dict, Any
+
 import json
 import os
+from dataclasses import dataclass
+from typing import Literal, Dict, Any
 
 # Fixed default weight per square meter (can be overridden per request)
 KG_PER_M2: float = 24.0
 
-Origin = Literal["ES", "IT", "PT"]
+Origin = Literal["ES", "IT", "PT", "PL"]
 Destination = Literal["GR-mainland", "GR-crete"]
 PalletType = Literal["eu", "industrial"]
 TransportMode = Literal["road", "groupage"]
@@ -23,6 +24,7 @@ class PricingRequest:
     destination: Destination
     margin: float  # gross margin target, e.g., 0.40
     transport_mode: TransportMode = "road"
+    freight_override_eur: float | None = None
 
 class PricingEngine:
     def __init__(self, tariffs: Dict[str, Any]):
@@ -49,9 +51,9 @@ class PricingEngine:
         extras = 0.0
         extras_breakdown = []
 
-        # Validate/adjust transport mode: Groupage επιτρέπεται μόνο για Ισπανία
+        # Validate/adjust transport mode: Groupage επιτρέπεται μόνο για Ισπανία και Πολωνία
         mode = r.transport_mode or "road"
-        if r.origin != "ES" and mode == "groupage":
+        if (r.origin not in ("ES", "PL")) and mode == "groupage":
             mode = "road"
 
         if r.origin == "ES":
@@ -85,6 +87,17 @@ class PricingEngine:
                 "label": f"Επιβάρυνση Πορτογαλίας ανά m² x{r.qty_m2}",
                 "amount": round(pt_extra, 2)
             })
+        elif r.origin == "PL":
+            # Για Πολωνία, τα μεταφορικά είναι μεταβλητά και εισάγονται απευθείας από τον χρήστη
+            if r.freight_override_eur is not None:
+                freight = float(r.freight_override_eur)
+                extras_breakdown.append({
+                    "code": "pl_manual_freight",
+                    "label": "Μεταφορικά Πολωνίας (χειροκίνητη εισαγωγή)",
+                    "amount": round(freight, 2)
+                })
+            else:
+                freight = 0.0
         else:
             raise ValueError("Unsupported origin")
 

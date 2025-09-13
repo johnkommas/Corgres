@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+- Retail Pricing: Added new origin Πολωνία (PL) with Groupage enabled and manual entry of final freight cost specifically for Poland.
+
+### Changed
+- Retail Pricing frontend and backend updated to support Poland-specific freight override and Groupage availability for ES and PL.
+
 ## [0.1.0] - 2025-09-11
 
 This release groups the most recent user-facing changes from the last commits on the default branch. The inferred version bump is minor (new features and UI enhancements, no breaking changes detected).
