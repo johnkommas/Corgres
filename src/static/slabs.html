@@ -61,11 +61,11 @@
 
     /* Stronger visibility for selected quantity mode */
     #qty_box .btn[data-mode].active {
-      background-color: var(--primary-color) !important;
-      border-color: var(--primary-color) !important;
+      background-color: #6c757d !important; /* Bootstrap secondary grey */
+      border-color: #6c757d !important;
       color: #fff !important;
       font-weight: 700;
-      box-shadow: 0 0 0 0.15rem rgba(225, 29, 72, 0.25);
+      box-shadow: 0 0 0 0.15rem rgba(108, 117, 125, 0.25);
     }
 
     /* Validation colors like pricing */
@@ -168,7 +168,7 @@
           <input type="hidden" id="dimensions" value="">
         </div>
         <div class="col-md-3">
-          <label class="form-label d-flex align-items-center gap-2">Ποσότητα <span id="qty_mode_badge" class="badge rounded-pill text-bg-secondary" title="Τρόπος εισόδου">ΤΕΜ</span></label>
+          <label class="form-label d-flex align-items-center gap-2">Ποσότητα σε <span id="qty_mode_badge" class="badge rounded-pill text-bg-secondary" title="Τρόπος εισόδου">ΤΕΜ</span></label>
           <div class="input-group" id="qty_box">
             <button type="button" class="btn btn-outline-secondary active" id="mode_units" data-mode="units" aria-pressed="true">ΤΕΜ</button>
             <button type="button" class="btn btn-outline-secondary" id="mode_sqm" data-mode="sqm" aria-pressed="false">m²</button>
@@ -642,15 +642,10 @@
         // Update visible mode badge near label
         const badge = document.getElementById('qty_mode_badge');
         if (badge){
-          if (currentQtyMode==='units'){
-            badge.textContent = 'ΤΕΜ';
-            badge.classList.remove('text-bg-info');
-            badge.classList.add('text-bg-secondary');
-          } else {
-            badge.textContent = 'm²';
-            badge.classList.remove('text-bg-secondary');
-            badge.classList.add('text-bg-info');
-          }
+          // Always keep grey background for consistency; only switch the text
+          badge.classList.remove('text-bg-info');
+          badge.classList.add('text-bg-secondary');
+          badge.textContent = (currentQtyMode==='units') ? 'ΤΕΜ' : 'm²';
         }
         refreshQtyState();
         refreshCalcButtonState();

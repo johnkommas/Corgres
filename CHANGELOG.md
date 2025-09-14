@@ -21,6 +21,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - SLABs UI: Unified quantity control into a single compact box with inline mode buttons ("ΤΕΜ" | "m²"), a single numeric field, and +/- steppers; removed trailing unit suffix for more space.
 - SLABs UI: Improved visibility of the selected mode via a live-updating badge next to the label and stronger active-button styling; abbreviated "Τεμάχια" to "ΤΕΜ".
 - SLABs UI: Cleaned up leftover event listeners and ensured proposePackaging/validation work with the new control.
+- SLABs UI: Quantity label now reads "Ποσότητα σε" with a live badge showing ΤΕΜ or m².
+- SLABs UI: Mode badge background color unified to grey (secondary) for both ΤΕΜ and m² for color consistency.
 - Retail Pricing: Replaced the pallet cost checkbox with a ΝΑΙ/ΟΧΙ toggle styled like the “Τύπος Παλέτας” UI, defaulting to ΝΑΙ (Yes).
 - Retail Pricing: Compacted header inputs — moved “Χρέωση κόστους παλέτας” toggle between Margin and Pallets as a smaller column, shortened its label, used smaller buttons, tightened Margin slider spacing, reduced badge width, and slightly reduced “Αριθμός Παλετών” label size to fit.
 
