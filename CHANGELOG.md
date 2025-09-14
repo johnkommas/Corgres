@@ -10,12 +10,17 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Retail Pricing: Added new origin Πολωνία (PL) with Groupage enabled and manual entry of final freight cost specifically for Poland.
 - Retail Pricing: Display an alternative retail price per m² next to the main retail price on /pricing, computed as A: +35% then B: +10% (shown as “Λιανική (35/10)/ m²”).
 - Retail Pricing: New checkbox on /pricing to include/exclude pallet cost (10€/EU, 30€/Industrial) without changing the number of pallets used for weight and island surcharges.
+- SLABs: API now accepts input_mode (units|sqm) and qty_m2. When m² is provided, converts to pieces using smpu and ceiling; returns a Greek explanation of the conversion in result.conversion.
+- SLABs: Destination GR-crete adds a per-pallet surcharge (150€ for CRATE, 170€ for A-FRAME) with a detailed breakdown in the response.
 
 ### Changed
 - Retail Pricing: Alternative retail price is now calculated based on Κόστος ανά m² (cost_per_m2) rather than purchase price, matching expected business logic (e.g., 36.80 × 1.35 × 1.10 = 54.65 €).
 - Retail Pricing: On /pricing, default pallets to 1 and disallow 0 in “Αριθμός Παλετών”. Use the checkbox to include/exclude pallet cost without altering pallet count.
 - Retail Pricing frontend and backend updated to support Poland-specific freight override and Groupage availability for ES and PL.
 - SLABs: Switched purchase price input from per piece to per square meter in UI and API. New field buy_price_eur_m2 is preferred; legacy buy_per_unit still accepted for backward compatibility (converted using m² per unit).
+- SLABs UI: Unified quantity control into a single compact box with inline mode buttons ("ΤΕΜ" | "m²"), a single numeric field, and +/- steppers; removed trailing unit suffix for more space.
+- SLABs UI: Improved visibility of the selected mode via a live-updating badge next to the label and stronger active-button styling; abbreviated "Τεμάχια" to "ΤΕΜ".
+- SLABs UI: Cleaned up leftover event listeners and ensured proposePackaging/validation work with the new control.
 - Retail Pricing: Replaced the pallet cost checkbox with a ΝΑΙ/ΟΧΙ toggle styled like the “Τύπος Παλέτας” UI, defaulting to ΝΑΙ (Yes).
 - Retail Pricing: Compacted header inputs — moved “Χρέωση κόστους παλέτας” toggle between Margin and Pallets as a smaller column, shortened its label, used smaller buttons, tightened Margin slider spacing, reduced badge width, and slightly reduced “Αριθμός Παλετών” label size to fit.
 
