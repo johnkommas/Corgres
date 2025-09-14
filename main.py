@@ -1646,7 +1646,17 @@ async def pricing_calc_slabs(payload: Dict[str, Any]):
     try:
         brand = str(payload.get("brand", "infinity")).lower()
         thickness = int(payload.get("thickness", 6))
-        units = int(payload.get("units", 0))
+        # Inputs can be provided either as units or as square meters (qty_m2)
+        input_mode = str(payload.get("input_mode", "units")).lower()
+        # parse raw values; conversion may happen later after we know smpu
+        try:
+            qty_m2 = float(payload.get("qty_m2", 0) or 0)
+        except Exception:
+            qty_m2 = 0.0
+        try:
+            units = int(payload.get("units", 0) or 0)
+        except Exception:
+            units = 0
         # Preferred: price per square meter; Legacy: price per unit
         try:
             buy_price_eur_m2 = float(payload.get("buy_price_eur_m2")) if payload.get("buy_price_eur_m2") is not None else None
@@ -1659,8 +1669,6 @@ async def pricing_calc_slabs(payload: Dict[str, Any]):
         pack = str(payload.get("pack", "auto")).lower()
         margin = float(payload.get("margin", 0.40))
         destination = str(payload.get("destination", "GR-mainland"))
-        if units <= 0:
-            raise ValueError("units must be > 0")
         if not (0 < margin < 1):
             raise ValueError("margin must be between 0 and 1 (e.g., 0.40)")
 
@@ -1702,6 +1710,27 @@ async def pricing_calc_slabs(payload: Dict[str, Any]):
         if smpu <= 0:
             warnings.append("Άγνωστο m² ανά τεμάχιο (smpu). Τα αποτελέσματα ανά m² ίσως δεν είναι ακριβή.")
 
+        # Convert m² to units if requested or if only qty_m2 provided
+        conversion_explanation = None
+        from math import ceil
+        if (input_mode == "sqm" and qty_m2 > 0) or (qty_m2 > 0 and units <= 0):
+            if smpu and smpu > 0:
+                raw_units = qty_m2 / smpu
+                computed_units = int(ceil(raw_units))
+                # Keep track of explanation (Greek)
+                conversion_explanation = {
+                    "mode": "sqm",
+                    "requested_qty_m2": round(qty_m2, 3),
+                    "smpu": smpu,
+                    "raw_units": round(raw_units, 3),
+                    "rounded_units": computed_units,
+                    "text": f"Δόθηκαν {round(qty_m2,3)} m². Κάθε τεμάχιο είναι ~{smpu} m², άρα τεμάχια = ceil({round(qty_m2,3)} / {smpu}) = {computed_units}."
+                }
+                units = computed_units
+                input_mode = "sqm"
+            else:
+                raise ValueError("Δεν είναι γνωστά τα m² ανά τεμάχιο (smpu) για να μετατρέψουμε από m² σε τεμάχια. Επιλέξτε διαστάσεις ή δώστε τεμάχια.")
+
         # Resolve purchase price inputs (prefer per m²)
         computed_buy_per_unit = 0.0
         resolved_buy_price_eur_m2 = None
@@ -1727,6 +1756,10 @@ async def pricing_calc_slabs(payload: Dict[str, Any]):
             except Exception:
                 resolved_buy_price_eur_m2 = 0.0
         buy_per_unit = float(computed_buy_per_unit)
+
+        # Final validation on units
+        if units <= 0:
+            raise ValueError("units must be > 0")
 
         # Proposal
         proposed = "crate"
@@ -1901,6 +1934,8 @@ async def pricing_calc_slabs(payload: Dict[str, Any]):
                 "brand": brand,
                 "thickness": thickness,
                 "units": units,
+                "input_mode": input_mode,
+                "requested_qty_m2": round(qty_m2, 3),
                 "buy_price_eur_m2": round(resolved_buy_price_eur_m2 if resolved_buy_price_eur_m2 is not None else 0.0, 4),
                 "buy_per_unit": round(buy_per_unit, 4),
                 "pack": pack,
@@ -1942,7 +1977,8 @@ async def pricing_calc_slabs(payload: Dict[str, Any]):
                 "crate_max_units": crate_max,
                 "a_frame_max_units": aframe_max
             },
-            "warnings": warnings
+            "warnings": warnings,
+            "conversion": conversion_explanation
         }
         # Additional warning for missing a-frame capacity when user forces a-frame
         if pack == "a-frame" and not isinstance(aframe_max, int):

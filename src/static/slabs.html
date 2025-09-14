@@ -58,6 +58,16 @@
     .input-group > .btn:last-child { border-top-left-radius: 0; border-bottom-left-radius: 0; }
     .unit-grey { background-color: var(--neutral-100)!important; border-color: var(--neutral-300)!important; }
     .form-select { border-radius: 999px; }
+
+    /* Stronger visibility for selected quantity mode */
+    #qty_box .btn[data-mode].active {
+      background-color: var(--primary-color) !important;
+      border-color: var(--primary-color) !important;
+      color: #fff !important;
+      font-weight: 700;
+      box-shadow: 0 0 0 0.15rem rgba(225, 29, 72, 0.25);
+    }
+
     /* Validation colors like pricing */
     .input-group.validation-invalid .btn,
     .input-group.validation-invalid .input-group-text,
@@ -158,13 +168,18 @@
           <input type="hidden" id="dimensions" value="">
         </div>
         <div class="col-md-3">
-          <label class="form-label">Τεμάχια</label>
-          <div class="input-group" id="units_group">
-            <button class="btn btn-outline-secondary" type="button" data-step-target="#units" data-step="-1" aria-label="Μείωση τεμαχίων"><i class="fas fa-minus"></i></button>
-            <input type="number" min="1" step="1" id="units" class="form-control text-end" placeholder="π.χ. 15" required>
-            <button class="btn btn-outline-secondary" type="button" data-step-target="#units" data-step="1" aria-label="Αύξηση τεμαχίων"><i class="fas fa-plus"></i></button>
-            <span class="input-group-text unit-grey">unit</span>
+          <label class="form-label d-flex align-items-center gap-2">Ποσότητα <span id="qty_mode_badge" class="badge rounded-pill text-bg-secondary" title="Τρόπος εισόδου">ΤΕΜ</span></label>
+          <div class="input-group" id="qty_box">
+            <button type="button" class="btn btn-outline-secondary active" id="mode_units" data-mode="units" aria-pressed="true">ΤΕΜ</button>
+            <button type="button" class="btn btn-outline-secondary" id="mode_sqm" data-mode="sqm" aria-pressed="false">m²</button>
+            <button class="btn btn-outline-secondary" type="button" id="qty_minus" aria-label="Μείωση"><i class="fas fa-minus"></i></button>
+            <input type="number" id="qty_input" class="form-control text-end" placeholder="π.χ. 15" required>
+            <button class="btn btn-outline-secondary" type="button" id="qty_plus" aria-label="Αύξηση"><i class="fas fa-plus"></i></button>
           </div>
+          <!-- hidden mirrors to keep backend contract unchanged -->
+          <input type="hidden" id="units" value="">
+          <input type="hidden" id="qty_m2" value="">
+          <div class="small text-muted mt-1" id="units_explain" style="display:none;"></div>
         </div>
         <div class="col-md-3">
           <label class="form-label">Τιμή Αγοράς / m² (€)</label>
@@ -269,6 +284,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
   <script>
     toastr.options = { positionClass: 'toast-top-right', timeOut: 7000, closeButton: true, progressBar: true };
@@ -537,15 +553,28 @@
       const brand = document.getElementById('brand').value;
       const thickness = parseInt(document.getElementById('thickness').value || '0');
       const dimensions = document.getElementById('dimensions').value || '';
-      const units = parseInt(document.getElementById('units').value || '0');
-      if (!units || !thickness) { setPackHint(''); return; }
-      // Ask the backend for proposal given inputs without forcing pack
+      const mode = getQtyMode();
+      const qtyVal = parseFloat(document.getElementById('qty_input').value || '0');
+      const units = mode==='units' ? Math.round(qtyVal) : 0;
+      const qty_m2 = mode==='sqm' ? qtyVal : 0;
+      if ((!thickness) || (mode==='units' ? !(units>0) : !(qty_m2>0))) { setPackHint(''); return; }
       try {
-        const payload = { brand, thickness, dimensions, units, buy_price_eur_m2: 0, pack: 'auto' };
+        const payload = (mode==='units')
+          ? { brand, thickness, dimensions, units, buy_price_eur_m2: 0, pack: 'auto' }
+          : { brand, thickness, dimensions, qty_m2, input_mode: 'sqm', buy_price_eur_m2: 0, pack: 'auto' };
         const res = await fetch('/api/pricing/slabs/calc', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
         if (!res.ok) return;
         const data = await res.json();
         setPackHint(`Βέλτιστη πρόταση: ${data.selection.package_type.toUpperCase()} – ${data.selection.pallets} παλέτα/ες`);
+        // Show conversion explanation when m² used
+        const explainBox = document.getElementById('units_explain');
+        if (mode==='sqm' && data && data.conversion && data.conversion.text) {
+          explainBox.textContent = `Τεμάχια για παραγγελία: ${Number(data.inputs.units||0)}. ${data.conversion.text}`;
+          explainBox.style.display = 'block';
+        } else {
+          explainBox.textContent = '';
+          explainBox.style.display = 'none';
+        }
         // Tick auto if present
         document.getElementById('pack_auto').checked = true;
       } catch(e) { /* ignore */ }
@@ -581,11 +610,75 @@
 
       // Visual validation like pricing: required fields red until valid
       const calcBtn = document.getElementById('calcBtn');
-      const unitsInput = document.getElementById('units');
-      const unitsGroup = document.getElementById('units_group');
-      function isUnitsValid(){ const v = parseFloat(unitsInput.value); const min = unitsInput.min!==''?parseFloat(unitsInput.min):1; return Number.isFinite(v) && v >= min; }
-      function refreshUnitsState(){ const valid = isUnitsValid(); unitsInput.setAttribute('aria-invalid', String(!valid)); if (unitsGroup){ unitsGroup.classList.toggle('validation-invalid', !valid); unitsGroup.classList.toggle('validation-valid', valid); } }
-      unitsInput.addEventListener('input', refreshUnitsState); unitsInput.addEventListener('change', refreshUnitsState); refreshUnitsState();
+      const qtyBox = document.getElementById('qty_box');
+      const qtyInput = document.getElementById('qty_input');
+      const qtyMinus = document.getElementById('qty_minus');
+      const qtyPlus = document.getElementById('qty_plus');
+      const modeUnitsBtn = document.getElementById('mode_units');
+      const modeSqmBtn = document.getElementById('mode_sqm');
+      const qtySuffix = document.getElementById('qty_unit_suffix');
+      let currentQtyMode = 'units';
+      function getQtyMode(){ return currentQtyMode; }
+      function setQtyMode(mode){
+        currentQtyMode = (mode==='sqm') ? 'sqm' : 'units';
+        if (modeUnitsBtn && modeSqmBtn){
+          const isUnits = currentQtyMode==='units';
+          modeUnitsBtn.classList.toggle('active', isUnits);
+          modeUnitsBtn.setAttribute('aria-pressed', String(isUnits));
+          modeUnitsBtn.classList.toggle('btn-secondary', isUnits);
+          modeUnitsBtn.classList.toggle('btn-outline-secondary', !isUnits);
+          modeSqmBtn.classList.toggle('active', !isUnits);
+          modeSqmBtn.setAttribute('aria-pressed', String(!isUnits));
+          modeSqmBtn.classList.toggle('btn-secondary', !isUnits);
+          modeSqmBtn.classList.toggle('btn-outline-secondary', isUnits);
+        }
+        if (qtySuffix) qtySuffix.textContent = currentQtyMode==='units' ? 'unit' : 'm²';
+        if (qtyInput){
+          qtyInput.value = '';
+          qtyInput.min = currentQtyMode==='units' ? '1' : '0.01';
+          qtyInput.step = currentQtyMode==='units' ? '1' : '0.01';
+          qtyInput.placeholder = currentQtyMode==='units' ? 'π.χ. 15' : 'π.χ. 16.50';
+        }
+        // Update visible mode badge near label
+        const badge = document.getElementById('qty_mode_badge');
+        if (badge){
+          if (currentQtyMode==='units'){
+            badge.textContent = 'ΤΕΜ';
+            badge.classList.remove('text-bg-info');
+            badge.classList.add('text-bg-secondary');
+          } else {
+            badge.textContent = 'm²';
+            badge.classList.remove('text-bg-secondary');
+            badge.classList.add('text-bg-info');
+          }
+        }
+        refreshQtyState();
+        refreshCalcButtonState();
+        proposePackaging();
+      }
+      [modeUnitsBtn, modeSqmBtn].forEach(btn => {
+        if (!btn) return;
+        btn.addEventListener('click', (ev)=>{ ev.preventDefault(); const m = btn.getAttribute('data-mode'); setQtyMode(m||'units'); });
+      });
+      // initialize
+      setQtyMode('units');
+      function stepQty(delta){
+        const st = currentQtyMode==='units' ? 1 : 0.10;
+        let v = parseFloat(qtyInput.value||'0')||0;
+        v = v + delta*st;
+        const min = parseFloat(qtyInput.min||'0');
+        if (v < min) v = min;
+        if (currentQtyMode==='units') v = Math.round(v); else v = Math.round(v*100)/100;
+        qtyInput.value = currentQtyMode==='units' ? String(v) : v.toFixed(2);
+        qtyInput.dispatchEvent(new Event('input'));
+        qtyInput.dispatchEvent(new Event('change'));
+      }
+      if (qtyMinus) qtyMinus.addEventListener('click', ()=> stepQty(-1));
+      if (qtyPlus) qtyPlus.addEventListener('click', ()=> stepQty(1));
+      function isQuantityValid(){ const v = parseFloat(qtyInput.value); return currentQtyMode==='units' ? (Number.isFinite(v) && v >= 1) : (Number.isFinite(v) && v >= 0.01); }
+      function refreshQtyState(){ const valid = isQuantityValid(); if (qtyInput){ qtyInput.setAttribute('aria-invalid', String(!valid)); } if (qtyBox){ qtyBox.classList.toggle('validation-invalid', !valid); qtyBox.classList.toggle('validation-valid', valid); } }
+      qtyInput.addEventListener('input', ()=>{ refreshQtyState(); refreshCalcButtonState(); });
+      qtyInput.addEventListener('change', ()=>{ refreshQtyState(); refreshCalcButtonState(); });
 
       const buyUnitInput = document.getElementById('buy_price_eur_m2');
       const buyUnitGroup = document.getElementById('buy_unit_group');
@@ -615,11 +708,11 @@
         updateMarginFromRange();
       }
 
-      // Calc button state (red by default, green when both units & buy/unit valid and margin inside (0,1))
+      // Calc button state (red by default, green when inputs valid and margin inside (0,1))
       function isMarginValid(){ const m = parseFloat(document.getElementById('margin').value || '0'); return Number.isFinite(m) && m > 0 && m < 1; }
-      function refreshCalcButtonState(){ try { const allValid = isUnitsValid() && isBuyUnitValid() && isMarginValid(); if (calcBtn){ calcBtn.classList.toggle('is-valid', allValid); calcBtn.classList.toggle('is-invalid', !allValid); calcBtn.setAttribute('aria-pressed', String(allValid)); } } catch(e){} }
+      function refreshCalcButtonState(){ try { const allValid = isQuantityValid() && isBuyUnitValid() && isMarginValid(); if (calcBtn){ calcBtn.classList.toggle('is-valid', allValid); calcBtn.classList.toggle('is-invalid', !allValid); calcBtn.setAttribute('aria-pressed', String(allValid)); } } catch(e){} }
       // wire to inputs
-      unitsInput.addEventListener('input', refreshCalcButtonState); unitsInput.addEventListener('change', refreshCalcButtonState);
+      qtyInput.addEventListener('input', refreshCalcButtonState); qtyInput.addEventListener('change', refreshCalcButtonState);
       buyUnitInput.addEventListener('input', refreshCalcButtonState); buyUnitInput.addEventListener('change', refreshCalcButtonState);
       if (marginRange){ marginRange.addEventListener('input', refreshCalcButtonState); marginRange.addEventListener('change', refreshCalcButtonState); }
       // initialize on load
@@ -650,22 +743,27 @@
       wireToggleGroup('destination_group','destination');
       wireToggleGroup('brand_group','brand');
 
+      // Quantity mode is now selected from the dropdown inside the input group; initialization done above.
 
       document.getElementById('slabForm').addEventListener('submit', async function(e){
         e.preventDefault();
         const brand = document.getElementById('brand').value;
         const thickness = parseInt(document.getElementById('thickness').value || '0');
         const dimensions = document.getElementById('dimensions').value || '';
-        const units = parseInt(document.getElementById('units').value || '0');
+        const mode = getQtyMode();
+        const qtyVal = parseFloat(document.getElementById('qty_input').value || '0');
+        const units = mode==='units' ? Math.round(qtyVal) : 0;
+        const qty_m2 = mode==='sqm' ? qtyVal : 0;
         const buy_price_eur_m2 = parseFloat(document.getElementById('buy_price_eur_m2').value || '0');
         const pack = (document.querySelector('input[name="pack"]:checked') && document.querySelector('input[name="pack"]:checked').value) || 'auto';
 
-        if (!(units>0) || !(buy_price_eur_m2>=0)) { toastr.error('Συμπληρώστε σωστά τα πεδία.'); return; }
+        if (!(isQuantityValid()) || !(buy_price_eur_m2>=0)) { toastr.error('Συμπληρώστε σωστά τα πεδία.'); return; }
         try{
           const destination = document.getElementById('destination').value;
           const margin = parseFloat(document.getElementById('margin').value || '0.40');
           if (!(margin>0 && margin<1)) { toastr.error('Το περιθώριο πρέπει να είναι μεταξύ 0 και 1 (π.χ. 0.40)'); return; }
-          const res = await fetch('/api/pricing/slabs/calc', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ brand, thickness, dimensions, units, buy_price_eur_m2, pack, destination, margin }) });
+          const body = (mode==='units') ? { brand, thickness, dimensions, units, buy_price_eur_m2, pack, destination, margin } : { brand, thickness, dimensions, qty_m2, input_mode: 'sqm', buy_price_eur_m2, pack, destination, margin };
+          const res = await fetch('/api/pricing/slabs/calc', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
           if (!res.ok) {
             const err = await res.json().catch(()=>({detail:'Σφάλμα'}));
             throw new Error(err.detail || 'Αποτυχία αιτήματος');
@@ -718,6 +816,15 @@
             document.getElementById('pallets_info').textContent = `${data.selection.package_type.toUpperCase()} × ${data.selection.pallets}`;
           }
           document.getElementById('sell_per_m2').textContent = euro(data.pricing.sell_price_per_m2);
+          // Show conversion explanation when m² used
+          const explainBox2 = document.getElementById('units_explain');
+          if ((data?.inputs?.input_mode||'') === 'sqm' && data?.conversion?.text) {
+            explainBox2.textContent = `Τεμάχια για παραγγελία: ${Number(data.inputs.units||0)}. ${data.conversion.text}`;
+            explainBox2.style.display = 'block';
+          } else {
+            explainBox2.textContent = '';
+            explainBox2.style.display = 'none';
+          }
           // margin and markup
           if (typeof data.pricing.margin === 'number') {
             document.getElementById('margin_value').textContent = `${(data.pricing.margin*100).toFixed(2)}%`;
