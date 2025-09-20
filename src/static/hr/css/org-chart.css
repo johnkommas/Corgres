@@ -6,9 +6,29 @@
   --card: #ffffff;
   --text: #1e293b;
   --muted: #64748b;
-  --border: #fee2e2;
+  --border: #e5e7eb;
   --dark: #0f172a;
 }
+
+/* Explicit theme variables for toggle support */
+html[data-theme="light"] {
+  --bg: #fffbfa;
+  --card: #ffffff;
+  --text: #1e293b;
+  --muted: #64748b;
+  --border: #e5e7eb;
+  --dark: #0f172a;
+}
+html[data-theme="dark"] {
+  --bg: #0b1220;
+  --card: #111827;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --border: #1f2937;
+  --dark: #020617;
+}
+
+body { background: var(--bg); color: var(--text); }
 
 html, body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
 
@@ -338,3 +358,21 @@ html[data-theme="dark"] .toggle { background: #0f172a; border-color: var(--borde
 /* Ensure uniform two-line height in nodes across fallback renderers */
 .node .role { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; display: block; }
 .node .branch { min-height: 1.2em; line-height: 1.2; }
+
+/* Mobile responsiveness: larger tap targets and container behavior */
+@media (max-width: 576px) {
+  .btn-group[role="group"] { flex-wrap: wrap; }
+  .btn-group[role="group"] .btn,
+  #rethymnoDeptFilter .btn,
+  nav .btn,
+  #presenceChip .btn {
+    padding: 10px 14px;
+    font-size: 1rem; /* ~16px */
+    min-height: 44px; /* recommended tap target */
+  }
+  .orgchart {
+    height: auto;
+    min-height: 320px;
+    overflow: auto; /* allow pan/scroll on small screens */
+  }
+}

@@ -127,16 +127,18 @@
     </script>
     <script>
     (function(){
-      // Theme toggle (same as slabs)
+      // Theme toggle with system preference and persistence (align to index/slabs)
       try{
         var key='theme';
         var root=document.documentElement; var saved=localStorage.getItem(key);
-        if(saved){ root.setAttribute('data-theme', saved); }
+        var mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+        function applyTheme(val){ if(val!=='dark'&&val!=='light'){ val='light'; } root.setAttribute('data-theme', val); }
+        if(saved){ applyTheme(saved); } else { applyTheme(mq&&mq.matches?'dark':'light'); if(mq){ if(typeof mq.addEventListener==='function'){ mq.addEventListener('change', function(e){ applyTheme(e.matches?'dark':'light'); }); } else if(typeof mq.addListener==='function'){ mq.addListener(function(e){ applyTheme(e.matches?'dark':'light'); }); } } }
         var btn=document.getElementById('themeToggle');
-        if(btn){ btn.addEventListener('click', function(){ var curr=root.getAttribute('data-theme')==='dark'?'light':'dark'; root.setAttribute('data-theme', curr); localStorage.setItem(key, curr); }); }
+        if(btn){ btn.addEventListener('click', function(){ var curr=root.getAttribute('data-theme')==='dark'?'light':'dark'; applyTheme(curr); localStorage.setItem(key, curr); var icon=btn.querySelector('i'); if(icon){ icon.classList.toggle('fa-moon', curr!=='dark'); icon.classList.toggle('fa-sun', curr==='dark'); } }); }
       }catch(e){}
 
-      // Presence (same pattern as slabs)
+      // Presence (same pattern as slabs) + ensure row click navigates to logs
       var elCount=document.getElementById('presenceCount');
       var elList=document.getElementById('presenceList');
       var state={ apps:{}, visitors:[] };
@@ -158,6 +160,7 @@
           }).join('');
         }catch(e){}
       }
+      if(elList){ elList.addEventListener('click', function(e){ var a=e.target.closest('a[href]'); if(a){ e.preventDefault(); try{ var panel=document.getElementById('presencePanel'); if(panel && window.bootstrap && bootstrap.Collapse){ bootstrap.Collapse.getOrCreateInstance(panel).hide(); } }catch(ex){} window.location.href=a.getAttribute('href'); } }); }
       function getVisitorId(){ try{ var id=localStorage.getItem('visitorId'); if(!id){ id='visitor_'+Math.random().toString(36).substr(2,9)+'_'+Date.now(); localStorage.setItem('visitorId', id);} return id;}catch(e){ return 'visitor_fallback_'+Date.now(); } }
       function getBrowserInfo(){ var ua=navigator.userAgent||navigator.vendor||window.opera; var platform=navigator.platform||''; var maxTP=(typeof navigator.maxTouchPoints==='number')?navigator.maxTouchPoints:0; var name=ua.indexOf('Firefox')>-1?'Firefox': ua.indexOf('SamsungBrowser')>-1?'Samsung Browser': ua.indexOf('OPR')>-1||ua.indexOf('Opera')>-1?'Opera': ua.indexOf('Trident')>-1?'Internet Explorer': ua.indexOf('Edg')>-1||ua.indexOf('Edge')>-1?'Edge': ua.indexOf('Chrome')>-1?'Chrome': ua.indexOf('Safari')>-1?'Safari':'Unknown'; var isIpad=/iPad/i.test(ua)||(platform==='MacIntel'&&maxTP>1); var isIphone=/iPhone/i.test(ua); var isIpod=/iPod/i.test(ua); var isAndroid=/Android/i.test(ua); var isIOS=isIphone||isIpad||isIpod; var os=(function(u){ if(isIOS) return 'iOS'; if(/Windows NT/i.test(u)) return 'Windows'; if(isAndroid) return 'Android'; if(/Macintosh|Mac OS X/i.test(u)) return 'macOS'; if(/Linux/i.test(u)) return 'Linux'; return 'Other'; })(ua); var deviceType=(function(u){ if(isIphone||isIpod) return 'Phone'; if(isIpad) return 'Tablet'; if(isAndroid) return (/Mobi|Mobile/i.test(u)?'Phone':'Tablet'); return 'PC'; })(ua); var deviceModel=isIphone?'iPhone':(isIpad?'iPad':(isIpod?'iPod':'')); return {browser:name, userAgent:ua, platform:navigator.platform, os:os, deviceType:deviceType, deviceModel:deviceModel}; }
       function getTabId(){ try{ var id=sessionStorage.getItem('tabId'); if(!id){ id='tab_'+Math.random().toString(36).substr(2,9)+'_'+Date.now(); sessionStorage.setItem('tabId', id);} return id;}catch(e){ return 'tab_fallback_'+Date.now(); } }
