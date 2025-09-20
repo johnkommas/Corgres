@@ -926,6 +926,15 @@
             });
 
             // Initialize dashboard
+            // Pre-fill filter from query string (?search= or ?q=)
+            try{
+                var params = new URLSearchParams(window.location.search);
+                var preset = params.get('search') || params.get('q') || '';
+                if (preset) {
+                    var lf = document.getElementById('logFilter');
+                    if (lf) lf.value = preset;
+                }
+            }catch(e){}
             initializeCharts();
             loadLogs();
             refreshDashboard();

@@ -1,0 +1,340 @@
+/* Org Chart Page Styles - follows Hub theme */
+:root {
+  --primary-color: #e11d48;
+  --secondary-color: #be123c;
+  --bg: #fffbfa;
+  --card: #ffffff;
+  --text: #1e293b;
+  --muted: #64748b;
+  --border: #fee2e2;
+  --dark: #0f172a;
+}
+
+html, body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+
+.hub-header {
+  background-color: var(--primary-color);
+  color: #fff;
+  box-shadow: 0 4px 6px rgba(0,0,0,.08);
+}
+.hub-header h1 { color: #fff; font-weight: 700; letter-spacing: -0.3px; }
+.hub-header .breadcrumb { --bs-breadcrumb-divider: '›'; }
+.hub-header .breadcrumb .breadcrumb-item + .breadcrumb-item::before { color: rgba(255,255,255,.6); }
+
+.hub-footer { background: var(--dark); color: #fff; }
+.hub-footer a { color: #fff; }
+
+/* Controls */
+.btn-outline-primary { border-color: var(--primary-color); color: var(--primary-color); }
+.btn-outline-primary:hover, .btn-outline-primary.active { background: var(--primary-color); color: #fff; }
+
+/* Layout */
+ .orgchart {
+  background: #f5f5f7;
+  border-radius: 12px;
+  height: calc(100vh - 160px);
+  min-height: 420px;
+  padding: 12px;
+  overflow: hidden; /* we will auto-fit the chart to avoid scrollbars */
+  border: 1px solid #e5e7eb;
+}
+/* Horizontal orientation (left-to-right) */
+.orgchart.horizontal { overflow: auto; }
+.orgchart.horizontal .tree { display: block; padding: 8px; }
+/* Keep default vertical layout rules off; in horizontal we manually place siblings */
+.orgchart.horizontal .tree ul { display: block; }
+.orgchart.horizontal .tree li { display: block; padding: 8px 0; }
+.orgchart.horizontal .tree li::before,
+.orgchart.horizontal .tree li::after,
+.orgchart.horizontal .tree ul ul::before { display: none; }
+/* Parent on the left, children to the right in a row */
+.orgchart.horizontal .collapsible { display: flex; align-items: flex-start; gap: 16px; }
+.orgchart.horizontal .collapsible > ul { display: flex; flex-wrap: wrap; gap: 16px; margin: 0; padding: 0; align-items: flex-start; }
+.orgchart.horizontal .collapsible > ul > li { display: inline-block; padding: 0; }
+
+.info-panel {
+  background: var(--card);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px;
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 150px);
+  overflow: auto;
+}
+.info-panel-header { border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 10px; }
+.info-content { font-size: .95rem; color: var(--text); }
+
+/* Tree - CSS only, collapsible */
+.tree { display: inline-block; padding: 12px; }
+.tree ul { position: relative; padding-left: 0; margin: 0; display: flex; justify-content: center; flex-wrap: wrap; gap: var(--level-gap, 24px); }
+.tree li { list-style: none; text-align: center; position: relative; padding: 24px 10px 0 10px; }
+.tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; width: 50%; height: 20px; border-top: 1px solid #d2d2d7; }
+.tree li::after { right: auto; left: 50%; border-left: 1px solid #d2d2d7; }
+.tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
+.tree li:last-child::before { border-right: 1px solid #d2d2d7; border-radius: 0 5px 0 0; }
+.tree li:first-child::after { border-radius: 5px 0 0 0; }
+.tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; width: 0; height: 20px; border-left: 1px solid #d2d2d7; }
+
+.node { display: inline-flex; align-items: center; gap: 10px; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; box-shadow: 0 2px 8px rgba(0,0,0,.05); cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+.node:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.08); }
+.node .badge { font-weight: 600; }
+.node .role { font-weight: 600; color: var(--text); }
+.node .branch { font-size: .8rem; color: var(--muted); }
+
+.toggle { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: #f3f4f6; border: 1px solid #e5e7eb; color: #111827; }
+.toggle.collapsed i { transform: rotate(-90deg); }
+
+.collapsible > ul { display: block; }
+.collapsible.collapsed > ul { display: none; }
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0b1220; --card: #111827; --text: #e5e7eb; --muted: #94a3b8; --border: #1f2937; --dark: #020617; }
+  body { background: var(--bg); color: var(--text); }
+  .orgchart { background: #0b1220; border-color: var(--border); }
+  .info-panel { background: var(--card); border-color: var(--border); }
+  .tree li::before, .tree li::after, .tree ul ul::before { border-color: #334155; }
+  .node { background: var(--card); border-color: var(--border); color: var(--text); }
+  .toggle { background: #0f172a; border-color: var(--border); color: var(--text); }
+}
+
+
+/* Split two-sided layout under a parent (horizontal mode only) */
+.orgchart.horizontal .collapsible.has-split {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  column-gap: 24px;
+}
+.orgchart.horizontal .collapsible.has-split > .node {
+  grid-column: 2;
+}
+.orgchart.horizontal .collapsible.has-split > ul {
+  display: none; /* hide normal children list in horizontal when split is enabled */
+}
+.orgchart.horizontal .collapsible.has-split > .split-2 { display: contents; }
+.orgchart.horizontal .collapsible.has-split > .split-2 > .left-children {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0; padding: 0;
+}
+.orgchart.horizontal .collapsible.has-split > .split-2 > .right-children {
+  grid-column: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0; padding: 0;
+}
+/* Hide split container in vertical orientation to keep default connectors */
+.orgchart:not(.horizontal) .split-2 { display: none; }
+/* Ensure collapsed nodes hide both normal and split children */
+.collapsible.collapsed > .split-2 { display: none !important; }
+
+/* Button normalization for org-chart page */
+.btn {
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  font-weight: 500;
+  padding: .5rem .75rem;
+  line-height: 1.25;
+}
+.btn:focus { box-shadow: none; }
+.btn-sm { padding: .35rem .6rem; font-size: .875rem; line-height: 1.2; }
+
+/* Make grouped buttons look consistent and spaced */
+.btn-group { gap: .5rem; }
+.btn-group > .btn { border-radius: 10px !important; }
+
+/* Outline Secondary unified to card/neutral look */
+.btn-outline-secondary { color: var(--text); background: var(--card); border: 1px solid #e5e7eb; }
+.btn-outline-secondary:hover { background: #f3f4f6; color: var(--text); border-color: #d1d5db; }
+
+/* Light button matches neutral outline for consistency */
+.btn-light { color: var(--text); background: var(--card); border: 1px solid #e5e7eb; }
+.btn-light:hover { background: #f3f4f6; border-color: #d1d5db; }
+
+/* Primary outline keeps brand color */
+.btn-outline-primary { border-color: var(--primary-color); color: var(--primary-color); background: transparent; }
+.btn-outline-primary:hover, .btn-outline-primary.active { background: var(--primary-color); color: #fff; }
+
+/* Icon-only small buttons maintain square shape */
+.btn.btn-sm.icon-only, .btn.btn-sm:has(> i):not(:has(> span)) { padding: .35rem; width: 32px; height: 32px; justify-content: center; }
+
+/* Dark mode adjustments rely on variables; ensure border-muted works */
+@media (prefers-color-scheme: dark) {
+  .btn-outline-secondary, .btn-light { background: var(--card); border-color: var(--border); color: var(--text); }
+  .btn-outline-secondary:hover, .btn-light:hover { background: #0f172a; border-color: #334155; }
+}
+
+/* Google OrgChart: elegant connector lines */
+:root {
+  --org-connector-color: #cbd5e1; /* slate-300 */
+  --org-connector-thickness: 2px;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --org-connector-color: #334155; /* slate-700 */ }
+}
+
+/* Reset default line backgrounds so we can draw our own */
+.google-visualization-orgchart-lineleft,
+.google-visualization-orgchart-lineright,
+.google-visualization-orgchart-linebottom,
+.google-visualization-orgchart-linecenter,
+.google-visualization-orgchart-linetop {
+  position: relative !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+/* Vertical segments */
+.google-visualization-orgchart-lineleft::before,
+.google-visualization-orgchart-lineright::before,
+.google-visualization-orgchart-linebottom::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 50%;
+  width: var(--org-connector-thickness);
+  transform: translateX(-50%);
+  background: var(--org-connector-color);
+  border-radius: 9999px; /* rounded ends */
+}
+/* Horizontal segments */
+.google-visualization-orgchart-linecenter::before,
+.google-visualization-orgchart-linetop::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  top: 50%;
+  height: var(--org-connector-thickness);
+  transform: translateY(-50%);
+  background: var(--org-connector-color);
+  border-radius: 9999px; /* rounded ends */
+}
+/* Subtle taper near joints for a premium feel */
+.google-visualization-orgchart-linetop::after,
+.google-visualization-orgchart-linecenter::after {
+  content: '';
+  position: absolute;
+  top: 50%; transform: translateY(-50%);
+  height: var(--org-connector-thickness);
+  width: 40%; right: 0;
+  background: linear-gradient(to right, transparent, var(--org-connector-color));
+  pointer-events: none;
+}
+
+/* Reduce extra whitespace between rows/cols to balance line rhythm */
+.google-visualization-orgchart-table { border-collapse: separate !important; border-spacing: 12px 18px !important; }
+/* Round native node container if Google wraps our HTML */
+.google-visualization-orgchart-node { border-radius: 14px !important; overflow: visible !important; }
+/* Overrides: make orgchart invisible (transparent) and remove border */
+.orgchart { background: transparent !important; border: none !important; }
+/* Ensure Google OrgChart table is transparent as well */
+.google-visualization-orgchart-table { background: transparent !important; }
+
+/* Hide Google OrgChart default selection highlight and keep only inner pill styling */
+.google-visualization-orgchart-nodesel {
+  border: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+/* When a node is selected, recolor only the inner pill like slabs grey */
+.google-visualization-orgchart-nodesel .node-pill {
+  background: #6c757d !important;
+  border-color: #6c757d !important;
+  color: #ffffff !important;
+}
+
+
+/* Ensure Google OrgChart outer TD box is invisible (no border/background/padding) */
+.google-visualization-orgchart-node,
+.google-visualization-orgchart-node-large {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Make Google OrgChart nodes feel clickable */
+.google-visualization-orgchart-node,
+.google-visualization-orgchart-node * {
+  cursor: pointer !important;
+}
+/* Also indicate interactivity on selected node and collapse/expand links */
+.google-visualization-orgchart-nodesel,
+.google-visualization-orgchart-nodesel * {
+  cursor: pointer !important;
+}
+.google-visualization-orgchart-collapse,
+.google-visualization-orgchart-collapse * {
+  cursor: pointer !important;
+}
+
+
+/* Dark theme via [data-theme="dark"] attribute (matches on-page toggle) */
+:root[data-theme="dark"] {
+  --bg: #0b1220;
+  --card: #111827;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --border: #1f2937;
+  --dark: #020617;
+}
+:root[data-theme="dark"] body { background: var(--bg); color: var(--text); }
+:root[data-theme="dark"] .orgchart { background: #0b1220; border-color: var(--border); }
+:root[data-theme="dark"] .info-panel { background: var(--card); border-color: var(--border); }
+:root[data-theme="dark"] .tree li::before,
+:root[data-theme="dark"] .tree li::after,
+:root[data-theme="dark"] .tree ul ul::before { border-color: #334155; }
+:root[data-theme="dark"] .node { background: var(--card); border-color: var(--border); color: var(--text); }
+:root[data-theme="dark"] .toggle { background: #0f172a; border-color: var(--border); color: var(--text); }
+
+
+/* Dark theme via [data-theme="dark"] attribute — corrected :root selector */
+:root[data-theme="dark"] {
+  --bg: #0b1220;
+  --card: #111827;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --border: #1f2937;
+  --dark: #020617;
+}
+:root[data-theme="dark"] body { background: var(--bg); color: var(--text); }
+:root[data-theme="dark"] .orgchart { background: #0b1220; border-color: var(--border); }
+:root[data-theme="dark"] .info-panel { background: var(--card); border-color: var(--border); }
+:root[data-theme="dark"] .tree li::before,
+:root[data-theme="dark"] .tree li::after,
+:root[data-theme="dark"] .tree ul ul::before { border-color: #334155; }
+:root[data-theme="dark"] .node { background: var(--card); border-color: var(--border); color: var(--text); }
+:root[data-theme="dark"] .toggle { background: #0f172a; border-color: var(--border); color: var(--text); }
+
+
+/* Dark theme support using html[data-theme="dark"] — robust selector */
+html[data-theme="dark"] {
+  --bg: #0b1220;
+  --card: #111827;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --border: #1f2937;
+  --dark: #020617;
+}
+html[data-theme="dark"] body { background: var(--bg); color: var(--text); }
+html[data-theme="dark"] .orgchart { background: #0b1220; border-color: var(--border); }
+html[data-theme="dark"] .info-panel { background: var(--card); border-color: var(--border); }
+html[data-theme="dark"] .tree li::before,
+html[data-theme="dark"] .tree li::after,
+html[data-theme="dark"] .tree ul ul::before { border-color: #334155; }
+html[data-theme="dark"] .node { background: var(--card); border-color: var(--border); color: var(--text); }
+html[data-theme="dark"] .toggle { background: #0f172a; border-color: var(--border); color: var(--text); }
+
+
+/* Ensure uniform two-line height in nodes across fallback renderers */
+.node .role { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; display: block; }
+.node .branch { min-height: 1.2em; line-height: 1.2; }

@@ -554,6 +554,7 @@ manager = ConnectionManager()
 api.mount("/static", StaticFiles(directory="src/static"), name="static")
 api.mount("/images", StaticFiles(directory="src/static/images"), name="images")
 api.mount("/css", StaticFiles(directory="src/static/css"), name="css")
+api.mount("/hr", StaticFiles(directory="src/static/hr"), name="hr")
 
 @api.get("/", response_class=HTMLResponse)
 async def root():
