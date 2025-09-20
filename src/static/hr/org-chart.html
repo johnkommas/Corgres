@@ -32,7 +32,7 @@
                     <i class="fa-solid fa-moon"></i>
                 </button>
                 <div id="presenceChip" class="presence-chip">
-                    <span class="badge bg-success" id="presenceCount">0 online</span>
+                    <span class="badge bg-success" id="presenceCount" role="button" data-bs-toggle="collapse" data-bs-target="#presencePanel" aria-expanded="false">0 online</span>
                     <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#presencePanel" aria-expanded="false" title="Show online">
                         <i class="fa-solid fa-users"></i>
                     </button>
@@ -42,6 +42,13 @@
             </div>
         </div>
     </nav>
+
+    <!-- Presence panel (match slabs) -->
+    <div class="collapse position-absolute end-0 mt-2" id="presencePanel" style="min-width: 320px; z-index: 1050;">
+        <div class="card shadow-sm">
+            <div class="card-body p-2"><div id="presenceList" class="small"></div></div>
+        </div>
+    </div>
 
     <main class="container-fluid my-4">
         <!-- Controls -->
@@ -84,13 +91,6 @@
             </div>
         </div>
     </main>
-
-    <!-- Presence panel (match slabs) -->
-    <div class="collapse position-absolute end-0 mt-2" id="presencePanel" style="min-width: 320px; z-index: 1050;">
-        <div class="card shadow-sm">
-            <div class="card-body p-2"><div id="presenceList" class="small"></div></div>
-        </div>
-    </div>
 
     <!-- Footer (shared like pricing pages) -->
     <footer class="mt-5 pt-5 text-center">
