@@ -15,9 +15,73 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/hr/css/org-chart.css">
+    <style>
+        :root { --gm-bg: #2563eb; }
+        .hero-section { min-height: 70vh; }
+        .fade-out { opacity: 0 !important; transition: opacity .5s ease-in; }
+        .card-elevated { border: 0; border-radius:16px; box-shadow: 0 10px 25px rgba(0,0,0,.08); transition: transform .2s ease, box-shadow .2s ease; background-color: var(--surface, #ffffff); overflow:hidden; }
+        .card-elevated:hover { transform: translateY(-4px); box-shadow: 0 14px 35px rgba(0,0,0,.12); }
+        .card-gm { background-color: var(--gm-bg); color: #fff; border: 0; border-radius:16px; box-shadow: 0 16px 40px rgba(37, 99, 235, .35); overflow:hidden; }
+        .card-gm .card-body { padding: 2rem 2rem; }
+        .chip { display: inline-block; padding: .25rem .5rem; border-radius: 999px; background: rgba(255,255,255,.15); color: #fff; font-size: .85rem; }
+        .clickable { cursor: pointer; text-decoration: none; color: inherit; }
+        #cardsSection.d-none { display: none !important; }
+        .reveal-up { transform: translateY(24px); opacity: 0; transition: transform .5s ease, opacity .5s ease; }
+        .reveal-up.show { transform: translateY(0); opacity: 1; }
+        @media (prefers-color-scheme: dark) {
+            .card-elevated { box-shadow: 0 10px 25px rgba(0,0,0,.6); }
+            .card-elevated:hover { box-shadow: 0 14px 35px rgba(0,0,0,.7); }
+        }
+        /* Modal typography upgrade */
+        .modal-content{ font-family:'Manrope','Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans',sans-serif; line-height:1.6; }
+        .modal-title{ font-family:'Manrope','Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans',sans-serif; font-weight:700; letter-spacing:.2px; }
+        .modal-body p{ margin-bottom:.75rem; }
+        .modal-body h4, .modal-body .h4, .modal-body h5, .modal-body .h5{ margin-top:1rem; font-weight:700; }
+        @media (prefers-color-scheme: dark){
+          .modal-content{ background-color: var(--surface); color: var(--text); }
+        }
+    </style>
+    <style>
+        /* Org tree layout for Χανιά (STORE ΧΑΝΙΑ) */
+        #levelUpBtn{ border-radius:12px !important; border-width:1.5px; line-height:1.2; padding:.45rem 1.25rem !important; font-size:.95rem; white-space:nowrap; min-width: 112px; }
+        #levelUpBtnRethymno{ border-radius:12px !important; border-width:1.5px; line-height:1.2; padding:.45rem 1.25rem !important; font-size:.95rem; white-space:nowrap; min-width: 112px; }
+        #levelUpBtnMenidi{ border-radius:12px !important; border-width:1.5px; line-height:1.2; padding:.45rem 1.25rem !important; font-size:.95rem; white-space:nowrap; min-width: 112px; }
+        #levelUpBtnAspropyrgos{ border-radius:12px !important; border-width:1.5px; line-height:1.2; padding:.45rem 1.25rem !important; font-size:.95rem; white-space:nowrap; min-width: 112px; }
+        .org-tree .org-level{ margin-bottom:1.25rem; }
+        .org-tree .org-card{ border:0; border-radius:16px; background-color: var(--surface, #ffffff); }
+        .org-group{ border-radius:20px; border-left:4px solid var(--neutral-300); background-color: var(--surface, #ffffff); padding:.75rem; box-shadow: 0 6px 18px rgba(0,0,0,.06); }
+        .org-group .group-header a.org-card{ display:block; }
+        .org-group .children{ margin-top:.5rem; padding-left:.25rem; border-top:1px dashed var(--neutral-300); padding-top:.75rem; }
+        .role-card.mini{ border:1px solid var(--neutral-300); border-radius:16px; background-color: var(--surface, #ffffff); }
+        .role-card.mini .card-body{ padding:.5rem .5rem; }
+        .accent-sales{ border-color:#2563eb; }
+        .accent-warehouse{ border-color:#059669; }
+        @media (max-width: 576px){ .role-card.mini .fw-semibold{ font-size:.95rem; } }
+        /* Dark mode tweaks */
+        html[data-theme="dark"] .org-group{ background-color: var(--surface); box-shadow: 0 8px 20px rgba(0,0,0,.45); border-left-color: var(--neutral-300); }
+        html[data-theme="dark"] .org-group .children{ border-top-color: var(--neutral-300); }
+    </style>
+        <style>
+        /* Branch images: hover previews and branch page background */
+        .branch-card{ position:relative; overflow:hidden; }
+        .branch-card .branch-photo{ position:absolute; inset:0; background-size:cover; background-position:center; opacity:0; transform:scale(1.05); transition: opacity .35s ease, transform .35s ease; }
+        .branch-card.has-photo:hover .branch-photo{ opacity:.95; transform:scale(1.02); }
+        .branch-card.has-photo:hover .card-body{ color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.45); }
+        /* GM card hover photo */
+        .card-gm{ position:relative; overflow:hidden; }
+        .card-gm .gm-photo{ position:absolute; inset:0; background-size:cover; background-position:center 20%; opacity:0; transform:scale(1.05); transition: opacity .35s ease, transform .35s ease; }
+        .card-gm.has-photo:hover .gm-photo{ opacity:.95; transform:scale(1.02); }
+        .card-gm.has-photo:hover .card-body{ text-shadow:0 1px 2px rgba(0,0,0,.45); }
+        /* Store page background */
+        #branchDetails.with-photo-bg{ position:relative; background-size:cover; background-position:center; background-repeat:no-repeat; }
+        #branchDetails.with-photo-bg::before{ content:""; position:absolute; inset:0; background: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.35)); pointer-events:none; }
+        #branchDetails.with-photo-bg > .row{ position:relative; z-index:1; }
+        html[data-theme="dark"] #branchDetails.with-photo-bg::before{ background: linear-gradient(180deg, rgba(0,0,0,.4), rgba(0,0,0,.4)); }
+        </style>
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
     <!-- Header (match slabs navbar) -->
     <nav class="navbar navbar-expand-lg navbar-light mb-4 py-3">
         <div class="container-fluid">
@@ -43,51 +107,1230 @@
         </div>
     </nav>
 
-    <!-- Presence panel (match slabs) -->
-    <div class="collapse position-absolute end-0 mt-2" id="presencePanel" style="min-width: 320px; z-index: 1050;">
+    <!-- Presence panel (collapsible list of online users) -->
+    <div class="collapse position-fixed end-0" id="presencePanel" style="min-width: 320px; z-index: 1050; top: 72px; right: 1rem;">
         <div class="card shadow-sm">
             <div class="card-body p-2"><div id="presenceList" class="small"></div></div>
         </div>
     </div>
 
-    <main class="container-fluid my-4">
-        <!-- Controls -->
-        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
-            <div class="btn-group" role="group" aria-label="Εναλλαγή Καταστήματος">
-                <button id="hqInfoBtn" class="btn btn-outline-primary"><i class="fa-solid fa-building-columns me-2"></i>Γενική Διεύθυνση</button>
-                <button class="btn btn-outline-primary active" data-branch="Ρέθυμνο"><i class="fa-solid fa-building me-2"></i>Ρέθυμνο</button>
-                <button class="btn btn-outline-primary" data-branch="Χανιά"><i class="fa-solid fa-store me-2"></i>Χανιά</button>
-                <button class="btn btn-outline-primary" data-branch="Μενίδι"><i class="fa-solid fa-store me-2"></i>Μενίδι</button>
-                <button class="btn btn-outline-primary" data-branch="Ασπρόπυργος"><i class="fa-solid fa-warehouse me-2"></i>Ασπρόπυργος</button>
+    <main class="flex-fill">
+        <section id="hero" class="hero-section container d-flex align-items-center justify-content-center text-center">
+            <div class="col-lg-10 col-xl-8">
+                <h1 class="display-5 fw-bold mb-3">Οργανόγραμμα Corgres</h1>
+                <p class="lead mb-4">
+                    Ανακαλύψτε τη δομή, τους ρόλους και τις ευθύνες στην Corgres — καθαρά, απλά, επαγγελματικά.
+                    Ξεκινήστε από τη Γενική Διεύθυνση και συνεχίστε με τα καταστήματα και τις μονάδες μας.
+                </p>
+                <button id="startBtn" class="btn btn-primary btn-lg px-4">Let’s start</button>
             </div>
-            <div id="rethymnoDeptFilter" class="btn-group d-none" role="group" aria-label="Τμήματα Ρεθύμνου">
-                <button class="btn btn-outline-secondary" data-dept="Υπεύθυνος Λογιστηρίου">Υπεύθυνος Λογιστηρίου</button>
-                <button class="btn btn-outline-secondary" data-dept="Υπεύθυνος Πωλήσεων">Υπεύθυνος Πωλήσεων</button>
-                <button class="btn btn-outline-secondary" data-dept="Διευθυντής Αγορών">Διευθυντής Αγορών</button>
-                <button class="btn btn-outline-secondary" data-dept="Υπεύθυνος Αποθήκης & Logistics">Υπεύθυνος Αποθήκης & Logistics</button>
-                <button class="btn btn-outline-secondary" data-dept="Υπεύθυνος Παραγωγής">Υπεύθυνος Παραγωγής</button>
+        </section>
+
+        <section id="cardsSection" class="container py-5 d-none">
+            <div class="row justify-content-center mb-4">
+                <div class="col-12 col-md-10 col-lg-8">
+                    <a id="gmCard" class="card card-gm clickable reveal-up">
+                        <div class="card-body d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3">
+                            <div class="flex-grow-1">
+                                <div class="chip mb-2"><i class="fa-solid fa-crown me-2"></i>Γενική Διεύθυνση</div>
+                                <h2 class="h3 fw-bold mb-1">Γενική Διεύθυνση</h2>
+                                <p class="mb-0">General Management · Πατήστε για αναλυτικές πληροφορίες ρόλου</p>
+                            </div>
+                            <i class="fa-solid fa-arrow-right-long fa-lg opacity-75"></i>
+                        </div>
+                    </a>
+                </div>
             </div>
-            <div class="d-flex align-items-center gap-2">
-                <button id="expandAll" class="btn btn-light"><i class="fa-solid fa-plus me-2"></i>Άνοιγμα όλων</button>
-                <button id="collapseAll" class="btn btn-light"><i class="fa-solid fa-minus me-2"></i>Κλείσιμο όλων</button>
+
+            <div class="row g-3 justify-content-center">
+                <div class="col-6 col-md-3">
+                    <a class="card card-elevated clickable text-center p-3 reveal-up branch-card" data-branch="Ρέθυμνο" data-image="/images/stores/rethimno.png">
+                        <div class="card-body">
+                            <div class="fs-3 mb-2">🏬</div>
+                            <div class="fw-semibold">Ρέθυμνο</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a class="card card-elevated clickable text-center p-3 reveal-up branch-card" data-branch="Χανιά" data-image="/images/stores/XANIA.jpg">
+                        <div class="card-body">
+                            <div class="fs-3 mb-2">🏬</div>
+                            <div class="fw-semibold">Χανιά</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a class="card card-elevated clickable text-center p-3 reveal-up branch-card" data-branch="Μενιδι" data-image="/images/stores/menidi.jpg">
+                        <div class="card-body">
+                            <div class="fs-3 mb-2">🏬</div>
+                            <div class="fw-semibold">Μενιδι</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a class="card card-elevated clickable text-center p-3 reveal-up branch-card" data-branch="Ασπρόπυργος" data-image="/images/stores/aspropirgos.png">
+                        <div class="card-body">
+                            <div class="fs-3 mb-2">🏭</div>
+                            <div class="fw-semibold">Ασπρόπυργος</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Branch Details (Ρέθυμνο) -->
+        <section id="branchDetailsRethymno" class="container py-5 d-none">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10">
+                    <div class="mb-3 d-flex align-items-center justify-content-between">
+                        <h2 id="storeRethymnoHeader" class="h4 mb-0 clickable" title="Level up"><span class="text-muted">STORE</span> ΡΕΘΥΜΝΟ</h2>
+                        <button id="levelUpBtnRethymno" class="btn btn-outline-primary btn-sm" type="button">
+                            <i class="fa-solid fa-arrow-up me-1"></i>Level up
+                        </button>
+                    </div>
+                    <div class="row g-4 org-tree">
+                        <!-- First level: 5 department heads -->
+                        <div class="col-12 col-md-6 col-lg-4 org-level">
+                            <div class="org-group reveal-up">
+                                <div class="group-header">
+                                    <a class="card card-elevated clickable text-center p-3 role-card org-card" data-role="accounting-lead">
+                                        <div class="card-body py-2 px-2">
+                                            <div class="chip mb-1"></div>
+                                            <h4 class="h6 mb-0">Υπεύθυνος Λογιστηρίου</h4>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="children">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <a class="card clickable text-center role-card mini" data-role="external-accountant">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold">Εξωτερικός Λογιστής</div>
+                                                    <div class="text-muted small"></div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-12">
+                                            <a class="card clickable text-center role-card mini" data-role="assistant-accountant">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold">Βοηθός Λογιστή</div>
+                                                    <div class="text-muted small"></div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-12">
+                                            <a class="card clickable text-center role-card mini" data-role="payroll-manager">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold">Υπεύθυνος Μισθοδοσίας</div>
+                                                    <div class="text-muted small"></div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-4 org-level">
+                            <div class="org-group accent-sales reveal-up">
+                                <div class="group-header">
+                                    <a class="card card-elevated clickable text-center p-3 role-card org-card" data-role="sales-lead">
+                                        <div class="card-body py-2 px-2">
+                                            <div class="chip mb-1"></div>
+                                            <h4 class="h6 mb-0">Υπεύθυνος Πωλήσεων</h4>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="children">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <a class="card clickable text-center role-card mini" data-role="sales-reps">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold">Πωλητής</div>
+                                                    <div class="text-muted small"></div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-12">
+                                            <a class="card clickable text-center role-card mini" data-role="reception">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold">Υποδοχή</div>
+                                                    <div class="text-muted small"></div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-12">
+                                            <a class="card clickable text-center role-card mini" data-role="after-sales-tech">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold">Τμήμα After-Sales / Τεχνικός Service</div>
+                                                    <div class="text-muted small"></div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-4 org-level">
+                            <div class="org-group reveal-up">
+                                <div class="group-header">
+                                    <a class="card card-elevated clickable text-center p-3 role-card org-card" data-role="procurement-head">
+                                        <div class="card-body py-2 px-2">
+                                            <div class="chip mb-1"></div>
+                                            <h4 class="h6 mb-0">Διευθυντής Αγορών</h4>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="children">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <a class="card clickable text-center role-card mini" data-role="imports-manager">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold">Υπεύθυνος Εισαγωγών Εξωτερικού</div>
+                                                    <div class="text-muted small"></div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-4 org-level">
+                            <div class="org-group accent-warehouse reveal-up">
+                                <div class="group-header">
+                                    <a class="card card-elevated clickable text-center p-3 role-card org-card" data-role="warehouse-lead">
+                                        <div class="card-body py-2 px-2">
+                                            <div class="chip mb-1"></div>
+                                            <h4 class="h6 mb-0">Υπεύθυνος Αποθήκης &amp; Logistics</h4>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="children">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <a class="card clickable text-center role-card mini" data-role="warehouse-worker">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold">Αποθηκάριος</div>
+                                                    <div class="text-muted small"></div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-12">
+                                            <a class="card clickable text-center role-card mini" data-role="driver">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold">Οδηγός</div>
+                                                    <div class="text-muted small"></div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-4 org-level">
+                            <div class="org-group reveal-up">
+                                <div class="group-header">
+                                    <a class="card card-elevated clickable text-center p-3 role-card org-card" data-role="production-lead">
+                                        <div class="card-body py-2 px-2">
+                                            <div class="chip mb-1"></div>
+                                            <h4 class="h6 mb-0">Υπεύθυνος Παραγωγής</h4>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="children">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <a class="card clickable text-center role-card mini" data-role="offers-projects">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold">Υπεύθυνος Προσφορών Έργων</div>
+                                                    <div class="text-muted small"></div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-12">
+                                            <a class="card clickable text-center role-card mini" data-role="production-lab">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold">Υπεύθυνος Παραγωγής (Τμήμα Εργαστηρίου)</div>
+                                                    <div class="text-muted small"></div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Branch Details (single-page roles for Χανιά) -->
+        <section id="branchDetails" class="container py-5 d-none">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10">
+                    <div class="mb-3 d-flex align-items-center justify-content-between">
+                        <h2 id="storeChaniaHeader" class="h4 mb-0 clickable" title="Level up"><span class="text-muted">STORE</span> ΧΑΝΙΑ</h2>
+                        <button id="levelUpBtn" class="btn btn-outline-primary btn-sm" type="button">
+                            <i class="fa-solid fa-arrow-up me-1"></i>Level up
+                        </button>
+                    </div>
+
+                    <div class="row g-4 org-tree">
+                        <!-- Level 1 -->
+                        <div class="col-12 org-level">
+                            <div class="d-flex justify-content-center">
+                                <a class="card card-elevated clickable text-center p-3 reveal-up role-card org-card" data-role="store-manager" style="max-width:520px; width:100%;">
+                                    <div class="card-body">
+                                        <div class="chip mb-2"></div>
+                                        <h3 class="h6 mb-0">Διευθυντής Καταστήματος <small class="text-muted">(Store Manager)</small></h3>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                        <!-- Level 2 + Level 3 (grouped) -->
+                        <div class="col-12 col-md-6 org-level">
+                            <div class="org-group accent-sales reveal-up">
+                                <div class="group-header">
+                                    <a class="card card-elevated clickable text-center p-3 role-card org-card" data-role="sales-lead">
+                                        <div class="card-body py-2 px-2">
+                                            <div class="chip mb-1"></div>
+                                            <h4 class="h6 mb-0">Υπεύθυνος Πωλήσεων</h4>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="children">
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <a class="card clickable text-center role-card mini" data-role="reception">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold">Υποδοχή</div>
+                                                    <div class="text-muted small"></div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-6">
+                                            <a class="card clickable text-center role-card mini" data-role="sales-reps">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold">Πωλητές</div>
+                                                    <div class="text-muted small"></div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 org-level">
+                            <div class="org-group accent-warehouse reveal-up">
+                                <div class="group-header">
+                                    <a class="card card-elevated clickable text-center p-3 role-card org-card" data-role="warehouse-lead">
+                                        <div class="card-body py-2 px-2">
+                                            <div class="chip mb-1"></div>
+                                            <h4 class="h6 mb-0">Υπεύθυνος Αποθήκης &amp; Logistics</h4>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="children">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <a class="card clickable text-center role-card mini" data-role="warehouse-worker">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold">Αποθηκάριος</div>
+                                                    <div class="text-muted small"></div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Branch Details (single-page roles for Μενιδι) -->
+        <section id="branchDetailsMenidi" class="container py-5 d-none">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10">
+                    <div class="mb-3 d-flex align-items-center justify-content-between">
+                        <h2 id="storeMenidiHeader" class="h4 mb-0 clickable" title="Level up"><span class="text-muted">STORE</span> ΜΕΝΙΔΙ</h2>
+                        <button id="levelUpBtnMenidi" class="btn btn-outline-primary btn-sm" type="button">
+                            <i class="fa-solid fa-arrow-up me-1"></i>Level up
+                        </button>
+                    </div>
+
+                    <div class="row g-4 org-tree">
+                        <!-- Level 1 -->
+                        <div class="col-12 org-level">
+                            <div class="d-flex justify-content-center">
+                                <a class="card card-elevated clickable text-center p-3 reveal-up role-card org-card" data-role="store-manager" style="max-width:520px; width:100%;">
+                                    <div class="card-body">
+                                        <div class="chip mb-2"></div>
+                                        <h3 class="h6 mb-0">Διευθυντής Καταστήματος <small class="text-muted">(Store Manager)</small></h3>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                        <!-- Level 2 (ΜΕΝΙΔΙ specific) -->
+                        <div class="col-12 col-md-6 org-level">
+                            <div class="org-group accent-sales reveal-up">
+                                <div class="group-header">
+                                    <a class="card card-elevated clickable text-center p-3 role-card org-card" data-role="project-athens">
+                                        <div class="card-body py-2 px-2">
+                                            <div class="chip mb-1"></div>
+                                            <h4 class="h6 mb-0">Υπεύθυνος Project Έργων Αθήνας</h4>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 org-level">
+                            <div class="org-group accent-sales reveal-up">
+                                <div class="group-header">
+                                    <a class="card card-elevated clickable text-center p-3 role-card org-card" data-role="sales-reps">
+                                        <div class="card-body py-2 px-2">
+                                            <div class="chip mb-1"></div>
+                                            <h4 class="h6 mb-0">Πωλητές</h4>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+        <!-- Branch Details (single-page roles for Ασπρόπυργος) -->
+        <section id="branchDetailsAspropyrgos" class="container py-5 d-none">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10">
+                    <div class="mb-3 d-flex align-items-center justify-content-between">
+                        <h2 id="storeAspropyrgosHeader" class="h4 mb-0 clickable" title="Level up"><span class="text-muted">STORE</span> ΑΣΠΡΟΠΥΡΓΟΣ</h2>
+                        <button id="levelUpBtnAspropyrgos" class="btn btn-outline-primary btn-sm" type="button">
+                            <i class="fa-solid fa-arrow-up me-1"></i>Level up
+                        </button>
+                    </div>
+
+                    <div class="row g-4 org-tree">
+                        <!-- Level 1 -->
+                        <div class="col-12 org-level">
+                            <div class="d-flex justify-content-center">
+                                <a class="card card-elevated clickable text-center p-3 reveal-up role-card org-card" data-role="store-manager" style="max-width:520px; width:100%;">
+                                    <div class="card-body">
+                                        <div class="chip mb-2"></div>
+                                        <h3 class="h6 mb-0">Διευθυντής Καταστήματος <small class="text-muted">(Store Manager)</small></h3>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                        <!-- Level 2 (ΑΣΠΡΟΠΥΡΓΟΣ specific) -->
+                        <div class="col-12 col-md-6 org-level">
+                            <div class="org-group accent-warehouse reveal-up">
+                                <div class="group-header">
+                                    <a class="card card-elevated clickable text-center p-3 role-card org-card" data-role="warehouse-lead">
+                                        <div class="card-body py-2 px-2">
+                                            <div class="chip mb-1"></div>
+                                            <h4 class="h6 mb-0">Υπεύθυνος Αποθήκης</h4>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="children">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <a class="card clickable text-center role-card mini" data-role="warehouse-worker">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold">Αποθηκάριος</div>
+                                                    <div class="text-muted small"></div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 org-level">
+                            <div class="org-group accent-sales reveal-up">
+                                <div class="group-header">
+                                    <a class="card card-elevated clickable text-center p-3 role-card org-card" data-role="wholesale-lead">
+                                        <div class="card-body py-2 px-2">
+                                            <div class="chip mb-1"></div>
+                                            <h4 class="h6 mb-0">Υπεύθυνος Χονδρικής</h4>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="children">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <a class="card clickable text-center role-card mini" data-role="sales-reps">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold">Πωλητές</div>
+                                                    <div class="text-muted small"></div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+        
+        <!-- Hidden rich content template for GM -->
+        <div id="gmContent" class="d-none">
+
+            <p><strong>Σκοπός θέσης:</strong> Ηγεσία και συνολική ευθύνη για τη στρατηγική, την ανάπτυξη και την ομαλή λειτουργία της εταιρείας.
+            Διασφαλίζει ότι όλα τα τμήματα λειτουργούν συντονισμένα και σύμφωνα με τους στόχους.</p>
+
+            <h4 class="h5 mt-4">Κύριες αρμοδιότητες</h4>
+            <ul>
+                <li><strong>Καθορισμός στρατηγικής</strong> και επιχειρηματικών στόχων.</li>
+                <li><strong>Εποπτεία</strong> όλων των τμημάτων.</li>
+                <li><strong>Λήψη αποφάσεων</strong> για επενδύσεις, συνεργασίες και ανάπτυξη.</li>
+                <li><strong>Διαχείριση κρίσεων</strong> και σημαντικών πελατειακών θεμάτων.</li>
+                <li><strong>Έγκριση προϋπολογισμών</strong> και δαπανών.</li>
+                <li><strong>Τήρηση budget</strong> τμήματος/υποκαταστήματος.</li>
+            
+                <li><strong>Δείκτες επίδοσης:</strong> Αύξηση τζίρου: <em>+% YoY</em> · Μικτό/EBITDA margin: <em>≥ % στόχος</em>.</li>
+                <li><strong>Συναντήσεις &amp; παρακολούθηση:</strong> Weekly ops meeting με επικεφαλής τμημάτων · Monthly P&amp;L review &amp; KPI dashboard · Quarterly στρατηγικό πλάνο/επανεξέταση.</li>
+                <li><strong>Risk &amp; Συμμόρφωση</strong> και εταιρική διακυβέρνηση.</li>
+                <li><strong>Ηγεσία &amp; Κουλτούρα</strong> – έμπνευση, αξίες, engagement.</li>
+                <li><strong>Έλεγχοι</strong> (εσωτερικοί/εξωτερικοί) και <strong>action plans</strong>.</li>
+                <li><strong>Βελτίωση διαδικασιών</strong> και συνεχής βελτίωση.</li>
+                <li><strong>Αξιολόγηση</strong> και ανάπτυξη ομάδων.</li>
+            </ul>
+
+            <h4 class="h5 mt-4">Βασικές δεξιότητες &amp; προσόντα</h4>
+            <ul>
+                <li><strong>Στρατηγική σκέψη</strong> και αποτελεσματική λήψη αποφάσεων.</li>
+                <li><strong>Εμπειρία</strong> σε διοίκηση επιχειρήσεων.</li>
+                <li><strong>Δεξιότητες επικοινωνίας</strong> και ηγεσίας.</li>
+                <li><strong>Ικανότητα διαχείρισης αλλαγών</strong> και ανθεκτικότητα.</li>
+            </ul>
+        </div>
+
+        <!-- Role templates for Χανιά -->
+        <div id="roleTemplates" class="d-none">
+            <div id="tpl-project-athens">
+                <h4 class="h6 mt-3">Σκοπός θέσης:</h4>
+                <p>Συντονισμός, παρακολούθηση και ολοκλήρωση έργων της εταιρίας στην Αττική, με στόχο την τήρηση χρονοδιαγραμμάτων, προϋπολογισμών και ποιοτικών προδιαγραφών.</p>
+
+                <h4 class="h6 mt-4">Αναφορές &amp; Ιεραρχία</h4>
+                <ul>
+                    <li><strong>Αναφέρεται:</strong> Διευθυντής Υποκαταστήματος / Κεντρική Διοίκηση</li>
+                </ul>
+
+                <h4 class="h6 mt-4">Κύριες αρμοδιότητες</h4>
+                <ul>
+                    <li>Ανεύρεση Έργων</li>
+                    <li>Σχεδιασμός και παρακολούθηση χρονοδιαγραμμάτων έργων</li>
+                    <li>Διασφάλιση υλικών &amp; συντονισμός παραδόσεων</li>
+                    <li>Διαχείριση συνεργείων και υπεργολάβων</li>
+                    <li>Επίβλεψη ποιότητας εργασιών και συμμόρφωση σε κανονισμούς</li>
+                    <li>Αναφορές προόδου και οικονομικής πορείας έργων προς διοίκηση</li>
+                    <li>Διαχείριση ρίσκου (καθυστερήσεις, κόστος, τεχνικά ζητήματα)</li>
+                    <li>Εσωτερικός Πωλητής στο κατάστημα Μενιδίου.</li>
+                </ul>
+
+                <h4 class="h6 mt-4">KPIs</h4>
+                <ul>
+                    <li>Ολοκλήρωση έργων εντός χρονοδιαγράμματος ≥ __%</li>
+                    <li>Deviations από budget ≤ __%</li>
+                    <li>Quality inspection pass rate ≥ __%</li>
+                </ul>
+
+                <h4 class="h6 mt-4">Προσόντα</h4>
+                <ul>
+                    <li>5+ έτη εμπειρίας σε project management (κατασκευές, δομικά υλικά)</li>
+                    <li>Γνώση MS Project ή αντίστοιχων εργαλείων</li>
+                    <li>Δυνατές οργανωτικές και επικοινωνιακές δεξιότητες</li>
+                    <li>Άριστα Ελληνικά, καλή γνώση Αγγλικών</li>
+                </ul>
+
+                <h4 class="h6 mt-4">Out of scope</h4>
+                <ul>
+                    <li>Στρατηγική επιλογή έργων (καθορίζεται από HQ)</li>
+                    <li>Διαπραγμάτευση τελικών όρων με πελάτες (ανήκει στο Commercial Dept)</li>
+                </ul>
+            </div>
+            <div id="tpl-wholesale-lead">
+                <h4 class="h6 mt-3">Σκοπός θέσης:</h4>
+                <p>Ανάπτυξη και εποπτεία του δικτύου χονδρικής της εταιρείας, με στόχο την αύξηση του κύκλου εργασιών B2B, την εξασφάλιση νέων συνεργασιών και τη διατήρηση υψηλού επιπέδου εξυπηρέτησης.</p>
+
+                <h4 class="h6 mt-4">Αναφορές &amp; Ιεραρχία</h4>
+                <ul>
+                    <li><strong>Αναφέρεται:</strong> Διεύθυνση Καταστήματος / Διεύθυνση Πωλήσεων</li>
+                    <li><strong>Υφιστάμενοι:</strong> Πωλητές Χονδρικής</li>
+                </ul>
+
+                <h4 class="h6 mt-4">Κύριες αρμοδιότητες</h4>
+                <ul>
+                    <li>Σχεδιασμός και υλοποίηση στρατηγικής ανάπτυξης χονδρικής</li>
+                    <li>Εποπτεία και καθοδήγηση πωλητών χονδρικής</li>
+                    <li>Διαχείριση μεγάλων πελατών (key accounts) και συνεργασιών με επαγγελματίες (μηχανικούς, εργολάβους, κατασκευαστικές)</li>
+                    <li>Δημιουργία και παρακολούθηση στόχων πωλήσεων B2B</li>
+                    <li>Έλεγχος προσφορών και εμπορικών συμφωνιών πριν την αποστολή</li>
+                    <li>Εξασφάλιση σωστής καταγραφής πελατών και συμφωνιών στο ERP</li>
+                    <li>Παρακολούθηση KPIs (πωλήσεις, νέοι πελάτες, διατήρηση πελατών)</li>
+                    <li>Συνεργασία με Αποθήκη &amp; Logistics για έγκαιρες παραδόσεις</li>
+                    <li>Αναφορές προς Διοίκηση για πρόοδο και ευκαιρίες αγοράς</li>
+                </ul>
+
+                <h4 class="h6 mt-4">Βασικές δεξιότητες &amp; προσόντα</h4>
+                <ul>
+                    <li>5+ έτη εμπειρίας σε πωλήσεις B2B ή χονδρική, ιδανικά σε δομικά υλικά/είδη υγιεινής</li>
+                    <li>Δυνατές ικανότητες διαπραγμάτευσης και ανάπτυξης σχέσεων</li>
+                    <li>Ικανότητα οργάνωσης ομάδας και καθοδήγησης πωλητών</li>
+                    <li>Καλή γνώση ERP (Entersoft/SoftOne) και CRM εργαλείων</li>
+                    <li>Στρατηγική και εμπορική σκέψη</li>
+                    <li>Άριστα Ελληνικά, καλή γνώση Αγγλικών</li>
+                </ul>
+            </div>
+            <div id="tpl-store-manager">
+                <h4 class="h6 mt-3">Σκοπός θέσης</h4>
+                <p>Διασφάλιση της εύρυθμης λειτουργίας του υποκαταστήματος, επίτευξη εμπορικών στόχων και άριστη εμπειρία πελάτη, με πλήρη συμμόρφωση στις πολιτικές και διαδικασίες της εταιρίας.</p>
+
+                <h4 class="h6 mt-4">Αναφορές &amp; Ιεραρχία</h4>
+                <ul>
+                    <li><strong>Αναφέρεται:</strong> Κεντρική Δ/νση</li>
+                    <li><strong>Υφιστάμενοι:</strong> Υπεύθυνος Πωλήσεων, Υπεύθυνος Αποθήκης, Ταμίες, Πωλητές, Βοηθητικό προσωπικό</li>
+                </ul>
+
+                <h4 class="h6 mt-4">Κύριες αρμοδιότητες</h4>
+                <p class="fw-semibold mb-2">Πωλήσεις &amp; Εξυπηρέτηση Πελατών</p>
+                <ul>
+                    <li>Επίτευξη στόχων πωλήσεων &amp; περιθωρίων</li>
+                    <li>Διασφάλιση υψηλού επιπέδου εξυπηρέτησης</li>
+                    <li>Διαχείριση παραπόνων &amp; επίλυση προβλημάτων</li>
+                </ul>
+                <p class="fw-semibold mb-2 mt-3">Λειτουργία Καταστήματος</p>
+                <ul>
+                    <li>Οργάνωση καθημερινής λειτουργίας και ροής εργασιών</li>
+                    <li>Έλεγχος παραλαβών, αποθεμάτων &amp; αποθήκης</li>
+                    <li>Εφαρμογή εμπορικής πολιτικής και προωθητικών ενεργειών</li>
+                </ul>
+                <p class="fw-semibold mb-2 mt-3">Ομάδα &amp; Ανάπτυξη Προσωπικού</p>
+                <ul>
+                    <li>Στελέχωση, εκπαίδευση και αξιολόγηση προσωπικού</li>
+                    <li>Προγραμματισμός βαρδιών και διαχείριση παρουσιών</li>
+                    <li>Coaching για βελτίωση απόδοσης ομάδας</li>
+                </ul>
+                <p class="fw-semibold mb-2 mt-3">Διοικητικά &amp; Οικονομικά</p>
+                <ul>
+                    <li>Παρακολούθηση KPIs καταστήματος (πωλήσεις, stock turns, shrinkage, customer satisfaction)</li>
+                    <li>Έλεγχος ταμείων, εισπράξεων, συμμόρφωση με διαδικασίες</li>
+                    <li>Αναφορές προς κεντρική διοίκηση, συναντήσεις με διοίκηση</li>
+                </ul>
+                <p class="fw-semibold mb-2 mt-3">KPIs (ενδεικτικά)</p>
+                <ul>
+                    <li>Επίτευξη στόχων πωλήσεων: ≥ __%</li>
+                    <li>Customer satisfaction score: ≥ __/10</li>
+                    <li>Stock accuracy: ≥ __%</li>
+                    <li>Shrinkage ≤ __%</li>
+                    <li>Employee turnover ≤ __%</li>
+                </ul>
+
+                <h4 class="h6 mt-4">Προσόντα</h4>
+                <ul>
+                    <li>5–7 έτη εμπειρίας σε λιανική ή χονδρική, ιδανικά σε δομικά υλικά/DIY</li>
+                    <li>Ικανότητες ηγεσίας, οργάνωσης &amp; επικοινωνίας</li>
+                    <li>Γνώση ERP/WMS (π.χ. Entersoft/SoftOne), MS Office/BI reports</li>
+                    <li>Οικονομική σκέψη (budgeting, margin analysis)</li>
+                    <li>Άριστα Ελληνικά, καλές γνώσεις Αγγλικών</li>
+                </ul>
+
+                <h4 class="h6 mt-4">Out of scope</h4>
+                <ul>
+                    <li>Στρατηγική εμπορική πολιτική (καθορίζεται από Κεντρική Διοίκηση)</li>
+                    <li>Marketing campaigns (ορίζονται κεντρικά)</li>
+                    <li>Τελικές αποφάσεις HR (προσλήψεις, απολύσεις – εγκρίνονται από HQ)</li>
+                </ul>
+            </div>
+
+            <div id="tpl-sales-lead">
+                <h4 class="h6 mt-3">Σκοπός θέσης</h4>
+                <p>Διασφάλιση της επίτευξης των πωλησιακών στόχων, καθοδήγηση της ομάδας πωλητών και βελτιστοποίηση της εξυπηρέτησης πελατών.</p>
+
+                <h4 class="h6 mt-4">Κύριες αρμοδιότητες</h4>
+                <ul>
+                    <li>Καθορισμός στόχων και προγραμμάτων πωλήσεων.</li>
+                    <li>Παρακολούθηση απόδοσης πωλητών.</li>
+                    <li>Επίλυση προβλημάτων πελατών.</li>
+                    <li>Ενημέρωση για νέα προϊόντα και υλικά.</li>
+                    <li>Συνεργασία με την αποθήκη για διαθεσιμότητες.</li>
+                    <li>Στήσιμο προϊόντων και εκθεμάτων με έγκριση από την γενική διεύθυνση και διεύθυνση αγορών.</li>
+                    <li>Διαχείρηση δειγμάτων</li>
+                    <li>Διαχείρηση πελατειακών προβλημάτων</li>
+                    <li>Οργάνωση After Sales Service</li>
+                </ul>
+
+                <h4 class="h6 mt-4">Στρατηγική &amp; Σχεδιασμός Πωλήσεων</h4>
+                <ul>
+                    <li>Ετήσιο/μηνιαίο πλάνο πωλήσεων ανά κατηγορία, περιοχή, κανάλι.</li>
+                    <li>Forecasting &amp; S&amp;OP με Αποθήκη/Εισαγωγές για διαθεσιμότητες.</li>
+                </ul>
+
+                <h4 class="h6 mt-4">Ηγεσία Ομάδας</h4>
+                <ul>
+                    <li>Στόχοι ανά άτομο (τζίρος, μικτό %, activity).</li>
+                    <li>Coaching/ride-alongs, 1:1 εβδομαδιαία, πλάνο ανάπτυξης δεξιοτήτων.</li>
+                    <li>Πρόσληψη/ένταξη νέων πωλητών.</li>
+                </ul>
+
+                <h4 class="h6 mt-4">Τιμολόγηση &amp; Προσφορές</h4>
+                <ul>
+                    <li>Τήρηση πολιτικής εκπτώσεων/πιστώσεων.</li>
+                    <li>Έγκριση ειδικών τιμών εντός ορίων.</li>
+                    <li>Χρόνος ανταπόκρισης σε προσφορές (SLA).</li>
+                </ul>
+
+                <h4 class="h6 mt-4">Βασικές δεξιότητες &amp; προσόντα</h4>
+                <ul>
+                    <li>Γνώση αγοράς και προϊόντων.</li>
+                    <li>Εμπειρία σε διαχείριση ομάδας πωλήσεων.</li>
+                    <li>Ικανότητα διαπραγμάτευσης.</li>
+                    <li>Άριστη επικοινωνία.</li>
+                </ul>
+            </div>
+
+            <div id="tpl-warehouse-lead">
+                <h4 class="h6 mt-3">Σκοπός θέσης</h4>
+                <p>Διασφάλιση της σωστής οργάνωσης αποθήκης και της έγκαιρης εκτέλεσης παραδόσεων στους πελάτες και τα καταστήματα.</p>
+
+                <h4 class="h6 mt-4">Κύριες αρμοδιότητες</h4>
+                <ul>
+                    <li>Επίβλεψη παραλαβών και αποστολών.</li>
+                    <li>Οργάνωση και έλεγχος αποθεμάτων.</li>
+                    <li>Σχεδιασμός και παρακολούθηση δρομολογίων.</li>
+                    <li>Συντονισμός με πωλητές για προετοιμασία παραγγελιών.</li>
+                    <li>Διαχείριση τιμολόγησης αποθήκης.</li>
+                </ul>
+
+                <h4 class="h6 mt-4">Έλεγχος Αποθεμάτων</h4>
+                <ul>
+                    <li>Υπεύθυνος Απογραφών: συμφωνίες ERP–φυσικού, διερεύνηση αποκλίσεων.</li>
+                    <li>Παρακολούθηση dead/slow-moving stock και εισηγήσεις εκκαθάρισης.</li>
+                    <li>Στόχοι safety stock ανά κατηγορία, συνεργασία με Αγορές/Εισαγωγές.</li>
+                </ul>
+
+                <h4 class="h6 mt-4">Δρομολόγηση &amp; Διανομές</h4>
+                <ul>
+                    <li>Σχεδιασμός δρομολογίων (TMS/route optimizer), αναθέσεις σε μεταφορικές.</li>
+                    <li>OTIF παραδόσεις, proof of delivery, reverse logistics/επιστροφές.</li>
+                    <li>Διαχείριση κόστους μεταφοράς, καύσιμα, βλάβες/ατυχήματα.</li>
+                </ul>
+
+                <h4 class="h6 mt-4">Άνθρωποι &amp; Ασφάλεια</h4>
+                <ul>
+                    <li>Βάρδιες, 1:1, εκπαίδευση σε WMS/ασφάλεια/κλαρκ.</li>
+                    <li>Υ&amp;Α: μηδενικά ατυχήματα, toolbox talks, συμβάντα &amp; διορθωτικές ενέργειες.</li>
+                    <li>Υπεύθυνος ασφάλειας χώρου.</li>
+                    <li>Αξιολόγηση Ανθρώπων.</li>
+                </ul>
+
+                <h4 class="h6 mt-4">Συστήματα &amp; Δεδομένα</h4>
+                <ul>
+                    <li>Πειθαρχία σε ERP/WMS, scanners, batch/lot tracking.</li>
+                    <li>Dashboards KPIs, εβδομαδιαία και μηνιαία reports.</li>
+                </ul>
+
+                <h4 class="h6 mt-4">Βασικές δεξιότητες &amp; προσόντα</h4>
+                <ul>
+                    <li>Εμπειρία σε logistics και αποθήκες.</li>
+                    <li>Ικανότητα συντονισμού ομάδας.</li>
+                    <li>Οργάνωση και γρήγορη επίλυση προβλημάτων.</li>
+                    <li>Γνώση χειρισμού ERP και εξοπλισμού αποθήκης.</li>
+                </ul>
+            </div>
+
+            <div id="tpl-reception">
+                <p><strong>Σκοπός θέσης:</strong> Πρώτο σημείο επαφής για πελάτες/προμηθευτές. Διασφαλίζει ότι τηλέφωνα, επισκέψεις, μηνύματα και παραλαβές δρομολογούνται σωστά και γρήγορα—χωρίς τηλεφωνικό «πινγκ-πονγκ».</p>
+                <h4 class="h6 mt-3">Αναφορές & ιεραρχία</h4>
+                <p>Αναφέρεται στον Υπεύθυνο Διοικητικής Υποστήριξης & HR. Συνεργάζεται με Πωλήσεις, After-Sales/Service, Αποθήκη/Logistics, Αγορές/Εισαγωγές.</p>
+                <h4 class="h6 mt-3">Front Desk & Επισκέπτες</h4>
+                <ul>
+                    <li>Υποδοχή, καθοδήγηση επισκεπτών στον κατάλληλο χώρο/άτομο, ενημέρωση υπευθύνων, Εντατική Λιανική Πώληση και Χονδρική.</li>
+                </ul>
+                <h4 class="h6 mt-3">Τηλεφωνικό Κέντρο & Επικοινωνία</h4>
+                <ul>
+                    <li>Διαχείριση κλήσεων, σωστή δρομολόγηση ή λήψη μηνύματος με πλήρη στοιχεία (όνομα, θέμα, επείγον).</li>
+                    <li>Παρακολούθηση email «info@ / reception@».</li>
+                    <li>Βασική ενημέρωση πελατών (ωράριο, διευθύνσεις, status παραγγελίας μόνο από ERP).</li>
+                </ul>
+                <h4 class="h6 mt-3">Υποστήριξη Τμημάτων</h4>
+                <ul>
+                    <li>Ρυθμιστές Πελατών.</li>
+                </ul>
+                <h4 class="h6 mt-3">Ασφάλεια & Συμμόρφωση</h4>
+                <ul>
+                    <li>Τήρηση διαδικασιών έκτακτης ανάγκης (εκκένωση, πρώτες βοήθειες, έντυπα).</li>
+                    <li>GDPR: διακριτικός χειρισμός προσωπικών δεδομένων/παραπόνων.</li>
+                </ul>
+            </div>
+            <div id="tpl-sales-reps">
+                <p class="mb-2"><strong>Πωλητής – Καθοδήγηση πελατών</strong></p>
+                <h4 class="h6 mt-0">Σκοπός θέσης</h4>
+                <p>Εξυπηρέτηση πελατών, παροχή συμβουλών και καθοδήγηση στην επιλογή των κατάλληλων προϊόντων.</p>
+                <h4 class="h6 mt-3">Κύριες αρμοδιότητες</h4>
+                <ul>
+                    <li>Υποδοχή και εξυπηρέτηση πελατών.</li>
+                    <li>Καθοδήγηση σε προϊόντα βάσει αναγκών και προϋπολογισμού.</li>
+                    <li>Παρουσίαση εναλλακτικών προτάσεων.</li>
+                    <li>Συνεργασία με αποθήκη για έλεγχο διαθεσιμότητας.</li>
+                    <li>Δημιουργία προσφορών και αποστολή στους πελάτες.</li>
+                    <li>Καταχώριση παραγγελιών στο ERP.</li>
+                    <li>Επικοινωνία με προμηθευτές για παραγγελίες.</li>
+                    <li>Παρακολούθηση χρόνων παράδοσης.</li>
+                    <li>Παρουσίαση και πώληση ειδών υγιεινής και πλακιδίων.</li>
+                    <li>Δημιουργία συνδυασμών και προτάσεων για τον πελάτη.</li>
+                    <li>Στήσιμο προϊόντων και εκθεμάτων.</li>
+                    <li>Συμμετοχή σε παραλαβές και απογραφές.</li>
+                    <li>Διαμόρφωση πιστώσεων εγκεκριμένο από τον υπεύθυνο πωλήσεων.</li>
+                    <li>Τακτοποίηση και επανατακτοποίηση Εκθεσιακών Προϊόντων.</li>
+                    <li>Καθαριότητα γραφείου και τακτοποίηση χώρου εργασίας.</li>
+                    <li>Υπεύθυνος για την άμεση αποστολή των παραγγελιών στους πελάτες.</li>
+                    <li>Υπεύθυνος για την πλήρη καταγραφή των πελατών στο ERP.</li>
+                </ul>
+                <h4 class="h6 mt-3">Βασικές δεξιότητες & προσόντα</h4>
+                <ul>
+                    <li>Γνώση προϊόντων και τεχνικών χαρακτηριστικών.</li>
+                    <li>Ικανότητα επικοινωνίας και πειθούς.</li>
+                    <li>Προσανατολισμός στην εξυπηρέτηση πελάτη.</li>
+                </ul>
+            </div>
+            <div id="tpl-warehouse-worker">
+                <p><strong>Σκοπός θέσης:</strong> Διαχείριση παραλαβών, τακτοποίησης και προετοιμασίας παραγγελιών στην αποθήκη ειδών υγιεινής.</p>
+                <h4 class="h6 mt-3">Κύριες αρμοδιότητες</h4>
+                <ul>
+                    <li>Παραλαβή και έλεγχος προϊόντων.</li>
+                    <li>Τακτοποίηση στην αποθήκη.</li>
+                    <li>Προετοιμασία παραγγελιών για παράδοση.</li>
+                    <li>Έλεγχος ελλείψεων.</li>
+                    <li>Συλλογή προϊόντων σύμφωνα με τα δελτία παραγγελίας ή τις οδηγίες από το ERP.</li>
+                    <li>Έλεγχος κωδικών, ποσοτήτων και κατάστασης προϊόντων πριν τη συσκευασία.</li>
+                    <li>Προετοιμασία παραγγελιών για φόρτωση (παλετοποίηση, σήμανση, ζελατίνα).</li>
+                    <li>Χρήση scanner ή χειροκίνητων λιστών συλλογής.</li>
+                    <li>Συνεργασία με το τμήμα αποστολών για τη σωστή φόρτωση.</li>
+                    <li>Συμμετοχή σε απογραφές αποθήκης.</li>
+                    <li>Τήρηση κανόνων ασφαλείας και καθαριότητας στον χώρο εργασίας.</li>
+                </ul>
+                <h4 class="h6 mt-3">Ασφάλεια & Υγιεινή</h4>
+                <ul>
+                    <li>Χρήση ΜΑΠ, σωστός χειρισμός βαριών/εύθραυστων (νιπτήρες, λεκανές, μπαταρίες).</li>
+                    <li>Άμεση αναφορά συμβάντων/κινδύνων.</li>
+                </ul>
+                <h4 class="h6 mt-3">Βασικές δεξιότητες & προσόντα</h4>
+                <ul>
+                    <li>Φυσική αντοχή και τήρηση κανόνων ασφάλειας.</li>
+                    <li>Οργάνωση αποθήκης.</li>
+                    <li>Χρήση ERP και scanner.</li>
+                </ul>
+
+                <hr class="my-4">
+                <h4 class="h6 mt-3">Χειριστής Κλαρκ</h4>
+                <p><strong>Σκοπός θέσης:</strong> Ασφαλής και αποδοτικός χειρισμός περονοφόρου ανυψωτικού (κλαρκ) για φόρτωση, εκφόρτωση, μεταφορά και τακτοποίηση εμπορευμάτων, διασφαλίζοντας την ακεραιότητα των προϊόντων και την τήρηση των διαδικασιών αποθήκης.</p>
+
+                <h5 class="h6 mt-3">Κύριες αρμοδιότητες</h5>
+                <ul>
+                    <li>Χειρισμός κλαρκ για φόρτωση και εκφόρτωση φορτηγών.</li>
+                    <li>Μεταφορά και τακτοποίηση προϊόντων σε αποθηκευτικούς χώρους.</li>
+                    <li>Συνεργασία με την ομάδα αποθήκης για την εκτέλεση παραγγελιών.</li>
+                    <li>Έλεγχος κλαρκ πριν και μετά τη χρήση (καύσιμα, λάδια, φθορές).</li>
+                    <li>Τήρηση κανόνων ασφαλείας και διαδικασιών εργασίας.</li>
+                    <li>Συμμετοχή σε παραλαβές, απογραφές και γενικές εργασίες αποθήκης όταν απαιτείται.</li>
+                </ul>
+
+                <h5 class="h6 mt-3">Λειτουργία &amp; χειρισμός</h5>
+                <ul>
+                    <li>Φόρτωση/εκφόρτωση φορτηγών, put-away και ανατροφοδοτήσεις ραφιών.</li>
+                    <li>Μεταφορά παλετών σε καθορισμένα slots, τήρηση FIFO/FEFO.</li>
+                    <li>Ταξίδι με τις περόνες χαμηλά (≈10–15 εκ.), χρήση κόρνας σε τυφλά σημεία, όρια ταχύτητας.</li>
+                </ul>
+
+                <h5 class="h6 mt-3">Έλεγχοι &amp; συντήρηση πρώτου επιπέδου</h5>
+                <ul>
+                    <li>Προ-βάρδιας checklist: περόνες/αλυσίδες/ιστός, υδραυλικά, φρένα, ζώνη, φώτα/ηχητικά, ελαστικά, διαρροές, πίνακας οργάνων.</li>
+                    <li>Μπαταρία/φόρτιση ή LPG/πετρέλαιο σύμφωνα με διαδικασία (PPE, εξαερισμός).</li>
+                    <li>Άμεση αναφορά βλάβης – όχι χρήση ελαττωματικού οχήματος.</li>
+                </ul>
+
+                <h5 class="h6 mt-3">Ασφάλεια &amp; συμμόρφωση</h5>
+                <ul>
+                    <li>Τήρηση load chart/κέντρου βάρους – όχι υπερφόρτωση.</li>
+                    <li>Spotter όταν το οπτικό πεδίο είναι περιορισμένο, αυστηρός διαχωρισμός πεζών.</li>
+                    <li>Σωστό parking: περόνες κάτω, χειρόφρενο, key off/plug off.</li>
+                </ul>
+
+                <h5 class="h6 mt-3">Βασικές δεξιότητες &amp; προσόντα</h5>
+                <ul>
+                    <li>Άδεια χειριστή περονοφόρου (σε ισχύ).</li>
+                    <li>Εμπειρία σε χειρισμό κλαρκ (αντίθετης διεύθυνσης, reach truck ή counterbalance).</li>
+                    <li>Γνώση κανόνων ασφαλείας αποθήκης.</li>
+                    <li>Προσοχή στη λεπτομέρεια και υπευθυνότητα.</li>
+                    <li>Ικανότητα συνεργασίας σε ομάδα.</li>
+                </ul>
             </div>
         </div>
 
-        <!-- Layout: Chart + Info Panel -->
-        <div class="row g-3">
-            <div class="col-12 col-lg-9 col-xl-9">
-                <div id="orgchart" class="orgchart" aria-label="Οργανόγραμμα"></div>
+        <!-- Additional Role Content Templates (Ρέθυμνο) -->
+        <div class="d-none">
+            <div id="tpl-accounting-lead">
+                <h4 class="h6 mt-3">Σκοπός θέσης</h4>
+                <p>Διαχείριση οικονομικών, μισθοδοσίας και διοικητικών διαδικασιών ώστε να διασφαλίζεται η ομαλή λειτουργία της επιχείρησης.</p>
+                <h4 class="h6 mt-3">Κύριες αρμοδιότητες</h4>
+                <ul>
+                    <li>Διαχείριση πληρωμών και εισπράξεων.</li>
+                    <li>Παρακολούθηση μισθοδοσίας και αδειών.</li>
+                    <li>Επικοινωνία με εξωτερικό λογιστή.</li>
+                    <li>Καταχώριση και έλεγχος οικονομικών εγγράφων.</li>
+                    <li>Διαχείριση συμβάσεων και αρχείων προσωπικού.</li>
+                    <li>Διαχείριση προμηθειών λειτουργίας (γενικά έξοδα, αναλώσιμα, υπηρεσίες).</li>
+                    <li>Reporting προς Διεύθυνση Υποκαταστήματος (μηνιαίο P&amp;L snapshot, αποκλίσεις budget).</li>
+                    <li>Στελέχωση: αγγελίες, προεπιλογή, συνεντεύξεις με managers, προτάσεις πρόσληψης.</li>
+                    <li>Onboarding/Offboarding: συμβάσεις, ένταξη, εξοπλισμός/λογαριασμοί, exit.</li>
+                    <li>Χρονοπαρουσία &amp; άδειες: πολιτικές, έλεγχος, ενημέρωση μισθοδοσίας.</li>
+                    <li>Απόδοση &amp; ανάπτυξη: αξιολογήσεις, ατομικοί στόχοι, εκπαιδεύσεις/πιστοποιήσεις.</li>
+                    <li>Εργασιακές σχέσεις: πολιτικές, πειθαρχικά, διαχείριση παραπόνων.</li>
+                    <li>Παροχές: προτάσεις παροχών, ομαδική ασφάλιση (αν υπάρχει).</li>
+                    <li>Εργατική νομοθεσία, GDPR (φάκελοι προσωπικού, δικαιώματα πρόσβασης), Υ&amp;Α, και ISO.</li>
+                    <li>Τήρηση SOPs, ενημέρωση πολιτικών, υποστήριξη ελέγχων (φορολογικοί/εργατικοί).</li>
+                </ul>
+                <h4 class="h6 mt-3">Βασικές δεξιότητες &amp; προσόντα</h4>
+                <ul>
+                    <li>Γνώση λογιστικών διαδικασιών.</li>
+                    <li>Εμπειρία σε μισθοδοσία.</li>
+                    <li>Οργάνωση και εμπιστευτικότητα.</li>
+                    <li>Καλή χρήση Η/Υ και ERP.</li>
+                </ul>
             </div>
-            <div class="col-12 col-lg-3 col-xl-3">
-                <aside class="info-panel" aria-live="polite">
-                    <div class="info-panel-header d-flex align-items-center justify-content-between">
-                        <h2 class="h5 mb-0"><i class="fa-solid fa-circle-info me-2"></i>Πληροφορίες Ρόλου</h2>
-                        <button id="clearInfo" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-xmark"></i></button>
+
+            <div id="tpl-external-accountant">
+                <h4 class="h6 mt-3">Σκοπός θέσης</h4>
+                <p>Παροχή λογιστικών και φοροτεχνικών υπηρεσιών στην εταιρεία, διασφαλίζοντας τη συμμόρφωση με την ισχύουσα νομοθεσία και την ακρίβεια των οικονομικών στοιχείων.</p>
+                <h4 class="h6 mt-3">Κύριες αρμοδιότητες</h4>
+                <ul>
+                    <li>Καταχώριση και έλεγχος παραστατικών αγορών, πωλήσεων και δαπανών.</li>
+                    <li>Υποβολή φορολογικών δηλώσεων (ΦΠΑ, εισόδημα, παρακρατούμενοι φόροι).</li>
+                    <li>Σύνταξη και υποβολή μισθοδοσίας και ασφαλιστικών εισφορών (ΕΦΚΑ).</li>
+                    <li>Τήρηση και ενημέρωση βιβλίων σύμφωνα με τα Ελληνικά Λογιστικά Πρότυπα.</li>
+                    <li>Παροχή συμβουλών για φορολογική βελτιστοποίηση.</li>
+                    <li>Υποστήριξη σε φορολογικούς ελέγχους.</li>
+                    <li>Συνεργασία με τον υπεύθυνο διοικητικής υποστήριξης για οικονομικές αναφορές.</li>
+                </ul>
+                <h4 class="h6 mt-3">Βασικές δεξιότητες &amp; προσόντα</h4>
+                <ul>
+                    <li>Πτυχίο Λογιστικής, Οικονομικών ή συναφούς αντικειμένου.</li>
+                    <li>Άδεια ασκήσεως επαγγέλματος λογιστή-φοροτεχνικού (Α΄ ή Β΄ τάξης).</li>
+                    <li>Πολύ καλή γνώση φορολογικής και εργατικής νομοθεσίας.</li>
+                    <li>Εμπειρία στη χρήση λογιστικών προγραμμάτων.</li>
+                    <li>Ακρίβεια, εμπιστευτικότητα και τήρηση προθεσμιών.</li>
+                </ul>
+            </div>
+
+            <div id="tpl-assistant-accountant">
+                <h4 class="h6 mt-3">Σκοπός θέσης</h4>
+                <p>Υποστήριξη του Λογιστηρίου στην καταχώριση, οργάνωση και παρακολούθηση οικονομικών συναλλαγών, με στόχο την ορθή τήρηση των λογιστικών βιβλίων και τη συμμόρφωση με τις φορολογικές υποχρεώσεις της εταιρείας.</p>
+                <h4 class="h6 mt-3">Αναφορές &amp; Ιεραρχία</h4>
+                <ul>
+                    <li>Αναφέρεται: Υπεύθυνος Λογιστηρίου / Οικονομικός Διευθυντής</li>
+                    <li>Υφιστάμενοι: —</li>
+                </ul>
+                <h4 class="h6 mt-3">Κύριες αρμοδιότητες</h4>
+                <ul>
+                    <li>Καταχώριση παραστατικών αγορών, πωλήσεων, εξόδων στο ERP.</li>
+                    <li>Υποστήριξη στην προετοιμασία μισθοδοσίας &amp; ασφαλιστικών δηλώσεων.</li>
+                    <li>Συμφωνία τραπεζικών λογαριασμών και ταμείου.</li>
+                    <li>Έλεγχος και αρχειοθέτηση λογιστικών εγγράφων.</li>
+                    <li>Παρακολούθηση υπολοίπων πελατών &amp; προμηθευτών.</li>
+                    <li>Υποστήριξη στη σύνταξη φορολογικών δηλώσεων και περιοδικών ΦΠΑ.</li>
+                    <li>Συνεργασία με εξωτερικούς φορείς (ΔΟΥ, ΙΚΑ, τράπεζες).</li>
+                </ul>
+                <h4 class="h6 mt-3">Βασικές δεξιότητες &amp; προσόντα</h4>
+                <ul>
+                    <li>Πτυχίο Λογιστικής/Οικονομικών (ΑΕΙ/ΤΕΙ ή ΙΕΚ).</li>
+                    <li>Εμπειρία 1–3 έτη σε λογιστικό γραφείο ή λογιστήριο εταιρείας.</li>
+                    <li>Καλή γνώση ERP (Entersoft, SoftOne) και MS Excel.</li>
+                    <li>Βασική γνώση φορολογικής και εργατικής νομοθεσίας.</li>
+                    <li>Οργανωτικότητα, συνέπεια και προσοχή στη λεπτομέρεια.</li>
+                </ul>
+            </div>
+
+            <div id="tpl-payroll-manager">
+                <h4 class="h6 mt-3">Σκοπός θέσης</h4>
+                <p>Διασφάλιση της ορθής και έγκαιρης εκτέλεσης της μισθοδοσίας του προσωπικού, σύμφωνα με την εργατική και ασφαλιστική νομοθεσία, τις συλλογικές συμβάσεις και τις εσωτερικές πολιτικές της εταιρείας.</p>
+                <h4 class="h6 mt-3">Αναφορές &amp; Ιεραρχία</h4>
+                <ul>
+                    <li>Αναφέρεται: Οικονομικός Διευθυντής / Διεύθυνση Ανθρώπινου Δυναμικού</li>
+                    <li>Υφιστάμενοι: Βοηθός Λογιστή (σε θέματα μισθοδοσίας)</li>
+                </ul>
+                <h4 class="h6 mt-3">Κύριες αρμοδιότητες</h4>
+                <ul>
+                    <li>Υπολογισμός μισθών, επιδομάτων, υπερωριών και κρατήσεων.</li>
+                    <li>Έκδοση και αποστολή αναλυτικών εκκαθαριστικών μισθοδοσίας.</li>
+                    <li>Τήρηση και ενημέρωση αρχείου προσωπικού (προσλήψεις, αποχωρήσεις, άδειες, ασθένειες).</li>
+                    <li>Υποβολή δηλώσεων σε ΕΦΚΑ, ΑΠΔ, ΕΡΓΑΝΗ και λοιπούς φορείς.</li>
+                    <li>Παρακολούθηση εργατικής και ασφαλιστικής νομοθεσίας.</li>
+                    <li>Συνεργασία με HR για συμβάσεις εργασίας και αλλαγές σε όρους απασχόλησης.</li>
+                    <li>Συμφωνία μισθολογικών εξόδων με το λογιστήριο.</li>
+                </ul>
+                <h4 class="h6 mt-3">Βασικές δεξιότητες &amp; προσόντα</h4>
+                <ul>
+                    <li>3–5 έτη εμπειρίας σε μισθοδοσία.</li>
+                    <li>Πολύ καλή γνώση εργατικής &amp; ασφαλιστικής νομοθεσίας.</li>
+                    <li>Χρήση ERP/Payroll συστημάτων (Entersoft HRM, Epsilon Net ή αντίστοιχα).</li>
+                    <li>Εμπειρία σε MS Excel για ελέγχους/αναφορές.</li>
+                    <li>Οργάνωση, προσοχή στη λεπτομέρεια, εμπιστευτικότητα.</li>
+                </ul>
+            </div>
+
+            <div id="tpl-after-sales-tech">
+                <h4 class="h6 mt-3">Σκοπός θέσης</h4>
+                <p>Διασφάλιση της άμεσης και αποτελεσματικής υποστήριξης πελατών μετά την πώληση, με στόχο την ικανοποίηση, την επίλυση προβλημάτων και τη διατήρηση μακροχρόνιων συνεργασιών.</p>
+                <h4 class="h6 mt-3">Κύριες αρμοδιότητες</h4>
+                <ul>
+                    <li>Οργάνωση και παρακολούθηση αιτημάτων service και επισκευών.</li>
+                    <li>Διαχείριση εγγυήσεων και αντικαταστάσεων προϊόντων.</li>
+                    <li>Επικοινωνία με προμηθευτές για ανταλλακτικά και τεχνικές οδηγίες.</li>
+                    <li>Καταγραφή και ανάλυση παραπόνων πελατών.</li>
+                    <li>Δημιουργία αναφορών για επαναλαμβανόμενα προβλήματα και προτάσεις βελτίωσης.</li>
+                    <li>Μετάβαση - καταγραφή και διαχείριση ελαττωμάτων.</li>
+                    <li>Έλεγχος και διάγνωση προβλημάτων προϊόντων.</li>
+                    <li>Επισκευή ή αντικατάσταση εξαρτημάτων.</li>
+                    <li>Καταγραφή εργασιών και ανταλλακτικών που χρησιμοποιήθηκαν.</li>
+                    <li>Συμμετοχή σε εκπαιδεύσεις για νέα προϊόντα.</li>
+                    <li>Παροχή οδηγιών χρήσης και συντήρησης σε πελάτες.</li>
+                </ul>
+                <h4 class="h6 mt-3">Βασικές δεξιότητες &amp; προσόντα</h4>
+                <ul>
+                    <li>Τεχνική γνώση των προϊόντων της εταιρείας.</li>
+                    <li>Οργανωτικές δεξιότητες και ικανότητα συντονισμού.</li>
+                    <li>Καλή επικοινωνία και διαχείριση παραπόνων.</li>
+                    <li>Χρήση ERP και CRM συστημάτων.</li>
+                    <li>Προσανατολισμός στην ικανοποίηση του πελάτη.</li>
+                </ul>
+            </div>
+
+            <div id="tpl-procurement-head">
+                <h4 class="h6 mt-3">Σκοπός θέσης</h4>
+                <p>Ενιαία στρατηγική και εκτέλεση αγορών για εξωτερικό &amp; εσωτερικό, ώστε η εταιρεία να αγοράζει τα σωστά υλικά, στη σωστή τιμή, στον σωστό χρόνο, με ελεγχόμενο ρίσκο και υγιές cash flow.</p>
+                <h4 class="h6 mt-3">Αναφορές &amp; Ιεραρχία</h4>
+                <ul>
+                    <li>Αναφέρεται: Διεύθυνση Υποκαταστήματος / Κεντρική Δ/νση (ανά δομή).</li>
+                    <li>Υφιστάμενοι: Υπεύθυνος Εισαγωγών, Υπεύθυνος Προμηθειών Εσωτερικού, Buyers, Expeditor/Planner, Procurement Analyst.</li>
+                </ul>
+                <h4 class="h6 mt-3">Κύριες αρμοδιότητες</h4>
+                <h5 class="h6 mt-3">Κοστολόγηση</h5>
+                <ul>
+                    <li>Δημιουργία Τιμοκατάλογων, Τιμών Πώλησης.</li>
+                </ul>
+                <h5 class="h6 mt-3">Στρατηγική &amp; Sourcing</h5>
+                <ul>
+                    <li>Κατηγοριοποίηση δαπανών (spend), RFQs/RFIs, benchmarking τιμών.</li>
+                    <li>Συμβόλαια/πλαίσια με προμηθευτές, όροι πληρωμής, Incoterms, ρήτρες.</li>
+                    <li>Rebates, marketing coop, ετήσιες συμφωνίες τιμών.</li>
+                </ul>
+                <h5 class="h6 mt-3">Διαχείριση Προμηθευτών</h5>
+                <ul>
+                    <li>Επιλογή/αξιολόγηση (qualify), audits, SLA/OTIF, scorecards ανά τρίμηνο.</li>
+                    <li>Δεύτερες πηγές (dual sourcing) για κρίσιμα υλικά.</li>
+                </ul>
+                <h5 class="h6 mt-3">Σχεδιασμός Αποθεμάτων</h5>
+                <ul>
+                    <li>Στόχοι safety stock, MOQ, lead times, stock turns.</li>
+                    <li>Μείωση dead/slow-moving stock με δράσεις εκκαθάρισης.</li>
+                </ul>
+                <h5 class="h6 mt-3">Εισαγωγές &amp; Logistics</h5>
+                <ul>
+                    <li>Συντονισμός με μεταφορικές/εκτελωνιστές, consolidation φορτίων.</li>
+                    <li>Επιλογή τρόπου μεταφοράς βάσει κόστους/χρόνου/ρίσκου.</li>
+                </ul>
+                <h5 class="h6 mt-3">Συνεργασίες εντός εταιρείας</h5>
+                <ul>
+                    <li>Sales/Marketing για προβλέψεις &amp; promos.</li>
+                    <li>Παραγωγή/Εργαστήριο για πρώτες ύλες &amp; τεχνικές προδιαγραφές.</li>
+                    <li>Finance για cash flow, πιστωτικά όρια, PPV.</li>
+                    <li>Αποθήκη για χωρητικότητες &amp; κύκλους παραλαβής.</li>
+                </ul>
+                <h5 class="h6 mt-3">Συμμόρφωση &amp; Ρίσκο</h5>
+                <ul>
+                    <li>GDPR στα συμβόλαια, Υ&amp;Α, βασικά ESG κριτήρια όπου απαιτούνται.</li>
+                    <li>Risk register (τιμή/ισοτιμίες/μεταφορές) με mitigation plans.</li>
+                </ul>
+                <h5 class="h6 mt-3">KPIs (να μπουν στόχοι)</h5>
+                <ul>
+                    <li>Εξοικονόμηση επί spend: ≥ __% (net of rebates/PPV).</li>
+                    <li>OTIF Inbound: ≥ __%.</li>
+                    <li>Lead time κατά κατηγορία: ≤ __ ημέρες.</li>
+                    <li>Stock turns: ≥ __ / Dead stock ≤ __% αποθέματος.</li>
+                    <li>DSO/Days Payables alignment με στόχους cash flow.</li>
+                    <li>Διπλές πηγές στα κρίσιμα Α υλικά: ≥ __%.</li>
+                </ul>
+                <h5 class="h6 mt-3">Όρια εγκρίσεων</h5>
+                <ul>
+                    <li>Έγκριση αγορών έως €____/PO.</li>
+                    <li>Υπογραφή συμβολαίων έως €____/έτος ανά προμηθευτή.</li>
+                    <li>Εκπτώσεις/πιστωτικά rebates: πλαίσιο __%.</li>
+                </ul>
+                <h4 class="h6 mt-3">Προσόντα</h4>
+                <ul>
+                    <li>7–10+ έτη σε προμήθειες/εισαγωγές, ιδανικά σε υλικά οικοδομής/βιομηχανία.</li>
+                    <li>Δυνατό ERP (π.χ. SoftOne), Excel/BI, βασικά e-sourcing εργαλεία.</li>
+                    <li>Άριστα Ελληνικά/Αγγλικά, διαπραγμάτευση/συμβόλαια.</li>
+                    <li>Οικονομική σκέψη (PPV, TCO, cash-to-cash).</li>
+                </ul>
+                <h4 class="h6 mt-3">Εργαλεία &amp; Διακυβέρνηση</h4>
+                <ul>
+                    <li>Μηνιαίο Supplier Scorecard, τριμηνιαία αναθεώρηση τιμών.</li>
+                    <li>Rolling 12-μηνη πρόβλεψη ζήτησης με Sales/Production.</li>
+                    <li>SOPs για RFQ→PO→Παραλαβή→Τιμολόγηση→Rebate tracking.</li>
+                </ul>
+                <h4 class="h6 mt-3">Ελάχιστη στελέχωση</h4>
+                <ul>
+                    <li>Procurement Manager (Εσωτερικό) – τοπικοί προμηθευτές.</li>
+                    <li>Imports Manager – εξωτερικό, Incoterms/μεταφορές.</li>
+                    <li>Buyer(s) – εκτέλεση PO &amp; διαπραγμάτευση.</li>
+                    <li>Expeditor/Planner – follow-ups, ETA, καθυστερήσεις.</li>
+                    <li>Procurement Analyst – spend, KPIs, dashboards.</li>
+                </ul>
+                <p class="text-muted small">Out of scope: Εμπορική τιμολόγηση προς πελάτες, τελωνειακές δηλώσεις ιδιοχείρως, νομικές γνωμοδοτήσεις.</p>
+            </div>
+
+            <div id="tpl-imports-manager">
+                <h4 class="h6 mt-3">Σκοπός θέσης</h4>
+                <p>Διαχείριση όλων των διαδικασιών εισαγωγής προϊόντων, από την παραγγελία μέχρι την παραλαβή και τον έλεγχο, ώστε να εξασφαλίζεται η έγκαιρη και ορθή τροφοδοσία της επιχείρησης.</p>
+                <h4 class="h6 mt-3">Κύριες αρμοδιότητες</h4>
+                <ul>
+                    <li>Οργάνωση και παρακολούθηση εισαγωγών από εξωτερικό.</li>
+                    <li>Συνεννόηση με μεταφορικές και τελωνειακούς πράκτορες.</li>
+                    <li>Καταχώριση παραγγελιών και έλεγχος τιμών.</li>
+                    <li>Επικοινωνία με καταστήματα για παραδόσεις.</li>
+                    <li>Διαχείριση επιστροφών, σπασμένων ή ελαττωματικών προϊόντων.</li>
+                </ul>
+                <h4 class="h6 mt-3">Βασικές δεξιότητες &amp; προσόντα</h4>
+                <ul>
+                    <li>Γνώση διαδικασιών εισαγωγής και μεταφορών.</li>
+                    <li>Οργάνωση και προσοχή στη λεπτομέρεια.</li>
+                    <li>Ικανότητα συντονισμού πολλών παραγγελιών.</li>
+                    <li>Καλή γνώση Η/Υ και ERP.</li>
+                </ul>
+            </div>
+
+            <div id="tpl-driver">
+                <h4 class="h6 mt-3">Σκοπός θέσης</h4>
+                <p>Ασφαλής και έγκαιρη μεταφορά εμπορευμάτων από τις εγκαταστάσεις της εταιρείας προς τα τελικά σημεία παράδοσης, με τήρηση όλων των κανονισμών οδικής ασφάλειας και των διαδικασιών της εταιρείας.</p>
+                <h4 class="h6 mt-3">Αναφορές &amp; Ιεραρχία</h4>
+                <ul>
+                    <li>Αναφέρεται: Υπεύθυνος Αποστολών / Διευθυντής Καταστήματος</li>
+                    <li>Υφιστάμενοι: —</li>
+                </ul>
+                <h4 class="h6 mt-3">Κύριες αρμοδιότητες</h4>
+                <ul>
+                    <li>Φόρτωση, ασφαλής μεταφορά και εκφόρτωση εμπορευμάτων σε πελάτες ή εργοτάξια.</li>
+                    <li>Τήρηση προγραμματισμένων δρομολογίων και χρονοδιαγραμμάτων παραδόσεων.</li>
+                    <li>Έλεγχος συνοδευτικών εγγράφων (δελτία αποστολής, τιμολόγια, CMR όπου απαιτείται).</li>
+                    <li>Επιθεώρηση οχήματος πριν και μετά τη μεταφορά (καύσιμα, ελαστικά, φώτα, ασφάλεια φορτίου, καθαριότητα).</li>
+                    <li>Συνεργασία με Αποθήκη και Υπεύθυνο Αποστολών για την ακριβή εκτέλεση παραγγελιών.</li>
+                    <li>Άμεση ενημέρωση για καθυστερήσεις, προβλήματα στο δρόμο ή ζημιές προϊόντων.</li>
+                    <li>Τήρηση κανόνων οδικής κυκλοφορίας και εταιρικών πολιτικών ασφαλείας.</li>
+                </ul>
+                <h4 class="h6 mt-3">Βασικές δεξιότητες &amp; προσόντα</h4>
+                <ul>
+                    <li>Επαγγελματική άδεια οδήγησης (Γ’ κατηγορίας ή ανώτερη, ανάλογα το όχημα).</li>
+                    <li>Εμπειρία σε μεταφορές / διανομές εμπορευμάτων.</li>
+                    <li>Γνώση κανόνων οδικής ασφάλειας και βασική μηχανική γνώση οχήματος.</li>
+                    <li>Ικανότητα επικοινωνίας με πελάτες κατά την παράδοση.</li>
+                    <li>Υπευθυνότητα, συνέπεια, ευγένεια και επαγγελματική συμπεριφορά.</li>
+                </ul>
+            </div>
+
+            <div id="tpl-offers-projects">
+                <h4 class="h6 mt-3">Σκοπός θέσης</h4>
+                <p>Ανάληψη και διαχείριση της διαδικασίας κοστολόγησης και δημιουργίας προσφορών για έργα, με στόχο την ανταγωνιστικότητα και την κερδοφορία της εταιρείας.</p>
+                <h4 class="h6 mt-3">Κύριες αρμοδιότητες</h4>
+                <ul>
+                    <li>Λήψη τεχνικών προδιαγραφών από πελάτες ή τμήμα πωλήσεων.</li>
+                    <li>Υπολογισμός κόστους υλικών, εργασίας και μεταφοράς.</li>
+                    <li>Δημιουργία και αποστολή αναλυτικών προσφορών.</li>
+                    <li>Συνεργασία με τμήμα παραγωγής για έλεγχο τεχνικής εφικτότητας.</li>
+                    <li>Παρακολούθηση και επικαιροποίηση προσφορών.</li>
+                    <li>Υποστήριξη πωλητών κατά τη διαπραγμάτευση με πελάτες.</li>
+                </ul>
+                <h4 class="h6 mt-3">Βασικές δεξιότητες &amp; προσόντα</h4>
+                <ul>
+                    <li>Καλή γνώση τεχνικών υλικών και κατασκευών.</li>
+                    <li>Ικανότητα ακριβούς κοστολόγησης.</li>
+                    <li>Προσοχή στη λεπτομέρεια.</li>
+                    <li>Καλή χρήση ERP και MS Excel.</li>
+                    <li>Επικοινωνιακές δεξιότητες.</li>
+                </ul>
+            </div>
+
+            <div id="tpl-production-lab">
+                <h4 class="h6 mt-3">Σκοπός θέσης</h4>
+                <p>Οργάνωση και επίβλεψη των διαδικασιών παραγωγής, διασφαλίζοντας την τήρηση των προδιαγραφών ποιότητας και χρόνων παράδοσης.</p>
+                <h4 class="h6 mt-3">Κύριες αρμοδιότητες</h4>
+                <ul>
+                    <li>Ποιοτικός Έλεγχος όλων των Υλικών που είναι προς Παράδοση.</li>
+                    <li>Καθημερινός συντονισμός εργασιών εργαστηρίου.</li>
+                    <li>Ανάθεση εργασιών σε χειριστές και τεχνικούς.</li>
+                    <li>Έλεγχος προόδου και ποιότητας κατασκευών.</li>
+                    <li>Διασφάλιση διαθεσιμότητας υλικών και εργαλείων.</li>
+                    <li>Συνεργασία με Υπεύθυνο Προσφορών για τεχνικά ζητήματα.</li>
+                    <li>Τήρηση αρχείων παραγωγής και αναφορών.</li>
+                </ul>
+                <h4 class="h6 mt-3">Βασικές δεξιότητες &amp; προσόντα</h4>
+                <ul>
+                    <li>Εμπειρία σε συντονισμό ομάδας παραγωγής.</li>
+                    <li>Τεχνική γνώση επεξεργασίας υλικών.</li>
+                    <li>Οργανωτικές δεξιότητες.</li>
+                    <li>Προσανατολισμός στην ποιότητα.</li>
+                    <li>Ικανότητα διαχείρισης χρόνου και προτεραιοτήτων.</li>
+                </ul>
+            </div>
+
+            <div id="tpl-production-lead">
+                <h4 class="h6 mt-3">Σκοπός θέσης</h4>
+                <p>Οργάνωση και παρακολούθηση των εργασιών παραγωγής και επεξεργασίας υλικών, με στόχο την ποιότητα και την έγκαιρη παράδοση.</p>
+                <h4 class="h6 mt-3">Κύριες αρμοδιότητες</h4>
+                <ul>
+                    <li>Επίβλεψη χειριστών μηχανημάτων.</li>
+                    <li>Έλεγχος ποιότητας κοπής και διαμόρφωσης υλικών.</li>
+                    <li>Επικοινωνία με πελάτες και πωλητές για τεχνικές λεπτομέρειες.</li>
+                    <li>Οργάνωση παραγωγικού προγράμματος.</li>
+                    <li>Διαχείριση αναλωσίμων παραγωγής.</li>
+                </ul>
+                <h4 class="h6 mt-3">Βασικές δεξιότητες &amp; προσόντα</h4>
+                <ul>
+                    <li>Τεχνική γνώση επεξεργασίας υλικών.</li>
+                    <li>Ικανότητα συντονισμού ομάδας παραγωγής.</li>
+                    <li>Προσανατολισμός στην ποιότητα.</li>
+                    <li>Ικανότητα τήρησης χρονοδιαγραμμάτων.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Role Modal -->
+        <div class="modal fade" id="roleModal" tabindex="-1" aria-labelledby="roleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="roleModalLabel">Πληροφορίες Ρόλου</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Κλείσιμο"></button>
                     </div>
-                    <div id="roleDetails" class="info-content">
-                        <p class="text-muted mb-0">Επιλέξτε έναν ρόλο για να εμφανιστούν οι λεπτομέρειες εδώ. Θα προστεθούν περιγραφές για κάθε ρόλο.</p>
+                    <div class="modal-body" id="roleModalBody"></div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Κλείσιμο</button>
                     </div>
-                </aside>
+                </div>
             </div>
         </div>
     </main>
@@ -119,15 +1362,267 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Google Charts loader for OrgChart -->
-    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <script src="/hr/js/org-chart.js"></script>
     <script>
+        // Footer year
         document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // Page interactions
+        (function(){
+            var hero = document.getElementById('hero');
+            var startBtn = document.getElementById('startBtn');
+            var cards = document.getElementById('cardsSection');
+
+            function revealCards(){
+                if(!cards) return;
+                cards.classList.remove('d-none');
+                try{ cards.scrollIntoView({behavior:'smooth', block:'start'}); }
+                catch(e){ window.scrollTo(0, cards.offsetTop||0); }
+                var items = cards.querySelectorAll('.reveal-up');
+                items.forEach(function(el, idx){ setTimeout(function(){ el.classList.add('show'); }, 100 + idx*80); });
+            }
+
+            if(startBtn){
+                startBtn.addEventListener('click', function(){
+                    if(hero){
+                        hero.classList.add('fade-out');
+                        setTimeout(function(){ hero.classList.add('d-none'); revealCards(); }, 500);
+                    } else {
+                        revealCards();
+                    }
+                });
+            }
+
+            // Modal wiring
+            var modalEl = document.getElementById('roleModal');
+            var modalTitle = document.getElementById('roleModalLabel');
+            var modalBody = document.getElementById('roleModalBody');
+            var gmContent = document.getElementById('gmContent');
+            var gmCard = document.getElementById('gmCard');
+            var modalInstance = modalEl ? bootstrap.Modal.getOrCreateInstance(modalEl) : null;
+
+            function openModal(title, html){
+                if(!modalInstance) return;
+                if(modalTitle) modalTitle.textContent = title || 'Πληροφορίες Ρόλου';
+                if(modalBody) modalBody.innerHTML = html || '';
+                modalInstance.show();
+            }
+
+            if(gmCard){
+                // Hover image overlay disabled per request
+                gmCard.classList.remove('has-photo');
+                gmCard.addEventListener('click', function(){
+                    openModal('Γενική Διεύθυνση / General Management', gmContent ? gmContent.innerHTML : '');
+                });
+            }
+
+            var branchDetails = document.getElementById('branchDetails');
+            var cardsSectionEl = document.getElementById('cardsSection');
+            var levelUpBtn = document.getElementById('levelUpBtn');
+            var storeChaniaHeader = document.getElementById('storeChaniaHeader');
+            // Rethymno section elements
+            var branchDetailsRethymno = document.getElementById('branchDetailsRethymno');
+            var levelUpBtnRethymno = document.getElementById('levelUpBtnRethymno');
+            var storeRethymnoHeader = document.getElementById('storeRethymnoHeader');
+            if(storeChaniaHeader){
+                // Make header act as level-up trigger as well
+                storeChaniaHeader.addEventListener('click', function(){ if(levelUpBtn) levelUpBtn.click(); });
+            }
+            if(storeRethymnoHeader){
+                storeRethymnoHeader.addEventListener('click', function(){ if(levelUpBtnRethymno) levelUpBtnRethymno.click(); });
+            }
+            // Menidi section elements
+            var branchDetailsMenidi = document.getElementById('branchDetailsMenidi');
+            var levelUpBtnMenidi = document.getElementById('levelUpBtnMenidi');
+            var storeMenidiHeader = document.getElementById('storeMenidiHeader');
+            if(storeMenidiHeader){
+                storeMenidiHeader.addEventListener('click', function(){ if(levelUpBtnMenidi) levelUpBtnMenidi.click(); });
+            }
+            // Aspropyrgos section elements
+            var branchDetailsAspropyrgos = document.getElementById('branchDetailsAspropyrgos');
+            var levelUpBtnAspropyrgos = document.getElementById('levelUpBtnAspropyrgos');
+            var storeAspropyrgosHeader = document.getElementById('storeAspropyrgosHeader');
+            if(storeAspropyrgosHeader){
+                storeAspropyrgosHeader.addEventListener('click', function(){ if(levelUpBtnAspropyrgos) levelUpBtnAspropyrgos.click(); });
+            }
+            function revealIn(el){ if(!el) return; var items = el.querySelectorAll('.reveal-up'); items.forEach(function(node, idx){ setTimeout(function(){ node.classList.add('show'); }, 100 + idx*80); }); }
+            function showChania(){
+                if(!branchDetails) return;
+                // No background image on branch page per request; keep hover on cards only
+                branchDetails.classList.remove('with-photo-bg');
+                branchDetails.style.backgroundImage='';
+                branchDetails.classList.remove('d-none');
+                if(cardsSectionEl) cardsSectionEl.classList.add('d-none');
+                try{ branchDetails.scrollIntoView({behavior:'smooth', block:'start'}); }
+                catch(e){ window.scrollTo(0, branchDetails.offsetTop||0); }
+                revealIn(branchDetails);
+            }
+            function showRethymno(){
+                if(!branchDetailsRethymno) return;
+                branchDetailsRethymno.classList.remove('with-photo-bg');
+                branchDetailsRethymno.style.backgroundImage='';
+                branchDetailsRethymno.classList.remove('d-none');
+                if(cardsSectionEl) cardsSectionEl.classList.add('d-none');
+                try{ branchDetailsRethymno.scrollIntoView({behavior:'smooth', block:'start'}); }
+                catch(e){ window.scrollTo(0, branchDetailsRethymno.offsetTop||0); }
+                revealIn(branchDetailsRethymno);
+            }
+            function showMenidi(){
+                if(!branchDetailsMenidi) return;
+                branchDetailsMenidi.classList.remove('with-photo-bg');
+                branchDetailsMenidi.style.backgroundImage='';
+                branchDetailsMenidi.classList.remove('d-none');
+                if(cardsSectionEl) cardsSectionEl.classList.add('d-none');
+                try{ branchDetailsMenidi.scrollIntoView({behavior:'smooth', block:'start'}); }
+                catch(e){ window.scrollTo(0, branchDetailsMenidi.offsetTop||0); }
+                revealIn(branchDetailsMenidi);
+            }
+            function showAspropyrgos(){
+                if(!branchDetailsAspropyrgos) return;
+                branchDetailsAspropyrgos.classList.remove('with-photo-bg');
+                branchDetailsAspropyrgos.style.backgroundImage='';
+                branchDetailsAspropyrgos.classList.remove('d-none');
+                if(cardsSectionEl) cardsSectionEl.classList.add('d-none');
+                try{ branchDetailsAspropyrgos.scrollIntoView({behavior:'smooth', block:'start'}); }
+                catch(e){ window.scrollTo(0, branchDetailsAspropyrgos.offsetTop||0); }
+                revealIn(branchDetailsAspropyrgos);
+            }
+            if(levelUpBtn){
+                levelUpBtn.addEventListener('click', function(){
+                    if(branchDetails){
+                        branchDetails.classList.add('d-none');
+                        branchDetails.style.backgroundImage='';
+                        branchDetails.classList.remove('with-photo-bg');
+                    }
+                    if(cardsSectionEl){
+                        cardsSectionEl.classList.remove('d-none');
+                        try{ cardsSectionEl.scrollIntoView({behavior:'smooth', block:'start'}); }
+                        catch(e){ window.scrollTo(0, cardsSectionEl.offsetTop||0); }
+                        revealIn(cardsSectionEl);
+                    }
+                });
+            }
+            if(levelUpBtnRethymno){
+                levelUpBtnRethymno.addEventListener('click', function(){
+                    if(branchDetailsRethymno){
+                        branchDetailsRethymno.classList.add('d-none');
+                        branchDetailsRethymno.style.backgroundImage='';
+                        branchDetailsRethymno.classList.remove('with-photo-bg');
+                    }
+                    if(cardsSectionEl){
+                        cardsSectionEl.classList.remove('d-none');
+                        try{ cardsSectionEl.scrollIntoView({behavior:'smooth', block:'start'}); }
+                        catch(e){ window.scrollTo(0, cardsSectionEl.offsetTop||0); }
+                        revealIn(cardsSectionEl);
+                    }
+                });
+            }
+            if(levelUpBtnMenidi){
+                levelUpBtnMenidi.addEventListener('click', function(){
+                    if(branchDetailsMenidi){
+                        branchDetailsMenidi.classList.add('d-none');
+                        branchDetailsMenidi.style.backgroundImage='';
+                        branchDetailsMenidi.classList.remove('with-photo-bg');
+                    }
+                    if(cardsSectionEl){
+                        cardsSectionEl.classList.remove('d-none');
+                        try{ cardsSectionEl.scrollIntoView({behavior:'smooth', block:'start'}); }
+                        catch(e){ window.scrollTo(0, cardsSectionEl.offsetTop||0); }
+                        revealIn(cardsSectionEl);
+                    }
+                });
+            }
+            if(levelUpBtnAspropyrgos){
+                levelUpBtnAspropyrgos.addEventListener('click', function(){
+                    if(branchDetailsAspropyrgos){
+                        branchDetailsAspropyrgos.classList.add('d-none');
+                        branchDetailsAspropyrgos.style.backgroundImage='';
+                        branchDetailsAspropyrgos.classList.remove('with-photo-bg');
+                    }
+                    if(cardsSectionEl){
+                        cardsSectionEl.classList.remove('d-none');
+                        try{ cardsSectionEl.scrollIntoView({behavior:'smooth', block:'start'}); }
+                        catch(e){ window.scrollTo(0, cardsSectionEl.offsetTop||0); }
+                        revealIn(cardsSectionEl);
+                    }
+                });
+            }
+
+            var branchCards = document.querySelectorAll('.branch-card');
+            var imageMap = { 'Χανιά': '/images/stores/XANIA.jpg' };
+            branchCards.forEach(function(card){
+                var bname = card.getAttribute('data-branch') || '';
+                var img = card.getAttribute('data-image') || imageMap[bname];
+                // Hover image overlays disabled per request; do not create branch-photo or add has-photo
+                card.classList.remove('has-photo');
+                card.addEventListener('click', function(){
+                    var name = card.getAttribute('data-branch') || 'Κατάστημα';
+                    if(name === 'Ρέθυμνο'){ showRethymno(); return; }
+                    if(name === 'Χανιά'){ showChania(); return; }
+                    if(name === 'Μενιδι'){ showMenidi(); return; }
+                    if(name === 'Ασπρόπυργος'){ showAspropyrgos(); return; }
+                    var html = '<p class="mb-0">Πληροφορίες για «'+ name +'» θα προστεθούν σύντομα.</p>';
+                    openModal(name, html);
+                });
+            });
+
+            // Roles modal wiring on Χανιά page
+            var templates = {
+                'store-manager': document.getElementById('tpl-store-manager'),
+                'sales-lead': document.getElementById('tpl-sales-lead'),
+                'warehouse-lead': document.getElementById('tpl-warehouse-lead'),
+                'wholesale-lead': document.getElementById('tpl-wholesale-lead'),
+                'reception': document.getElementById('tpl-reception'),
+                'sales-reps': document.getElementById('tpl-sales-reps'),
+                'warehouse-worker': document.getElementById('tpl-warehouse-worker'),
+                'project-athens': document.getElementById('tpl-project-athens'),
+                // Rethymno additions
+                'accounting-lead': document.getElementById('tpl-accounting-lead'),
+                'external-accountant': document.getElementById('tpl-external-accountant'),
+                'assistant-accountant': document.getElementById('tpl-assistant-accountant'),
+                'payroll-manager': document.getElementById('tpl-payroll-manager'),
+                'after-sales-tech': document.getElementById('tpl-after-sales-tech'),
+                'procurement-head': document.getElementById('tpl-procurement-head'),
+                'imports-manager': document.getElementById('tpl-imports-manager'),
+                'driver': document.getElementById('tpl-driver'),
+                'offers-projects': document.getElementById('tpl-offers-projects'),
+                'production-lab': document.getElementById('tpl-production-lab'),
+                'production-lead': document.getElementById('tpl-production-lead')
+            };
+            var titles = {
+                'store-manager': 'Διευθυντής Καταστήματος (Store Manager)',
+                'sales-lead': 'Υπεύθυνος Πωλήσεων',
+                'warehouse-lead': 'Υπεύθυνος Αποθήκης & Logistics',
+                'wholesale-lead': 'Υπεύθυνος Χονδρικής',
+                'reception': 'Υποδοχή',
+                'sales-reps': 'Πωλητής',
+                'warehouse-worker': 'Αποθηκάριος',
+                'project-athens': 'Υπεύθυνος Project Έργων Αθήνας',
+                // Rethymno additions
+                'accounting-lead': 'Υπεύθυνος Λογιστηρίου',
+                'external-accountant': 'Εξωτερικός Λογιστής',
+                'assistant-accountant': 'Βοηθός Λογιστή',
+                'payroll-manager': 'Υπεύθυνος Μισθοδοσίας',
+                'after-sales-tech': 'Τμήμα After-Sales / Τεχνικός Service',
+                'procurement-head': 'Διευθυντής Αγορών (Head of Procurement)',
+                'imports-manager': 'Υπεύθυνος Εισαγωγών Εξωτερικού',
+                'driver': 'Οδηγός',
+                'offers-projects': 'Υπεύθυνος Προσφορών Έργων',
+                'production-lab': 'Υπεύθυνος Παραγωγής (Τμήμα Εργαστηρίου)',
+                'production-lead': 'Υπεύθυνος Παραγωγής'
+            };
+            document.querySelectorAll('#branchDetails .role-card, #branchDetailsRethymno .role-card, #branchDetailsMenidi .role-card, #branchDetailsAspropyrgos .role-card').forEach(function(card){
+                card.addEventListener('click', function(){
+                    var key = card.getAttribute('data-role');
+                    var tpl = templates[key];
+                    var html = tpl ? tpl.innerHTML : '<p class="mb-0">Λεπτομέρειες θα προστεθούν σύντομα.</p>';
+                    openModal(titles[key] || 'Πληροφορίες Ρόλου', html);
+                });
+            });
+        })();
     </script>
     <script>
     (function(){
-      // Theme toggle with system preference and persistence (align to index/slabs)
+      // Theme toggle with system preference and persistence
       try{
         var key='theme';
         var root=document.documentElement; var saved=localStorage.getItem(key);
@@ -135,39 +1630,59 @@
         function applyTheme(val){ if(val!=='dark'&&val!=='light'){ val='light'; } root.setAttribute('data-theme', val); }
         if(saved){ applyTheme(saved); } else { applyTheme(mq&&mq.matches?'dark':'light'); if(mq){ if(typeof mq.addEventListener==='function'){ mq.addEventListener('change', function(e){ applyTheme(e.matches?'dark':'light'); }); } else if(typeof mq.addListener==='function'){ mq.addListener(function(e){ applyTheme(e.matches?'dark':'light'); }); } } }
         var btn=document.getElementById('themeToggle');
-        if(btn){ btn.addEventListener('click', function(){ var curr=root.getAttribute('data-theme')==='dark'?'light':'dark'; applyTheme(curr); localStorage.setItem(key, curr); var icon=btn.querySelector('i'); if(icon){ icon.classList.toggle('fa-moon', curr!=='dark'); icon.classList.toggle('fa-sun', curr==='dark'); } }); }
+        if(btn){
+          var curr=root.getAttribute('data-theme')||'light';
+          var icon=btn.querySelector('i');
+          if(icon){ icon.classList.toggle('fa-sun', curr==='dark'); icon.classList.toggle('fa-moon', curr!=='dark'); }
+          btn.addEventListener('click', function(){ var curr=root.getAttribute('data-theme')==='dark'?'light':'dark'; applyTheme(curr); localStorage.setItem(key, curr); var icon=btn.querySelector('i'); if(icon){ icon.classList.toggle('fa-moon', curr!=='dark'); icon.classList.toggle('fa-sun', curr==='dark'); } });
+        }
       }catch(e){}
 
-      // Presence (same pattern as slabs) + ensure row click navigates to logs
+      // Presence (connect to /ws/app-status and render list)
       var elCount=document.getElementById('presenceCount');
       var elList=document.getElementById('presenceList');
+      var panel=document.getElementById('presencePanel');
+      var chip=document.getElementById('presenceChip');
+      try{
+        if(panel && window.bootstrap){
+          var collapseInst=bootstrap.Collapse.getOrCreateInstance(panel,{toggle:false});
+          if(chip){
+            chip.addEventListener('click', function(e){
+              var t=e.target.closest('[data-bs-target="#presencePanel"]');
+              if(t){ e.preventDefault(); collapseInst.toggle(); }
+            });
+          }
+        }
+      }catch(e){}
       var state={ apps:{}, visitors:[] };
       function render(){
         try{
-          var total=new Set(Object.values(state.apps||{}).flat()).size;
-          if(elCount) elCount.textContent=(total||0)+" online";
-          if(elList) elList.innerHTML=(state.visitors||[]).map(function(v){
+          var set=new Set();
+          Object.values(state.apps||{}).forEach(function(arr){ (arr||[]).forEach(function(id){ if(id) set.add(id); }); });
+          var total=set.size; if(elCount) elCount.textContent=(total||0)+" online";
+          if(elList){ elList.innerHTML=(state.visitors||[]).map(function(v){
             var ip=v.ip||''; var br=(v.browsers||[]).join(', ');
             var vid=(v.visitorId||'').slice(0,8);
             var dtype=(v.deviceModel||v.deviceType||'');
             var dev=(dtype + (v.os? ' '+v.os:'')).trim();
-            var net=v.net||'';
             var right=[br, dev].filter(Boolean).join(' · ');
-            return '<a class="text-decoration-none d-flex justify-content-between align-items-center py-1 border-bottom" href="/logs?search='+encodeURIComponent(v.visitorId||ip||'')+'" data-visitor="'+(v.visitorId||'')+'" data-ip="'+ip+'" target="_self" style="color:inherit;">\
-              <div><span class="fw-semibold">'+vid+'</span> <span class="text-muted ms-1">'+ip+'</span>'+(net? ' <span class="text-muted">· '+net+'</span>':'')+'</div>\
+            var href='/logs?search='+encodeURIComponent(v.visitorId||ip||'');
+            return '<a class="text-decoration-none d-flex justify-content-between align-items-center py-1 border-bottom" href="'+href+'" target="_self" style="color:inherit;">\
+              <div><span class="fw-semibold">'+vid+'</span> <span class="text-muted ms-1">'+ip+'</span></div>\
               <div class="text-muted">'+right+'</div>\
             </a>';
-          }).join('');
+          }).join(''); }
         }catch(e){}
       }
-      if(elList){ elList.addEventListener('click', function(e){ var a=e.target.closest('a[href]'); if(a){ e.preventDefault(); try{ var panel=document.getElementById('presencePanel'); if(panel && window.bootstrap && bootstrap.Collapse){ bootstrap.Collapse.getOrCreateInstance(panel).hide(); } }catch(ex){} window.location.href=a.getAttribute('href'); } }); }
+      if(elList){ elList.addEventListener('click', function(e){ var a=e.target.closest('a[href]'); if(a){ e.preventDefault(); try{ if(panel && window.bootstrap && bootstrap.Collapse){ bootstrap.Collapse.getOrCreateInstance(panel).hide(); } }catch(ex){} window.location.href=a.getAttribute('href'); } }); }
       function getVisitorId(){ try{ var id=localStorage.getItem('visitorId'); if(!id){ id='visitor_'+Math.random().toString(36).substr(2,9)+'_'+Date.now(); localStorage.setItem('visitorId', id);} return id;}catch(e){ return 'visitor_fallback_'+Date.now(); } }
       function getBrowserInfo(){ var ua=navigator.userAgent||navigator.vendor||window.opera; var platform=navigator.platform||''; var maxTP=(typeof navigator.maxTouchPoints==='number')?navigator.maxTouchPoints:0; var name=ua.indexOf('Firefox')>-1?'Firefox': ua.indexOf('SamsungBrowser')>-1?'Samsung Browser': ua.indexOf('OPR')>-1||ua.indexOf('Opera')>-1?'Opera': ua.indexOf('Trident')>-1?'Internet Explorer': ua.indexOf('Edg')>-1||ua.indexOf('Edge')>-1?'Edge': ua.indexOf('Chrome')>-1?'Chrome': ua.indexOf('Safari')>-1?'Safari':'Unknown'; var isIpad=/iPad/i.test(ua)||(platform==='MacIntel'&&maxTP>1); var isIphone=/iPhone/i.test(ua); var isIpod=/iPod/i.test(ua); var isAndroid=/Android/i.test(ua); var isIOS=isIphone||isIpad||isIpod; var os=(function(u){ if(isIOS) return 'iOS'; if(/Windows NT/i.test(u)) return 'Windows'; if(isAndroid) return 'Android'; if(/Macintosh|Mac OS X/i.test(u)) return 'macOS'; if(/Linux/i.test(u)) return 'Linux'; return 'Other'; })(ua); var deviceType=(function(u){ if(isIphone||isIpod) return 'Phone'; if(isIpad) return 'Tablet'; if(isAndroid) return (/Mobi|Mobile/i.test(u)?'Phone':'Tablet'); return 'PC'; })(ua); var deviceModel=isIphone?'iPhone':(isIpad?'iPad':(isIpod?'iPod':'')); return {browser:name, userAgent:ua, platform:navigator.platform, os:os, deviceType:deviceType, deviceModel:deviceModel}; }
       function getTabId(){ try{ var id=sessionStorage.getItem('tabId'); if(!id){ id='tab_'+Math.random().toString(36).substr(2,9)+'_'+Date.now(); sessionStorage.setItem('tabId', id);} return id;}catch(e){ return 'tab_fallback_'+Date.now(); } }
       var socket; var visitorId=getVisitorId(); var browserInfo=getBrowserInfo(); var tabId=getTabId(); var heartbeatInterval;
       function startHeartbeat(){ stopHeartbeat(); heartbeatInterval=setInterval(function(){ if(socket && socket.readyState===WebSocket.OPEN){ socket.send(JSON.stringify({action:'heartbeat', visitorId:visitorId, tabId:tabId})); } else { stopHeartbeat(); } }, 15000); }
       function stopHeartbeat(){ if(heartbeatInterval){ clearInterval(heartbeatInterval); heartbeatInterval=null; } }
-      function connect(){ var protocol=location.protocol==='https:'?'wss:':'ws:'; socket=new WebSocket(protocol+'//'+location.host+'/ws/app-status');
+      function connect(){ var protocol=location.protocol==='https:'?'wss:':'ws:'; try{ socket=new WebSocket(protocol+'//'+location.host+'/ws/app-status'); }catch(e){ return; }
+        if(!socket) return;
         socket.addEventListener('open', function(){ try{ socket.send(JSON.stringify({action:'identify', visitorId:visitorId, browserInfo:browserInfo, tabId:tabId})); socket.send(JSON.stringify({action:'join', app:'org-chart', visitorId:visitorId, tabId:tabId})); startHeartbeat(); }catch(e){} });
         socket.addEventListener('message', function(evt){ try{ var data=JSON.parse(evt.data); if(data.type==='presence'){ state.apps=data.apps||{}; state.visitors=data.visitors||[]; render(); } else if(data.active_users){ state.apps=data.active_users; render(); } }catch(e){} });
         socket.addEventListener('close', function(){ stopHeartbeat(); setTimeout(connect, 5000); });
