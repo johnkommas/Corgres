@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Corgres.iml" filepath="$PROJECT_DIR$/.idea/Corgres.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../Corgres_HR/.idea/HR.iml" filepath="$PROJECT_DIR$/../Corgres_HR/.idea/HR.iml" />
     </modules>
   </component>
 </project>
