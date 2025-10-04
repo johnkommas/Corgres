@@ -1605,6 +1605,12 @@ async def pricing_calc(payload: Dict[str, Any]):
         if origin not in ("ES", "PL") and transport_mode == "groupage":
             transport_mode = "road"
 
+        # Optional pallet unit cost override (per pallet)
+        try:
+            pallet_unit_cost_eur = float(payload.get("pallet_unit_cost_eur")) if payload.get("pallet_unit_cost_eur") is not None else None
+        except Exception:
+            pallet_unit_cost_eur = None
+
         req = PricingRequest(
             buy_price_eur_m2=buy_price,
             qty_m2=qty_m2,
@@ -1616,7 +1622,8 @@ async def pricing_calc(payload: Dict[str, Any]):
             margin=margin,
             transport_mode=transport_mode,  # type: ignore
             freight_override_eur=freight_override,
-            include_pallet_cost=bool(payload.get("include_pallet_cost", True))
+            include_pallet_cost=bool(payload.get("include_pallet_cost", True)),
+            pallet_unit_cost_eur=pallet_unit_cost_eur
         )
         result = PRICING_ENGINE.calculate(req)
         api_logger.info("Pricing calculation completed successfully")

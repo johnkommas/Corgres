@@ -26,6 +26,7 @@ class PricingRequest:
     transport_mode: TransportMode = "road"
     freight_override_eur: float | None = None
     include_pallet_cost: bool = True
+    pallet_unit_cost_eur: float | None = None
 
 class PricingEngine:
     def __init__(self, tariffs: Dict[str, Any]):
@@ -45,7 +46,10 @@ class PricingEngine:
         # 2) Βάρος + κόστος παλέτας
         pconf = self.tariffs["pallets"][r.pallet_type]
         kg_total = kg_tiles + r.pallets_count * pconf["weight_kg"]
-        pallet_cost = (r.pallets_count * pconf["cost_eur"]) if r.include_pallet_cost else 0.0
+        # Allow overriding pallet unit cost from request; fallback to tariff default
+        default_unit_cost = float(pconf.get("cost_eur", 0.0))
+        unit_cost = float(r.pallet_unit_cost_eur) if (r.pallet_unit_cost_eur is not None and r.pallet_unit_cost_eur >= 0) else default_unit_cost
+        pallet_cost = (r.pallets_count * unit_cost) if r.include_pallet_cost else 0.0
 
         # 3) Μεταφορικά ανά προέλευση/τρόπο
         freight = 0.0

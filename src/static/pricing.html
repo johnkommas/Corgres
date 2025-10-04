@@ -314,16 +314,6 @@
           </div>
         </div>
 
-        <!-- 3. Margin with slider + live badge (keep hidden number input for submit) -->
-        <div class="col-md-3">
-          <label for="margin" class="form-label">Περιθώριο (Margin %)</label>
-          <input type="number" min="0" max="1" step="0.01" class="form-control d-none" id="margin" value="0.40" required>
-          <div class="d-flex align-items-center gap-1">
-            <input type="range" id="margin_range" class="form-range" min="0" max="1" step="0.01" value="0.40" aria-label="Περιθώριο (Margin %)">
-            <span id="margin_badge" class="badge rounded-pill text-bg-success">40.00%</span>
-          </div>
-<!--          <div class="form-text">Σύρετε το slider για να αλλάξετε το περιθώριο. Προεπιλογή: 0,40</div>-->
-        </div>
 
         <!-- 3b. Include Pallet Cost toggle -->
         <div class="col-md-2">
@@ -364,6 +354,16 @@
             <option value="eu" selected>EU</option>
             <option value="industrial">Industrial</option>
           </select>
+        </div>
+
+        <!-- Pallet Unit Cost (EUR) shown when pallet cost is enabled -->
+        <div class="col-md-3" id="pallet_unit_cost_container">
+          <label for="pallet_unit_cost_eur" class="form-label compact-label">Κόστος ανά Παλέτα (EUR)</label>
+          <div class="input-group unified-secondary">
+            <span class="input-group-text unit-grey">EUR</span>
+            <input type="number" min="0" step="0.01" class="form-control text-end default-secondary-input-dark" id="pallet_unit_cost_eur" placeholder="π.χ. 10.00">
+            <span class="input-group-text unit-grey">€</span>
+          </div>
         </div>
 
         <!-- 6. Origin as toggle pills (hidden select kept) -->
@@ -427,6 +427,16 @@
             <option value="GR-mainland" selected>Ελλάδα - Αθήνα</option>
             <option value="GR-crete">Ελλάδα - Κρήτη</option>
           </select>
+        </div>
+
+        <!-- Margin moved after Destination -->
+        <div class="col-md-4">
+          <label for="margin" class="form-label">Περιθώριο (Margin %)</label>
+          <input type="number" min="0" max="1" step="0.01" class="form-control d-none" id="margin" value="0.40" required>
+          <div class="d-flex align-items-center gap-1">
+            <input type="range" id="margin_range" class="form-range" min="0" max="1" step="0.01" value="0.40" aria-label="Περιθώριο (Margin %)">
+            <span id="margin_badge" class="badge rounded-pill text-bg-success">40.00%</span>
+          </div>
         </div>
 
         <div class="col-12">
@@ -728,6 +738,39 @@
       wireToggleGroup('transport_mode_group', 'transport_mode');
       wireToggleGroup('include_pallet_cost_group', 'include_pallet_cost');
 
+      // Pallet Unit Cost defaults and visibility handling
+      const PALLET_DEFAULTS = { eu: 10.00, industrial: 30.00 };
+      const palletTypeSelect = document.getElementById('pallet_type');
+      const palletUnitCostInput = document.getElementById('pallet_unit_cost_eur');
+      const palletCostContainer = document.getElementById('pallet_unit_cost_container');
+      const includePalletSelect = document.getElementById('include_pallet_cost');
+      let palletCostDirty = false;
+      function applyPalletDefault(){
+        if (!palletTypeSelect || !palletUnitCostInput) return;
+        const t = palletTypeSelect.value || 'eu';
+        const def = (PALLET_DEFAULTS[t] ?? 0);
+        palletUnitCostInput.value = Number(def).toFixed(2);
+        palletCostDirty = false;
+      }
+      function refreshPalletCostVisibility(){
+        if (!palletCostContainer || !includePalletSelect) return;
+        const show = includePalletSelect.value === 'yes';
+        palletCostContainer.style.display = show ? 'block' : 'none';
+      }
+      if (palletUnitCostInput){
+        palletUnitCostInput.addEventListener('input', function(){ palletCostDirty = true; });
+        palletUnitCostInput.addEventListener('change', function(){ palletCostDirty = true; });
+      }
+      if (palletTypeSelect){
+        palletTypeSelect.addEventListener('change', function(){ applyPalletDefault(); });
+      }
+      if (includePalletSelect){
+        includePalletSelect.addEventListener('change', function(){ refreshPalletCostVisibility(); });
+      }
+      // initialize
+      applyPalletDefault();
+      refreshPalletCostVisibility();
+
 
       // Toggle extras details visibility
       const toggleBtn = document.getElementById('toggle_extras_details');
@@ -757,6 +800,13 @@
           margin: parseFloat(document.getElementById('margin').value || '0.40'),
           include_pallet_cost: (document.getElementById('include_pallet_cost').value === 'yes')
         };
+        // Include pallet unit cost override if applicable
+        if (payload.include_pallet_cost) {
+          const puc = parseFloat(document.getElementById('pallet_unit_cost_eur').value || 'NaN');
+          if (Number.isFinite(puc) && puc >= 0) {
+            payload.pallet_unit_cost_eur = puc;
+          }
+        }
         // If origin is Poland, include freight override when provided
         if (payload.origin === 'PL') {
           const plVal = parseFloat(document.getElementById('pl_freight_eur').value || 'NaN');
