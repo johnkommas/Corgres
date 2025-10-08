@@ -1688,6 +1688,19 @@ async def pricing_calc_slabs(payload: Dict[str, Any]):
         palette_map = {p["type"]: p for p in cfg.get("palette", [])}
         ship_cfg = cfg.get("palette_shipping", {})
 
+        # Brand-specific override: MIRAGE uses different pallet handling costs
+        # - crate: 100€ (instead of 220)
+        # - a-frame: 270€ (instead of 315)
+        try:
+            if str(brand).lower() == "mirage":
+                if "crate" in palette_map:
+                    palette_map["crate"]["price_per_unit"] = 100
+                if "a-frame" in palette_map:
+                    palette_map["a-frame"]["price_per_unit"] = 270
+        except Exception:
+            # If anything goes wrong, continue with defaults
+            pass
+
         if brand not in ("infinity", "mirage"):
             raise ValueError("Unsupported brand (use 'infinity' or 'mirage')")
         specs = cfg.get(brand, [])
