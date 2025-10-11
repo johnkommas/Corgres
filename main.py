@@ -1688,18 +1688,7 @@ async def pricing_calc_slabs(payload: Dict[str, Any]):
         palette_map = {p["type"]: p for p in cfg.get("palette", [])}
         ship_cfg = cfg.get("palette_shipping", {})
 
-        # Brand-specific override: MIRAGE uses different pallet handling costs
-        # - crate: 100€ (instead of 220)
-        # - a-frame: 270€ (instead of 315)
-        try:
-            if str(brand).lower() == "mirage":
-                if "crate" in palette_map:
-                    palette_map["crate"]["price_per_unit"] = 100
-                if "a-frame" in palette_map:
-                    palette_map["a-frame"]["price_per_unit"] = 270
-        except Exception:
-            # If anything goes wrong, continue with defaults
-            pass
+        # Note: MIRAGE special pallet handling applies conditionally after spec selection (see below).
 
         if brand not in ("infinity", "mirage"):
             raise ValueError("Unsupported brand (use 'infinity' or 'mirage')")
@@ -1713,6 +1702,21 @@ async def pricing_calc_slabs(payload: Dict[str, Any]):
             spec = next((s for s in specs if int(s.get("thickness")) == thickness), None)
         if not spec:
             raise ValueError("No spec found for selected brand/thickness (and dimensions if provided)")
+
+        # Brand-specific override for MIRAGE only for variant 6 mm 120x278
+        # Apply reduced pallet handling costs exclusively in this case.
+        try:
+            if str(brand).lower() == "mirage":
+                sel_th = int(spec.get("thickness", 0) or 0)
+                sel_dim = str(spec.get("dimensions", "")).strip().lower()
+                if sel_th == 6 and sel_dim == "120x278":
+                    if "crate" in palette_map:
+                        palette_map["crate"]["price_per_unit"] = 100
+                    if "a-frame" in palette_map:
+                        palette_map["a-frame"]["price_per_unit"] = 270
+        except Exception:
+            # If anything goes wrong, continue with defaults
+            pass
 
         warnings = []
         weight_per_unit = float(spec.get("weight_kg_per_unit", 0))
